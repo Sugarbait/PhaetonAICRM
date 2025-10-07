@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Direct Login Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Direct Supabase Login Test</h1>
+    <div id="result"></div>
+
+    <script>
+        const SUPABASE_URL = 'https://cpkslvmydfdevdftieck.supabase.co'
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNwa3Nsdm15ZGZkZXZkZnRpZWNrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY5MDAyOTUsImV4cCI6MjA2MjQ3NjI5NX0.0oH9E5nR9ZxcBHQy6T_Lz0YlWkDlQZxz7DYlBiVPBZw'
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+        async function testLogin() {
+            const resultDiv = document.getElementById('result')
+            resultDiv.innerHTML = '<p>Testing login...</p>'
+
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: 'admin@phaetonai.com',
+                    password: 'MedExAdmin2025!'
+                })
+
+                if (error) {
+                    resultDiv.innerHTML = `<p style="color: red;">❌ Login failed: ${error.message}</p>`
+                    return
+                }
+
+                resultDiv.innerHTML = `
+                    <p style="color: green;">✅ Login successful!</p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                    <p>Now check if you can access the MedEx app...</p>
+                `
+
+                // Store session
+                localStorage.setItem('sb-cpkslvmydfdevdftieck-auth-token', JSON.stringify(data.session))
+
+            } catch (err) {
+                resultDiv.innerHTML = `<p style="color: red;">❌ Error: ${err.message}</p>`
+            }
+        }
+
+        // Run test on page load
+        testLogin()
+    </script>
+</body>
+</html>

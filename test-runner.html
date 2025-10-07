@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logout Test Runner</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .button { padding: 10px 20px; margin: 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .button:hover { background: #0056b3; }
+        .danger { background: #dc3545; }
+        .danger:hover { background: #c82333; }
+        .success { background: #28a745; }
+        .success:hover { background: #218838; }
+        .console { background: #f8f9fa; border: 1px solid #dee2e6; padding: 15px; font-family: monospace; max-height: 400px; overflow-y: auto; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 4px; font-weight: bold; }
+        .pass { background: #d4edda; color: #155724; }
+        .fail { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Logout Prevention Test Runner</h1>
+    <p>This page will test the logout prevention functionality by injecting test scripts into the main application.</p>
+
+    <div id="status" class="status info">Ready to run tests...</div>
+
+    <div>
+        <button class="button" onclick="openMainApp()">1. Open Main App</button>
+        <button class="button" onclick="runQuickTest()">2. Run Quick Test</button>
+        <button class="button" onclick="simulateLogoutScenario()">3. Simulate Logout</button>
+        <button class="button success" onclick="checkResults()">4. Check Results</button>
+        <button class="button danger" onclick="clearAllData()">Clear All Data</button>
+    </div>
+
+    <div class="console" id="console">
+        Test results will appear here...
+    </div>
+
+    <script>
+        let testResults = [];
+
+        function log(message, type = 'info') {
+            const console = document.getElementById('console');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}`;
+            console.innerHTML += `<div style="color: ${type === 'error' ? 'red' : type === 'success' ? 'green' : 'black'}">${logEntry}</div>`;
+            console.scrollTop = console.scrollHeight;
+            console.log(logEntry);
+        }
+
+        function updateStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+        }
+
+        function openMainApp() {
+            log('🚀 Opening main application in new window...');
+            window.open('http://localhost:3000', 'mainApp', 'width=1200,height=800');
+            updateStatus('Main app opened - check console in that window', 'info');
+        }
+
+        function runQuickTest() {
+            log('🧪 Running quick test...');
+
+            // Set logout flag
+            localStorage.setItem('justLoggedOut', 'true');
+            log('✅ Set justLoggedOut flag');
+
+            // Clear credentials
+            sessionStorage.removeItem('retell_credentials_backup');
+            localStorage.removeItem('__emergencyRetellCredentials');
+            if (window.__retellCredentialsBackup) {
+                delete window.__retellCredentialsBackup;
+            }
+            log('✅ Cleared existing credentials');
+
+            // Check if anything gets stored despite the flag
+            setTimeout(() => {
+                const credentialsFound = sessionStorage.getItem('retell_credentials_backup') ||
+                                       localStorage.getItem('__emergencyRetellCredentials') ||
+                                       window.__retellCredentialsBackup;
+
+                if (credentialsFound) {
+                    log('❌ FAIL: Credentials found despite logout flag', 'error');
+                    updateStatus('Test FAILED - credentials found', 'fail');
+                } else {
+                    log('✅ SUCCESS: No credentials found', 'success');
+                    updateStatus('Test PASSED - no credentials found', 'pass');
+                }
+
+                localStorage.removeItem('justLoggedOut');
+                log('🧹 Test cleanup completed');
+            }, 2000);
+
+            updateStatus('Running quick test...', 'info');
+        }
+
+        function simulateLogoutScenario() {
+            log('🔄 Simulating complete logout scenario...');
+
+            // Step 1: Set logout flag
+            localStorage.setItem('justLoggedOut', 'true');
+            log('✅ Set justLoggedOut flag');
+
+            // Step 2: Clear all data like AuthContext does
+            sessionStorage.removeItem('retell_credentials_backup');
+            localStorage.removeItem('__emergencyRetellCredentials');
+            localStorage.removeItem('__fallbackRetellConfig');
+            localStorage.removeItem('currentUser');
+
+            if (window.__retellCredentialsBackup) {
+                delete window.__retellCredentialsBackup;
+            }
+
+            // Clear settings
+            const settingsKeys = Object.keys(localStorage).filter(key => key.startsWith('settings_'));
+            settingsKeys.forEach(key => localStorage.removeItem(key));
+
+            log(`✅ Cleared all data (${settingsKeys.length} settings keys removed)`);
+
+            // Step 3: Wait and check if anything gets restored
+            setTimeout(() => {
+                const state = {
+                    justLoggedOut: localStorage.getItem('justLoggedOut'),
+                    currentUser: localStorage.getItem('currentUser'),
+                    sessionCredentials: sessionStorage.getItem('retell_credentials_backup'),
+                    emergencyCredentials: localStorage.getItem('__emergencyRetellCredentials'),
+                    memoryCredentials: !!window.__retellCredentialsBackup,
+                    settingsCount: Object.keys(localStorage).filter(key => key.startsWith('settings_')).length
+                };
+
+                log('Final state after logout simulation:');
+                log(JSON.stringify(state, null, 2));
+
+                const isClean = !state.currentUser &&
+                               !state.sessionCredentials &&
+                               !state.emergencyCredentials &&
+                               !state.memoryCredentials &&
+                               state.settingsCount === 0;
+
+                if (isClean) {
+                    log('✅ LOGOUT SIMULATION SUCCESS: System is clean', 'success');
+                    updateStatus('Logout simulation PASSED', 'pass');
+                } else {
+                    log('❌ LOGOUT SIMULATION FAILED: Data found after logout', 'error');
+                    updateStatus('Logout simulation FAILED', 'fail');
+                }
+
+            }, 3000);
+
+            updateStatus('Running logout simulation...', 'info');
+        }
+
+        function checkResults() {
+            log('🔍 Checking current system state...');
+
+            const state = {
+                justLoggedOut: localStorage.getItem('justLoggedOut'),
+                currentUser: localStorage.getItem('currentUser'),
+                sessionCredentials: sessionStorage.getItem('retell_credentials_backup'),
+                emergencyCredentials: localStorage.getItem('__emergencyRetellCredentials'),
+                memoryCredentials: !!window.__retellCredentialsBackup,
+                settingsCount: Object.keys(localStorage).filter(key => key.startsWith('settings_')).length,
+                msalCount: Object.keys(localStorage).filter(key => key.startsWith('msal.')).length,
+                totalLocalStorage: Object.keys(localStorage).length,
+                totalSessionStorage: Object.keys(sessionStorage).length
+            };
+
+            log('Current system state:');
+            log(JSON.stringify(state, null, 2));
+
+            // Determine if system is in clean logout state
+            const isCleanLogout = state.justLoggedOut === 'true' &&
+                                 !state.currentUser &&
+                                 !state.sessionCredentials &&
+                                 !state.emergencyCredentials &&
+                                 !state.memoryCredentials;
+
+            if (isCleanLogout) {
+                log('✅ System is in CLEAN logout state', 'success');
+                updateStatus('System state: CLEAN LOGOUT', 'pass');
+            } else if (state.justLoggedOut === 'true') {
+                log('⚠️ System has logout flag but some data remains', 'error');
+                updateStatus('System state: PARTIAL LOGOUT', 'fail');
+            } else {
+                log('ℹ️ System is in normal operation state', 'info');
+                updateStatus('System state: NORMAL OPERATION', 'info');
+            }
+        }
+
+        function clearAllData() {
+            log('🗑️ Clearing all data...');
+
+            const localKeys = Object.keys(localStorage);
+            localKeys.forEach(key => localStorage.removeItem(key));
+
+            sessionStorage.clear();
+
+            if (window.__retellCredentialsBackup) {
+                delete window.__retellCredentialsBackup;
+            }
+
+            log(`✅ Cleared ${localKeys.length} localStorage keys and all sessionStorage`);
+            updateStatus('All data cleared', 'success');
+        }
+
+        // Auto-check initial state
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                log('📱 Test runner loaded, checking initial state...');
+                checkResults();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

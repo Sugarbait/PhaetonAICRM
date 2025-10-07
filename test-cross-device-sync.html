@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cross-Device Sync Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #fafafa;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        .warning { background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        .console-output {
+            background: #000;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        h1 { color: #333; text-align: center; }
+        h2 { color: #555; border-bottom: 2px solid #007bff; padding-bottom: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Cross-Device Sync Test</h1>
+
+        <div class="test-section">
+            <h2>Test Status</h2>
+            <div id="status">Ready to test...</div>
+        </div>
+
+        <div class="test-section">
+            <h2>Environment Check</h2>
+            <button onclick="checkEnvironment()">Check Environment</button>
+            <div id="env-results"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>localStorage Test</h2>
+            <button onclick="testLocalStorage()">Test localStorage</button>
+            <div id="localStorage-results"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>Force Sync Test</h2>
+            <button onclick="testForceSync()">Test Force Sync (Simulated)</button>
+            <div id="force-sync-results"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>Manual Test Instructions</h2>
+            <div class="info test-result">
+                <strong>To test cross-device sync manually:</strong><br>
+                1. Open CareXPS app: <a href="http://localhost:3010" target="_blank">http://localhost:3010</a><br>
+                2. Login and set up MFA + API keys in Settings<br>
+                3. Check browser console for sync logs (look for 🔐 MFA and 🔄 FORCE SYNC messages)<br>
+                4. Logout completely<br>
+                5. Open incognito window or different browser<br>
+                6. Login again and check if MFA + API keys appear automatically<br>
+                7. Verify both user settings and MFA sync across devices
+            </div>
+            <div class="warning test-result">
+                <strong>Expected Console Messages:</strong><br>
+                • <code>🔐 CROSS-DEVICE MFA SYNC: Starting MFA sync</code><br>
+                • <code>✅ MFA force sync SUCCESS</code><br>
+                • <code>🔄 CROSS-DEVICE SYNC: Starting settings load</code><br>
+                • <code>✅ Force sync SUCCESS</code><br>
+                • <code>🔑 API credentials found in force sync: ✅ Present</code>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Console Output</h2>
+            <div id="console-output" class="console-output">Console messages will appear here...</div>
+        </div>
+    </div>
+
+    <script>
+        // Capture console output
+        const originalConsole = {
+            log: console.log,
+            error: console.error,
+            warn: console.warn,
+            info: console.info
+        };
+
+        const consoleOutput = document.getElementById('console-output');
+        let consoleMessages = [];
+
+        function addToConsole(type, ...args) {
+            const timestamp = new Date().toLocaleTimeString();
+            const message = `[${timestamp}] ${type.toUpperCase()}: ${args.join(' ')}`;
+            consoleMessages.push(message);
+            consoleOutput.textContent = consoleMessages.slice(-50).join('\n'); // Keep last 50 messages
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+
+            // Call original console method
+            originalConsole[type](...args);
+        }
+
+        console.log = (...args) => addToConsole('log', ...args);
+        console.error = (...args) => addToConsole('error', ...args);
+        console.warn = (...args) => addToConsole('warn', ...args);
+        console.info = (...args) => addToConsole('info', ...args);
+
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `<div class="${type} test-result">${message}</div>`;
+        }
+
+        function addResult(containerId, message, type = 'info') {
+            const container = document.getElementById(containerId);
+            const result = document.createElement('div');
+            result.className = `test-result ${type}`;
+            result.innerHTML = message;
+            container.appendChild(result);
+        }
+
+        function checkEnvironment() {
+            console.log('🔧 Starting environment check...');
+            updateStatus('Checking environment...', 'info');
+
+            const envResults = document.getElementById('env-results');
+            envResults.innerHTML = '';
+
+            // Check if we're running in a dev environment
+            const isDev = window.location.hostname === 'localhost';
+            addResult('env-results', `Development mode: ${isDev ? '✅ Yes' : '❌ No'}`, isDev ? 'success' : 'warning');
+
+            // Check localStorage availability
+            try {
+                localStorage.setItem('test', 'test');
+                localStorage.removeItem('test');
+                addResult('env-results', '✅ localStorage available', 'success');
+            } catch (e) {
+                addResult('env-results', '❌ localStorage not available', 'error');
+            }
+
+            // Check if main app is running
+            fetch('http://localhost:3010')
+                .then(() => {
+                    addResult('env-results', '✅ Main app running on port 3010', 'success');
+                })
+                .catch(() => {
+                    addResult('env-results', '❌ Main app not running on port 3010', 'error');
+                });
+
+            console.log('✅ Environment check complete');
+            updateStatus('Environment check complete', 'success');
+        }
+
+        function testLocalStorage() {
+            console.log('💾 Testing localStorage behavior...');
+            updateStatus('Testing localStorage...', 'info');
+
+            const results = document.getElementById('localStorage-results');
+            results.innerHTML = '';
+
+            try {
+                // Test basic functionality
+                const testKey = 'cross-device-test';
+                const testData = {
+                    timestamp: Date.now(),
+                    testValue: 'Hello World',
+                    retell_config: {
+                        api_key: 'test-api-key',
+                        call_agent_id: 'test-call-agent',
+                        sms_agent_id: 'test-sms-agent'
+                    }
+                };
+
+                localStorage.setItem(testKey, JSON.stringify(testData));
+                const retrieved = JSON.parse(localStorage.getItem(testKey));
+
+                if (retrieved && retrieved.retell_config) {
+                    addResult('localStorage-results', '✅ localStorage read/write working', 'success');
+                    addResult('localStorage-results', `✅ Test data stored: ${Object.keys(retrieved).join(', ')}`, 'success');
+                    addResult('localStorage-results', `✅ API credentials preserved: ${Object.keys(retrieved.retell_config).join(', ')}`, 'success');
+                } else {
+                    addResult('localStorage-results', '❌ localStorage data corrupted', 'error');
+                }
+
+                localStorage.removeItem(testKey);
+                addResult('localStorage-results', '✅ localStorage cleanup successful', 'success');
+
+                // Check for existing user settings
+                let userSettingsFound = false;
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && key.startsWith('user_settings_')) {
+                        userSettingsFound = true;
+                        addResult('localStorage-results', `📄 Found existing settings: ${key}`, 'info');
+                    }
+                }
+
+                if (!userSettingsFound) {
+                    addResult('localStorage-results', '📭 No user settings found in localStorage', 'info');
+                }
+
+                console.log('✅ localStorage test complete');
+                updateStatus('localStorage test complete', 'success');
+
+            } catch (error) {
+                addResult('localStorage-results', `❌ localStorage test failed: ${error.message}`, 'error');
+                console.error('❌ localStorage test failed:', error);
+                updateStatus('localStorage test failed', 'error');
+            }
+        }
+
+        function testForceSync() {
+            console.log('🔄 Testing force sync simulation...');
+            updateStatus('Testing force sync...', 'info');
+
+            const results = document.getElementById('force-sync-results');
+            results.innerHTML = '';
+
+            // Simulate what the force sync should do
+            const testUserId = 'test-user-12345';
+
+            addResult('force-sync-results', '🔄 Simulating force sync process...', 'info');
+            addResult('force-sync-results', `👤 User ID: ${testUserId}`, 'info');
+
+            // Simulate cache check
+            const cacheExists = localStorage.getItem(`user_settings_${testUserId}`) !== null;
+            addResult('force-sync-results', `📋 Cache exists: ${cacheExists ? 'YES' : 'NO'}`, cacheExists ? 'warning' : 'success');
+
+            // Simulate cache clearing
+            if (cacheExists) {
+                localStorage.removeItem(`user_settings_${testUserId}`);
+                addResult('force-sync-results', '🗑️ Cache cleared', 'success');
+            }
+
+            // Simulate Supabase configuration check
+            const supabaseConfigured = true; // We know it's configured from .env.local
+            addResult('force-sync-results', `🔧 Supabase configured: ${supabaseConfigured ? 'YES' : 'NO'}`, supabaseConfigured ? 'success' : 'error');
+
+            if (supabaseConfigured) {
+                addResult('force-sync-results', '🌐 Would query Supabase: user_settings table', 'info');
+                addResult('force-sync-results', '🔄 Would transform and decrypt retell_config', 'info');
+                addResult('force-sync-results', '💾 Would cache results locally', 'info');
+                addResult('force-sync-results', '✅ Force sync simulation complete', 'success');
+
+                // Create a sample result
+                const sampleSettings = {
+                    theme: 'dark',
+                    retell_config: {
+                        api_key: 'sample-api-key',
+                        call_agent_id: 'sample-call-agent',
+                        sms_agent_id: 'sample-sms-agent'
+                    }
+                };
+
+                localStorage.setItem(`user_settings_${testUserId}`, JSON.stringify(sampleSettings));
+                addResult('force-sync-results', '📄 Sample settings created in localStorage', 'success');
+                addResult('force-sync-results', `🔑 Sample API credentials: ${Object.keys(sampleSettings.retell_config).join(', ')}`, 'success');
+            } else {
+                addResult('force-sync-results', '❌ Cannot test - Supabase not configured', 'error');
+            }
+
+            console.log('✅ Force sync simulation complete');
+            updateStatus('Force sync simulation complete', 'success');
+        }
+
+        // Auto-run environment check on page load
+        window.addEventListener('load', () => {
+            console.log('🚀 Cross-device sync test page loaded');
+            updateStatus('Test page ready', 'success');
+        });
+    </script>
+</body>
+</html>

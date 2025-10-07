@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logout Functionality Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #f9f9f9;
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .warning { color: #ffc107; }
+        .info { color: #17a2b8; }
+        pre {
+            background: #f1f1f1;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .status {
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 4px;
+            display: inline-block;
+            margin: 5px 0;
+        }
+        .status.pass {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.fail {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Logout Functionality Test</h1>
+        <p>This page tests the comprehensive logout fix to ensure credentials don't persist after logout.</p>
+
+        <div class="test-section">
+            <h2>🔧 Test Controls</h2>
+            <button onclick="runCurrentStateTest()">Check Current State</button>
+            <button onclick="runLogoutSimulation()">Simulate Logout</button>
+            <button onclick="runCredentialPreventionTest()">Test Credential Prevention</button>
+            <button onclick="runComprehensiveTest()">Run All Tests</button>
+            <button onclick="clearAllData()">Clear All Data</button>
+        </div>
+
+        <div class="test-section">
+            <h2>📊 Test Results</h2>
+            <div id="results">
+                <p>Click a test button to see results...</p>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔍 Live State Monitor</h2>
+            <div id="state-monitor">
+                <p>State information will appear here...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Test functions
+        function runCurrentStateTest() {
+            log('🔍 Checking current state...');
+
+            const state = {
+                justLoggedOut: localStorage.getItem('justLoggedOut'),
+                currentUser: localStorage.getItem('currentUser'),
+                sessionCredentials: sessionStorage.getItem('retell_credentials_backup'),
+                emergencyCredentials: localStorage.getItem('__emergencyRetellCredentials'),
+                memoryCredentials: window.__retellCredentialsBackup,
+                settingsCount: Object.keys(localStorage).filter(key => key.startsWith('settings_')).length,
+                msalCount: Object.keys(localStorage).filter(key => key.startsWith('msal.')).length
+            };
+
+            logResults('Current State', state);
+            updateStateMonitor();
+        }
+
+        function runLogoutSimulation() {
+            log('🔄 Simulating logout process...');
+
+            // Set the logout flag
+            localStorage.setItem('justLoggedOut', 'true');
+            log('✅ Set justLoggedOut flag');
+
+            // Clear credentials like AuthContext does
+            sessionStorage.removeItem('retell_credentials_backup');
+            if (typeof window !== 'undefined') {
+                delete window.__retellCredentialsBackup;
+            }
+            localStorage.removeItem('__emergencyRetellCredentials');
+            localStorage.removeItem('__fallbackRetellConfig');
+            log('✅ Cleared credential storage');
+
+            // Clear user data
+            localStorage.removeItem('currentUser');
+            log('✅ Cleared user data');
+
+            // Clear settings
+            const settingsKeys = Object.keys(localStorage).filter(key => key.startsWith('settings_'));
+            settingsKeys.forEach(key => localStorage.removeItem(key));
+            log(`✅ Cleared ${settingsKeys.length} settings keys`);
+
+            const result = {
+                justLoggedOutSet: localStorage.getItem('justLoggedOut') === 'true',
+                credentialsCleared: !sessionStorage.getItem('retell_credentials_backup') &&
+                                  !localStorage.getItem('__emergencyRetellCredentials') &&
+                                  !window.__retellCredentialsBackup,
+                userDataCleared: !localStorage.getItem('currentUser'),
+                settingsCleared: Object.keys(localStorage).filter(key => key.startsWith('settings_')).length === 0
+            };
+
+            logResults('Logout Simulation', result);
+            updateStateMonitor();
+        }
+
+        function runCredentialPreventionTest() {
+            log('🛡️ Testing credential prevention...');
+
+            // First set the logout flag
+            localStorage.setItem('justLoggedOut', 'true');
+
+            // Try to trigger credential storage (this should be prevented)
+            let preventionWorking = true;
+            let preventionDetails = {};
+
+            // Test sessionStorage prevention
+            try {
+                sessionStorage.setItem('retell_credentials_backup', JSON.stringify({test: 'data'}));
+                if (sessionStorage.getItem('retell_credentials_backup')) {
+                    preventionDetails.sessionStorage = 'FAILED - Storage not prevented';
+                    preventionWorking = false;
+                } else {
+                    preventionDetails.sessionStorage = 'PASSED - Storage prevented';
+                }
+            } catch (error) {
+                preventionDetails.sessionStorage = 'PASSED - Storage blocked';
+            }
+
+            // Test localStorage prevention
+            try {
+                localStorage.setItem('__emergencyRetellCredentials', JSON.stringify({test: 'data'}));
+                if (localStorage.getItem('__emergencyRetellCredentials')) {
+                    preventionDetails.localStorage = 'FAILED - Storage not prevented';
+                    preventionWorking = false;
+                } else {
+                    preventionDetails.localStorage = 'PASSED - Storage prevented';
+                }
+            } catch (error) {
+                preventionDetails.localStorage = 'PASSED - Storage blocked';
+            }
+
+            // Test memory prevention
+            try {
+                window.__retellCredentialsBackup = {test: 'data'};
+                if (window.__retellCredentialsBackup) {
+                    preventionDetails.memory = 'FAILED - Storage not prevented';
+                    preventionWorking = false;
+                } else {
+                    preventionDetails.memory = 'PASSED - Storage prevented';
+                }
+            } catch (error) {
+                preventionDetails.memory = 'PASSED - Storage blocked';
+            }
+
+            const result = {
+                overallPrevention: preventionWorking,
+                details: preventionDetails,
+                justLoggedOutFlag: localStorage.getItem('justLoggedOut') === 'true'
+            };
+
+            logResults('Credential Prevention Test', result);
+            updateStateMonitor();
+        }
+
+        function runComprehensiveTest() {
+            log('🎯 Running comprehensive logout test...');
+
+            // Run all tests in sequence
+            runCurrentStateTest();
+            setTimeout(() => {
+                runLogoutSimulation();
+                setTimeout(() => {
+                    runCredentialPreventionTest();
+                    setTimeout(() => {
+                        log('✅ All tests completed');
+                        updateStateMonitor();
+                    }, 1000);
+                }, 1000);
+            }, 1000);
+        }
+
+        function clearAllData() {
+            log('🗑️ Clearing all data...');
+
+            // Clear localStorage
+            const localKeys = Object.keys(localStorage);
+            localKeys.forEach(key => localStorage.removeItem(key));
+
+            // Clear sessionStorage
+            sessionStorage.clear();
+
+            // Clear memory
+            if (window.__retellCredentialsBackup) {
+                delete window.__retellCredentialsBackup;
+            }
+
+            log(`✅ Cleared ${localKeys.length} localStorage keys and all sessionStorage`);
+            updateStateMonitor();
+        }
+
+        function updateStateMonitor() {
+            const monitor = document.getElementById('state-monitor');
+            const state = {
+                localStorage: {
+                    justLoggedOut: localStorage.getItem('justLoggedOut'),
+                    currentUser: !!localStorage.getItem('currentUser'),
+                    emergencyCredentials: !!localStorage.getItem('__emergencyRetellCredentials'),
+                    settingsKeys: Object.keys(localStorage).filter(key => key.startsWith('settings_')).length,
+                    totalKeys: Object.keys(localStorage).length
+                },
+                sessionStorage: {
+                    credentialBackup: !!sessionStorage.getItem('retell_credentials_backup'),
+                    totalKeys: Object.keys(sessionStorage).length
+                },
+                memory: {
+                    credentialBackup: !!window.__retellCredentialsBackup
+                }
+            };
+
+            const isCleanState = !state.localStorage.currentUser &&
+                               !state.localStorage.emergencyCredentials &&
+                               !state.sessionStorage.credentialBackup &&
+                               !state.memory.credentialBackup &&
+                               state.localStorage.settingsKeys === 0;
+
+            monitor.innerHTML = `
+                <div class="status ${isCleanState ? 'pass' : 'fail'}">
+                    Logout State: ${isCleanState ? 'CLEAN ✅' : 'DIRTY ❌'}
+                </div>
+                <pre>${JSON.stringify(state, null, 2)}</pre>
+            `;
+        }
+
+        function log(message) {
+            console.log(message);
+            const results = document.getElementById('results');
+            const timestamp = new Date().toLocaleTimeString();
+            results.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+        }
+
+        function logResults(testName, result) {
+            console.log(testName, result);
+            const results = document.getElementById('results');
+            const timestamp = new Date().toLocaleTimeString();
+            results.innerHTML += `
+                <div style="margin: 10px 0; padding: 10px; border-left: 3px solid #007bff;">
+                    <strong>[${timestamp}] ${testName}</strong>
+                    <pre>${JSON.stringify(result, null, 2)}</pre>
+                </div>
+            `;
+        }
+
+        // Auto-update state monitor every 2 seconds
+        setInterval(updateStateMonitor, 2000);
+
+        // Initial state check
+        updateStateMonitor();
+
+        log('🚀 Logout test page loaded. Use the buttons above to run tests.');
+    </script>
+</body>
+</html>

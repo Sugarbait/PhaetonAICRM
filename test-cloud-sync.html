@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Sync Test</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #1a1a1a;
+            color: #00ff00;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .button {
+            background: #333;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 10px 20px;
+            margin: 10px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-family: inherit;
+        }
+        .button:hover {
+            background: #555;
+        }
+        .log {
+            background: #222;
+            border: 1px solid #333;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border: 1px solid #444;
+        }
+        .success { border-color: #00ff00; background: rgba(0, 255, 0, 0.1); }
+        .error { border-color: #ff0000; background: rgba(255, 0, 0, 0.1); }
+        .warning { border-color: #ffaa00; background: rgba(255, 170, 0, 0.1); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌩️ Cloud Sync Test Interface</h1>
+
+        <div class="status" id="status">
+            <strong>Status:</strong> Initializing...
+        </div>
+
+        <div>
+            <button class="button" onclick="runTest()">🚀 Run Cloud Sync Test</button>
+            <button class="button" onclick="checkStatus()">📊 Check Service Status</button>
+            <button class="button" onclick="resetData()">🔄 Reset Test Data</button>
+            <button class="button" onclick="clearLog()">🗑️ Clear Log</button>
+        </div>
+
+        <div class="log" id="log">Waiting for initialization...</div>
+
+        <div>
+            <h3>Instructions:</h3>
+            <ol>
+                <li>Make sure the CareXPS app is running on <a href="http://localhost:3000" target="_blank">localhost:3000</a></li>
+                <li>Click "Check Service Status" to verify services are loaded</li>
+                <li>Click "Run Cloud Sync Test" to test the synchronization</li>
+                <li>Check the log output for results</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        let logElement = document.getElementById('log');
+        let statusElement = document.getElementById('status');
+
+        // Override console.log to show in our log
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+
+        function addToLog(message, type = 'log') {
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? '❌' : type === 'warn' ? '⚠️' : '📝';
+            logElement.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addToLog(args.join(' '), 'log');
+        };
+
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addToLog(args.join(' '), 'error');
+        };
+
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addToLog(args.join(' '), 'warn');
+        };
+
+        function clearLog() {
+            logElement.textContent = '';
+        }
+
+        function updateStatus(message, type = 'info') {
+            statusElement.innerHTML = `<strong>Status:</strong> ${message}`;
+            statusElement.className = `status ${type}`;
+        }
+
+        // Check if the main app is accessible
+        async function checkAppConnection() {
+            try {
+                const response = await fetch('http://localhost:3000');
+                if (response.ok) {
+                    updateStatus('Main app is accessible', 'success');
+                    return true;
+                } else {
+                    updateStatus('Main app returned error', 'error');
+                    return false;
+                }
+            } catch (error) {
+                updateStatus('Cannot connect to main app - make sure it\'s running on localhost:3000', 'error');
+                return false;
+            }
+        }
+
+        // Check service status by calling the main app
+        async function checkStatus() {
+            console.log('🔍 Checking service status...');
+
+            try {
+                // Try to access localStorage from the main app (won't work due to CORS, but we can try)
+                const hasCurrentUser = localStorage.getItem('currentUser') !== null;
+                console.log('Current user in localStorage:', hasCurrentUser);
+
+                if (hasCurrentUser) {
+                    updateStatus('Services appear to be available', 'success');
+                } else {
+                    updateStatus('No user data found - make sure you\'re logged into the main app', 'warning');
+                }
+            } catch (error) {
+                console.error('Error checking status:', error);
+                updateStatus('Error checking status', 'error');
+            }
+        }
+
+        // Run the main test
+        async function runTest() {
+            console.log('🚀 Starting cloud sync test...');
+            updateStatus('Running test...', 'warning');
+
+            // Check if we can access localStorage (we might not due to CORS)
+            try {
+                const currentUser = localStorage.getItem('currentUser');
+                if (!currentUser) {
+                    console.error('❌ Cannot access user data. This test must be run from the main app console.');
+                    console.log('💡 Copy and paste the following into the main app console:');
+                    console.log('');
+                    console.log('// Load and run cloud sync test');
+                    console.log('fetch("/debug-cloud-sync.js")');
+                    console.log('  .then(r => r.text())');
+                    console.log('  .then(code => eval(code))');
+                    console.log('  .then(() => window.cloudSyncDebug.test())');
+                    console.log('');
+                    updateStatus('Test requires main app console access', 'error');
+                    return;
+                }
+
+                // If we have access, run a basic test
+                const userData = JSON.parse(currentUser);
+                console.log('✅ Found user:', userData.email);
+
+                // Basic localStorage test
+                const profileFields = localStorage.getItem(`profileFields_${userData.id}`);
+                if (profileFields) {
+                    console.log('✅ Profile fields found:', JSON.parse(profileFields));
+                } else {
+                    console.log('⚠️ No profile fields found');
+                }
+
+                updateStatus('Basic test completed', 'success');
+
+            } catch (error) {
+                console.error('❌ Test failed:', error);
+                updateStatus('Test failed', 'error');
+            }
+        }
+
+        function resetData() {
+            console.log('🔄 Resetting test data...');
+            try {
+                const currentUser = localStorage.getItem('currentUser');
+                if (currentUser) {
+                    const userData = JSON.parse(currentUser);
+                    localStorage.removeItem(`profileFields_${userData.id}`);
+                    console.log('✅ Test data reset');
+                    updateStatus('Test data reset', 'success');
+                } else {
+                    console.log('❌ No user data to reset');
+                    updateStatus('No user data to reset', 'warning');
+                }
+            } catch (error) {
+                console.error('❌ Reset failed:', error);
+                updateStatus('Reset failed', 'error');
+            }
+        }
+
+        // Initial setup
+        window.addEventListener('load', () => {
+            console.log('🌩️ Cloud Sync Test Interface Loaded');
+            console.log('=====================================');
+            checkAppConnection();
+        });
+    </script>
+</body>
+</html>

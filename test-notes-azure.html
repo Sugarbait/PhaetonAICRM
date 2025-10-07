@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CareXPS Notes Testing Tool</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #0056B3;
+            border-bottom: 3px solid #0056B3;
+            padding-bottom: 10px;
+        }
+        .section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            background: #0056B3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        .test-button:hover {
+            background: #004494;
+        }
+        .test-button.danger {
+            background: #dc3545;
+        }
+        .test-button.danger:hover {
+            background: #c82333;
+        }
+        .test-button.success {
+            background: #28a745;
+        }
+        .test-button.success:hover {
+            background: #218838;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        .input-group input, .input-group select, .input-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .output {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 15px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .output.success {
+            background: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .output.error {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .output.info {
+            background: #d1ecf1;
+            border-color: #bee5eb;
+            color: #0c5460;
+        }
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        h2 {
+            color: #495057;
+            margin-top: 0;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .status.online {
+            background: #28a745;
+            color: white;
+        }
+        .status.offline {
+            background: #dc3545;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>CareXPS Notes Testing Tool <span id="connection-status" class="status offline">Checking...</span></h1>
+
+    <div class="section">
+        <h2>📝 Test Configuration</h2>
+        <div class="input-group">
+            <label for="reference-id">Reference ID (Call ID or SMS ID):</label>
+            <input type="text" id="reference-id" placeholder="Enter a call ID or SMS ID (e.g., test-call-123)" value="test-call-123">
+        </div>
+        <div class="input-group">
+            <label for="reference-type">Reference Type:</label>
+            <select id="reference-type">
+                <option value="call">Call</option>
+                <option value="sms">SMS</option>
+            </select>
+        </div>
+        <div class="input-group">
+            <label for="note-content">Note Content:</label>
+            <textarea id="note-content" rows="3" placeholder="Enter test note content">This is a test note created at ${new Date().toLocaleString()}</textarea>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🧪 Quick Tests</h2>
+        <div class="button-group">
+            <button class="test-button" onclick="testConnection()">Test Supabase Connection</button>
+            <button class="test-button" onclick="getUserInfo()">Get User Info</button>
+            <button class="test-button" onclick="checkDebugTools()">Check Debug Tools</button>
+            <button class="test-button success" onclick="testCreateNote()">Test Create Note</button>
+            <button class="test-button" onclick="testGetNotes()">Test Get Notes</button>
+            <button class="test-button danger" onclick="testDeleteNote()">Test Delete Note</button>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🔍 Debug Analysis</h2>
+        <div class="button-group">
+            <button class="test-button" onclick="debugNotes()">Debug Notes for Reference ID</button>
+            <button class="test-button" onclick="analyzeLocalStorage()">Analyze LocalStorage</button>
+            <button class="test-button success" onclick="recoverNotes()">Emergency Recovery</button>
+            <button class="test-button danger" onclick="clearLocalNotes()">Clear Local Notes (DANGER)</button>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>💻 Output Console</h2>
+        <div id="output" class="output">Ready for testing...</div>
+    </div>
+
+    <script>
+        // Helper function to log output
+        function log(message, type = 'info') {
+            const output = document.getElementById('output');
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : 'ℹ️';
+
+            output.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+            output.className = `output ${type}`;
+            output.scrollTop = output.scrollHeight;
+
+            // Also log to browser console
+            console.log(`[Test Tool] ${message}`);
+        }
+
+        // Clear output
+        function clearOutput() {
+            document.getElementById('output').textContent = '';
+        }
+
+        // Get input values
+        function getInputValues() {
+            return {
+                referenceId: document.getElementById('reference-id').value || 'test-call-123',
+                referenceType: document.getElementById('reference-type').value || 'call',
+                noteContent: document.getElementById('note-content').value || 'Test note'
+            };
+        }
+
+        // Test Supabase connection
+        async function testConnection() {
+            clearOutput();
+            log('Testing Supabase connection...');
+
+            try {
+                if (window.notesDebug && window.notesDebug.testConnection) {
+                    const result = await window.notesDebug.testConnection();
+                    if (result) {
+                        log('Supabase connection successful!', 'success');
+                        document.getElementById('connection-status').className = 'status online';
+                        document.getElementById('connection-status').textContent = 'Online';
+                    } else {
+                        log('Supabase connection failed - using localStorage mode', 'error');
+                        document.getElementById('connection-status').className = 'status offline';
+                        document.getElementById('connection-status').textContent = 'Offline';
+                    }
+                } else {
+                    log('Debug tools not available. Are you in the CareXPS app?', 'error');
+                }
+            } catch (error) {
+                log(`Connection test error: ${error.message}`, 'error');
+            }
+        }
+
+        // Get user info
+        async function getUserInfo() {
+            clearOutput();
+            log('Getting user information...');
+
+            try {
+                if (window.notesDebug && window.notesDebug.getUserInfo) {
+                    const userInfo = await window.notesDebug.getUserInfo();
+                    log('User Information:', 'success');
+                    log(JSON.stringify(userInfo, null, 2));
+
+                    // Check localStorage for user ID consistency
+                    const cachedUserId = localStorage.getItem('notes_consistent_user_id');
+                    const primaryId = localStorage.getItem('notes_primary_id');
+                    log('\nCached User ID: ' + (cachedUserId || 'Not set'));
+                    log('Primary ID: ' + (primaryId || 'Not set'));
+                } else {
+                    // Fallback - check localStorage directly
+                    log('Debug tools not available. Checking localStorage directly...', 'info');
+                    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+                    log('Current User: ' + JSON.stringify(currentUser, null, 2));
+                }
+            } catch (error) {
+                log(`Error getting user info: ${error.message}`, 'error');
+            }
+        }
+
+        // Check debug tools availability
+        function checkDebugTools() {
+            clearOutput();
+            log('Checking debug tools availability...');
+
+            if (window.notesDebug) {
+                log('✅ notesDebug object is available', 'success');
+                const methods = Object.keys(window.notesDebug);
+                log('Available methods: ' + methods.join(', '));
+
+                // Show help
+                if (window.notesDebug.help) {
+                    window.notesDebug.help();
+                }
+            } else {
+                log('❌ notesDebug object is NOT available', 'error');
+                log('This may be because:', 'info');
+                log('1. You are not in the CareXPS application');
+                log('2. The application has not loaded yet');
+                log('3. Console logs are disabled in production build');
+
+                // Check if notesService exists
+                if (window.notesService) {
+                    log('✅ notesService is available (alternative access)', 'success');
+                }
+            }
+        }
+
+        // Test create note
+        async function testCreateNote() {
+            clearOutput();
+            const { referenceId, referenceType, noteContent } = getInputValues();
+            log(`Creating note for ${referenceType}: ${referenceId}...`);
+
+            try {
+                // Try using notesService directly if available
+                if (window.notesService) {
+                    const result = await window.notesService.createNote({
+                        reference_id: referenceId,
+                        reference_type: referenceType,
+                        content: noteContent,
+                        content_type: 'plain'
+                    });
+
+                    if (result.success) {
+                        log('Note created successfully!', 'success');
+                        log('Note ID: ' + result.note.id);
+                        log('Created by: ' + result.note.created_by);
+                        window.lastCreatedNoteId = result.note.id;
+                    } else {
+                        log('Failed to create note: ' + result.error, 'error');
+                    }
+                } else {
+                    log('notesService not available. Please open the CareXPS app first.', 'error');
+                }
+            } catch (error) {
+                log(`Error creating note: ${error.message}`, 'error');
+            }
+        }
+
+        // Test get notes
+        async function testGetNotes() {
+            clearOutput();
+            const { referenceId, referenceType } = getInputValues();
+            log(`Getting notes for ${referenceType}: ${referenceId}...`);
+
+            try {
+                if (window.notesService) {
+                    const result = await window.notesService.getNotes(referenceId, referenceType);
+
+                    if (result.success) {
+                        log(`Found ${result.notes.length} notes`, 'success');
+                        result.notes.forEach((note, index) => {
+                            log(`\nNote ${index + 1}:`);
+                            log(`  ID: ${note.id}`);
+                            log(`  Content: ${note.content}`);
+                            log(`  Created: ${note.created_at}`);
+                            log(`  Created by: ${note.created_by_name} (${note.created_by})`);
+                        });
+                    } else {
+                        log('Failed to get notes: ' + result.error, 'error');
+                    }
+                } else {
+                    // Try localStorage directly
+                    log('Using localStorage fallback...', 'info');
+                    const key = `notes_${referenceType}_${referenceId}`;
+                    const notes = JSON.parse(localStorage.getItem(key) || '[]');
+                    log(`Found ${notes.length} notes in localStorage`, notes.length > 0 ? 'success' : 'info');
+                    notes.forEach((note, index) => {
+                        log(`\nNote ${index + 1}: ${note.content.substring(0, 50)}...`);
+                    });
+                }
+            } catch (error) {
+                log(`Error getting notes: ${error.message}`, 'error');
+            }
+        }
+
+        // Test delete note
+        async function testDeleteNote() {
+            clearOutput();
+
+            if (!window.lastCreatedNoteId) {
+                log('No note to delete. Create a note first.', 'error');
+                return;
+            }
+
+            log(`Deleting note: ${window.lastCreatedNoteId}...`);
+
+            try {
+                if (window.notesService) {
+                    const result = await window.notesService.deleteNote(window.lastCreatedNoteId);
+
+                    if (result.success) {
+                        log('Note deleted successfully!', 'success');
+                        window.lastCreatedNoteId = null;
+                    } else {
+                        log('Failed to delete note: ' + result.error, 'error');
+                    }
+                } else {
+                    log('notesService not available', 'error');
+                }
+            } catch (error) {
+                log(`Error deleting note: ${error.message}`, 'error');
+            }
+        }
+
+        // Debug notes
+        async function debugNotes() {
+            clearOutput();
+            const { referenceId, referenceType } = getInputValues();
+            log(`Debugging notes for ${referenceType}: ${referenceId}...`);
+
+            try {
+                if (window.notesDebug && window.notesDebug.debug) {
+                    const result = await window.notesDebug.debug(referenceId, referenceType);
+                    log('Debug Analysis:', 'info');
+                    log('Summary: ' + result.summary);
+                    log(`\nLocalStorage: ${result.localStorage.length} notes`);
+                    log(`Supabase: ${result.supabase.length} notes`);
+                    log(`Cache: ${result.cache ? result.cache.length : 0} notes`);
+                    log(`\nUser Info: ${JSON.stringify(result.userInfo, null, 2)}`);
+                } else {
+                    log('Debug tools not available', 'error');
+                }
+            } catch (error) {
+                log(`Debug error: ${error.message}`, 'error');
+            }
+        }
+
+        // Analyze localStorage
+        function analyzeLocalStorage() {
+            clearOutput();
+            log('Analyzing localStorage for notes...');
+
+            const notesKeys = Object.keys(localStorage).filter(key => key.includes('notes'));
+            log(`Found ${notesKeys.length} notes-related keys in localStorage:`, 'info');
+
+            notesKeys.forEach(key => {
+                try {
+                    const value = localStorage.getItem(key);
+                    const size = value ? value.length : 0;
+
+                    if (key.startsWith('notes_') && !key.includes('_cache')) {
+                        const notes = JSON.parse(value || '[]');
+                        log(`\n${key}: ${notes.length} notes (${size} bytes)`);
+                        if (notes.length > 0) {
+                            log(`  First note: ${notes[0].content.substring(0, 50)}...`);
+                        }
+                    } else {
+                        log(`\n${key}: ${size} bytes`);
+                    }
+                } catch (e) {
+                    log(`\n${key}: [Unable to parse]`);
+                }
+            });
+        }
+
+        // Recover notes
+        async function recoverNotes() {
+            clearOutput();
+            const { referenceId, referenceType } = getInputValues();
+            log(`Attempting emergency recovery for ${referenceType}: ${referenceId}...`);
+
+            try {
+                if (window.notesDebug && window.notesDebug.recover) {
+                    const result = await window.notesDebug.recover(referenceId, referenceType);
+                    if (result.success) {
+                        log(`Recovery successful! Recovered ${result.recovered} notes`, 'success');
+                    } else {
+                        log('Recovery failed: ' + result.error, 'error');
+                    }
+                } else {
+                    log('Recovery tools not available', 'error');
+                }
+            } catch (error) {
+                log(`Recovery error: ${error.message}`, 'error');
+            }
+        }
+
+        // Clear local notes
+        function clearLocalNotes() {
+            if (!confirm('Are you sure you want to clear ALL local notes? This cannot be undone!')) {
+                return;
+            }
+
+            clearOutput();
+            log('Clearing all local notes...', 'info');
+
+            const notesKeys = Object.keys(localStorage).filter(key => key.startsWith('notes_'));
+            notesKeys.forEach(key => {
+                localStorage.removeItem(key);
+                log(`Removed: ${key}`);
+            });
+
+            log(`Cleared ${notesKeys.length} keys from localStorage`, 'success');
+        }
+
+        // Initialize on load
+        window.addEventListener('load', () => {
+            // Check connection status
+            testConnection();
+
+            // Set test note content with timestamp
+            document.getElementById('note-content').value = `Test note created at ${new Date().toLocaleString()}`;
+
+            log('Testing tool loaded. Select a test to begin.', 'info');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tenant Isolation Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .section {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; }
+        h2 { color: #555; margin-top: 0; }
+        .tenant {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .tenant.carexps { background: #dbeafe; color: #1e40af; }
+        .tenant.artlee { background: #fce7f3; color: #9f1239; }
+        .tenant.medex { background: #d1fae5; color: #065f46; }
+        .result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border-left: 4px solid;
+        }
+        .success { background: #d1fae5; border-color: #065f46; color: #065f46; }
+        .error { background: #fee2e2; border-color: #991b1b; color: #991b1b; }
+        .info { background: #dbeafe; border-color: #1e40af; color: #1e40af; }
+        pre {
+            background: #f3f4f6;
+            padding: 12px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover { background: #2563eb; }
+        button:active { background: #1d4ed8; }
+    </style>
+</head>
+<body>
+    <h1>🔐 Multi-Tenant Isolation Verification</h1>
+
+    <div class="section">
+        <h2>📊 Current localStorage State</h2>
+        <button onclick="refreshStorage()">🔄 Refresh</button>
+        <button onclick="clearAllTenantData()">🗑️ Clear All Tenant Data</button>
+        <div id="storage-state"></div>
+    </div>
+
+    <div class="section">
+        <h2>✅ Expected Behavior</h2>
+        <div class="result info">
+            <strong>Tenant Isolation Rules:</strong>
+            <ul>
+                <li>Each tenant should have its own localStorage key: <code>systemUsers_carexps</code>, <code>systemUsers_artlee</code>, <code>systemUsers_medex</code></li>
+                <li>Creating a user in ARTLEE should NOT appear in CareXPS</li>
+                <li>Deleting a user in ARTLEE should NOT affect CareXPS users</li>
+                <li>Each tenant's localStorage is completely isolated</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🧪 Test Results</h2>
+        <div id="test-results"></div>
+    </div>
+
+    <script>
+        function refreshStorage() {
+            const storageDiv = document.getElementById('storage-state');
+            let html = '<h3>All localStorage Keys:</h3>';
+
+            // Find all systemUsers keys
+            const tenantKeys = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith('systemUsers')) {
+                    tenantKeys.push(key);
+                }
+            }
+
+            if (tenantKeys.length === 0) {
+                html += '<div class="result info">No tenant user data found in localStorage</div>';
+            } else {
+                tenantKeys.forEach(key => {
+                    const data = localStorage.getItem(key);
+                    let users = [];
+                    try {
+                        users = JSON.parse(data) || [];
+                    } catch (e) {
+                        users = [];
+                    }
+
+                    const tenant = key.replace('systemUsers_', '');
+                    html += `
+                        <div class="result success">
+                            <span class="tenant ${tenant}">${tenant.toUpperCase()}</span>
+                            <strong>${users.length} users</strong>
+                            <pre>${JSON.stringify(users.map(u => ({ email: u.email, name: u.name, tenant_id: u.tenant_id })), null, 2)}</pre>
+                        </div>
+                    `;
+                });
+            }
+
+            // Check for old non-tenant-specific key
+            const oldKey = localStorage.getItem('systemUsers');
+            if (oldKey) {
+                html += `
+                    <div class="result error">
+                        <strong>⚠️ WARNING: Found old non-tenant-specific key!</strong>
+                        <p>Key 'systemUsers' should be removed and migrated to tenant-specific keys.</p>
+                        <button onclick="migrateOldData()">Migrate to Tenant Keys</button>
+                    </div>
+                `;
+            }
+
+            storageDiv.innerHTML = html;
+            runTests();
+        }
+
+        function clearAllTenantData() {
+            if (confirm('This will delete ALL tenant user data from localStorage. Continue?')) {
+                const keysToRemove = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && key.startsWith('systemUsers')) {
+                        keysToRemove.push(key);
+                    }
+                }
+                keysToRemove.forEach(key => localStorage.removeItem(key));
+                refreshStorage();
+            }
+        }
+
+        function migrateOldData() {
+            // This would need tenant context to work properly
+            alert('Migration requires knowing which tenant the data belongs to. Please delete the old key manually and let each app recreate its own tenant-specific cache.');
+        }
+
+        function runTests() {
+            const resultsDiv = document.getElementById('test-results');
+            let html = '';
+
+            // Test 1: Check for tenant-specific keys
+            const hasCarexps = localStorage.getItem('systemUsers_carexps') !== null;
+            const hasArtlee = localStorage.getItem('systemUsers_artlee') !== null;
+            const hasMedex = localStorage.getItem('systemUsers_medex') !== null;
+            const hasOldKey = localStorage.getItem('systemUsers') !== null;
+
+            html += `
+                <div class="result ${hasOldKey ? 'error' : 'success'}">
+                    <strong>Test 1: Tenant-Specific Keys</strong><br>
+                    ${hasOldKey ? '❌ Found old non-tenant key (systemUsers)' : '✅ No old non-tenant keys found'}<br>
+                    ${hasCarexps ? '✅' : '⚪'} CareXPS key exists: systemUsers_carexps<br>
+                    ${hasArtlee ? '✅' : '⚪'} ARTLEE key exists: systemUsers_artlee<br>
+                    ${hasMedex ? '✅' : '⚪'} MedEx key exists: systemUsers_medex
+                </div>
+            `;
+
+            // Test 2: Check for cross-tenant contamination
+            let contaminated = false;
+            if (hasCarexps) {
+                const carexpsUsers = JSON.parse(localStorage.getItem('systemUsers_carexps') || '[]');
+                const hasArtleeUsers = carexpsUsers.some(u => u.tenant_id === 'artlee');
+                const hasMedexUsers = carexpsUsers.some(u => u.tenant_id === 'medex');
+                if (hasArtleeUsers || hasMedexUsers) {
+                    contaminated = true;
+                    html += `
+                        <div class="result error">
+                            <strong>Test 2: CareXPS Isolation</strong><br>
+                            ❌ CareXPS contains users from other tenants!<br>
+                            ${hasArtleeUsers ? '❌ Found ARTLEE users in CareXPS data<br>' : ''}
+                            ${hasMedexUsers ? '❌ Found MedEx users in CareXPS data<br>' : ''}
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="result success">
+                            <strong>Test 2: CareXPS Isolation</strong><br>
+                            ✅ CareXPS only contains carexps tenant users
+                        </div>
+                    `;
+                }
+            }
+
+            if (hasArtlee) {
+                const artleeUsers = JSON.parse(localStorage.getItem('systemUsers_artlee') || '[]');
+                const hasCarexpsUsers = artleeUsers.some(u => u.tenant_id === 'carexps');
+                const hasMedexUsers = artleeUsers.some(u => u.tenant_id === 'medex');
+                if (hasCarexpsUsers || hasMedexUsers) {
+                    contaminated = true;
+                    html += `
+                        <div class="result error">
+                            <strong>Test 3: ARTLEE Isolation</strong><br>
+                            ❌ ARTLEE contains users from other tenants!<br>
+                            ${hasCarexpsUsers ? '❌ Found CareXPS users in ARTLEE data<br>' : ''}
+                            ${hasMedexUsers ? '❌ Found MedEx users in ARTLEE data<br>' : ''}
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="result success">
+                            <strong>Test 3: ARTLEE Isolation</strong><br>
+                            ✅ ARTLEE only contains artlee tenant users
+                        </div>
+                    `;
+                }
+            }
+
+            if (!contaminated && (hasCarexps || hasArtlee || hasMedex)) {
+                html += `
+                    <div class="result success">
+                        <strong>🎉 Overall Result</strong><br>
+                        ✅ Tenant isolation is working correctly!<br>
+                        Each tenant has separate localStorage and no cross-contamination detected.
+                    </div>
+                `;
+            }
+
+            resultsDiv.innerHTML = html;
+        }
+
+        // Auto-refresh on page load
+        refreshStorage();
+    </script>
+</body>
+</html>

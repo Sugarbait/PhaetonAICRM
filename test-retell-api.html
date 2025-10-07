@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retell AI API Diagnostic Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2563eb;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .credentials {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .cred-item {
+            margin-bottom: 10px;
+        }
+        .cred-label {
+            font-weight: 600;
+            color: #374151;
+            display: inline-block;
+            width: 140px;
+        }
+        .cred-value {
+            font-family: 'Courier New', monospace;
+            color: #059669;
+            background: #ecfdf5;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+        }
+        .test-section h2 {
+            color: #1f2937;
+            margin-top: 0;
+        }
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background: #1d4ed8;
+        }
+        button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 6px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .result.success {
+            background: #ecfdf5;
+            border: 1px solid #059669;
+            color: #065f46;
+        }
+        .result.error {
+            background: #fef2f2;
+            border: 1px solid #dc2626;
+            color: #991b1b;
+        }
+        .result.info {
+            background: #eff6ff;
+            border: 1px solid #2563eb;
+            color: #1e40af;
+        }
+        .loading {
+            display: inline-block;
+            margin-left: 10px;
+        }
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #2563eb;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Retell AI API Diagnostic Test</h1>
+        <p class="subtitle">Test your MedEx Retell AI credentials and API endpoints</p>
+
+        <div class="credentials">
+            <h3 style="margin-top: 0;">Your Configured Credentials:</h3>
+            <div class="cred-item">
+                <span class="cred-label">API Key:</span>
+                <span class="cred-value" id="apiKeyDisplay">key_c42b5524eea5e4430641a9f26b43</span>
+            </div>
+            <div class="cred-item">
+                <span class="cred-label">Voice Agent ID:</span>
+                <span class="cred-value" id="callAgentDisplay">agent_59bb4cd5200c7e77584ac36d53</span>
+            </div>
+            <div class="cred-item">
+                <span class="cred-label">Chat Agent ID:</span>
+                <span class="cred-value" id="smsAgentDisplay">agent_840d4bfc9d4dac35a6d64546ad</span>
+            </div>
+        </div>
+
+        <!-- Test 1: List Calls -->
+        <div class="test-section">
+            <h2>📞 Test 1: List Calls Endpoint</h2>
+            <p>Tests: GET https://api.retellai.com/list-calls</p>
+            <button onclick="testListCalls()">Run Test</button>
+            <div id="calls-result"></div>
+        </div>
+
+        <!-- Test 2: List Chats -->
+        <div class="test-section">
+            <h2>💬 Test 2: List Chats Endpoint</h2>
+            <p>Tests: GET https://api.retellai.com/list-chat</p>
+            <button onclick="testListChats()">Run Test</button>
+            <div id="chats-result"></div>
+        </div>
+
+        <!-- Test 3: Get Specific Call -->
+        <div class="test-section">
+            <h2>📱 Test 3: Get Specific Call</h2>
+            <p>Enter a call ID to test retrieval:</p>
+            <input type="text" id="callIdInput" placeholder="call_xxxxxxxxx" style="padding: 8px; width: 300px; margin-right: 10px;">
+            <button onclick="testGetCall()">Test Get Call</button>
+            <div id="get-call-result"></div>
+        </div>
+
+        <!-- Test 4: Get Specific Chat -->
+        <div class="test-section">
+            <h2>💭 Test 4: Get Specific Chat</h2>
+            <p>Enter a chat ID to test retrieval:</p>
+            <input type="text" id="chatIdInput" placeholder="chat_xxxxxxxxx" style="padding: 8px; width: 300px; margin-right: 10px;">
+            <button onclick="testGetChat()">Test Get Chat</button>
+            <div id="get-chat-result"></div>
+        </div>
+
+        <!-- Test All -->
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #e5e7eb;">
+            <button onclick="runAllTests()" style="background: #059669; font-size: 18px; padding: 15px 30px;">▶ Run All Tests</button>
+        </div>
+    </div>
+
+    <script>
+        const API_KEY = 'key_c42b5524eea5e4430641a9f26b43';
+        const CALL_AGENT_ID = 'agent_59bb4cd5200c7e77584ac36d53';
+        const SMS_AGENT_ID = 'agent_840d4bfc9d4dac35a6d64546ad';
+        const BASE_URL = 'https://api.retellai.com';
+
+        function showLoading(elementId) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = '<div class="loading"><span class="spinner"></span> Testing...</div>';
+        }
+
+        function showResult(elementId, type, message) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="result ${type}">${message}</div>`;
+        }
+
+        async function testListCalls() {
+            const resultId = 'calls-result';
+            showLoading(resultId);
+
+            try {
+                const response = await fetch(`${BASE_URL}/list-calls`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${API_KEY}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const status = response.status;
+                const statusText = response.statusText;
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const count = Array.isArray(data) ? data.length : 'unknown';
+                    showResult(resultId, 'success',
+                        `✅ SUCCESS (${status} ${statusText})\n\n` +
+                        `Total calls found: ${count}\n\n` +
+                        `Sample response:\n${JSON.stringify(data.slice(0, 2), null, 2)}`
+                    );
+                } else {
+                    const errorText = await response.text();
+                    showResult(resultId, 'error',
+                        `❌ ERROR (${status} ${statusText})\n\n` +
+                        `Response:\n${errorText}`
+                    );
+                }
+            } catch (error) {
+                showResult(resultId, 'error',
+                    `❌ NETWORK ERROR\n\n${error.message}\n\nPossible causes:\n` +
+                    `- CORS issues\n` +
+                    `- Network connectivity\n` +
+                    `- Invalid API endpoint`
+                );
+            }
+        }
+
+        async function testListChats() {
+            const resultId = 'chats-result';
+            showLoading(resultId);
+
+            try {
+                const response = await fetch(`${BASE_URL}/list-chat`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${API_KEY}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const status = response.status;
+                const statusText = response.statusText;
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const count = Array.isArray(data) ? data.length : 'unknown';
+                    showResult(resultId, 'success',
+                        `✅ SUCCESS (${status} ${statusText})\n\n` +
+                        `Total chats found: ${count}\n\n` +
+                        `Sample response:\n${JSON.stringify(data.slice(0, 2), null, 2)}`
+                    );
+                } else {
+                    const errorText = await response.text();
+                    showResult(resultId, 'error',
+                        `❌ ERROR (${status} ${statusText})\n\n` +
+                        `Response:\n${errorText}\n\n` +
+                        `Troubleshooting:\n` +
+                        `- If 404: Check if SMS agent ID is correct\n` +
+                        `- If 401: API key may be invalid or revoked\n` +
+                        `- If 403: API key may lack permissions\n` +
+                        `- If empty: You may have no chats yet`
+                    );
+                }
+            } catch (error) {
+                showResult(resultId, 'error',
+                    `❌ NETWORK ERROR\n\n${error.message}\n\nPossible causes:\n` +
+                    `- CORS issues (try opening this file from dev server)\n` +
+                    `- Network connectivity\n` +
+                    `- Invalid API endpoint`
+                );
+            }
+        }
+
+        async function testGetCall() {
+            const callId = document.getElementById('callIdInput').value.trim();
+            const resultId = 'get-call-result';
+
+            if (!callId) {
+                showResult(resultId, 'error', '❌ Please enter a call ID');
+                return;
+            }
+
+            showLoading(resultId);
+
+            try {
+                const response = await fetch(`${BASE_URL}/get-call/${callId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${API_KEY}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const status = response.status;
+                const statusText = response.statusText;
+
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult(resultId, 'success',
+                        `✅ SUCCESS (${status} ${statusText})\n\n` +
+                        `Call details:\n${JSON.stringify(data, null, 2)}`
+                    );
+                } else {
+                    const errorText = await response.text();
+                    showResult(resultId, 'error',
+                        `❌ ERROR (${status} ${statusText})\n\n` +
+                        `Response:\n${errorText}`
+                    );
+                }
+            } catch (error) {
+                showResult(resultId, 'error', `❌ NETWORK ERROR\n\n${error.message}`);
+            }
+        }
+
+        async function testGetChat() {
+            const chatId = document.getElementById('chatIdInput').value.trim();
+            const resultId = 'get-chat-result';
+
+            if (!chatId) {
+                showResult(resultId, 'error', '❌ Please enter a chat ID');
+                return;
+            }
+
+            showLoading(resultId);
+
+            try {
+                const response = await fetch(`${BASE_URL}/get-chat/${chatId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${API_KEY}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const status = response.status;
+                const statusText = response.statusText;
+
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult(resultId, 'success',
+                        `✅ SUCCESS (${status} ${statusText})\n\n` +
+                        `Chat details:\n${JSON.stringify(data, null, 2)}`
+                    );
+                } else {
+                    const errorText = await response.text();
+                    showResult(resultId, 'error',
+                        `❌ ERROR (${status} ${statusText})\n\n` +
+                        `Response:\n${errorText}`
+                    );
+                }
+            } catch (error) {
+                showResult(resultId, 'error', `❌ NETWORK ERROR\n\n${error.message}`);
+            }
+        }
+
+        async function runAllTests() {
+            await testListCalls();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await testListChats();
+        }
+
+        // Auto-run tests on page load
+        window.addEventListener('load', () => {
+            console.log('🔍 Retell AI API Diagnostic Test Page Loaded');
+            console.log('API Key:', API_KEY);
+            console.log('Call Agent ID:', CALL_AGENT_ID);
+            console.log('SMS Agent ID:', SMS_AGENT_ID);
+        });
+    </script>
+</body>
+</html>

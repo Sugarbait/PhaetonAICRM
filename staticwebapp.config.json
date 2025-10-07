@@ -1,0 +1,108 @@
+{
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": [
+      "/assets/*",
+      "/api/*",
+      "/*.{png,jpg,jpeg,gif,svg,ico,webp}",
+      "/*.{css,js,mjs}",
+      "/*.{json,xml,txt}",
+      "/*.{woff,woff2,ttf,eot}",
+      "/manifest.webmanifest",
+      "/sw.js",
+      "/registerSW.js",
+      "/workbox-*.js",
+      "/robots.txt",
+      "/sitemap.xml"
+    ]
+  },
+  "routes": [
+    {
+      "route": "/",
+      "rewrite": "/index.html"
+    },
+    {
+      "route": "/dashboard",
+      "rewrite": "/index.html"
+    },
+    {
+      "route": "/calls",
+      "rewrite": "/index.html"
+    },
+    {
+      "route": "/sms",
+      "rewrite": "/index.html"
+    },
+    {
+      "route": "/users",
+      "rewrite": "/index.html"
+    },
+    {
+      "route": "/settings",
+      "rewrite": "/index.html"
+    },
+    {
+      "route": "/login",
+      "rewrite": "/index.html"
+    },
+    {
+      "route": "/assets/*",
+      "headers": {
+        "cache-control": "public, max-age=31536000, immutable"
+      }
+    },
+    {
+      "route": "/api/*",
+      "allowedRoles": ["anonymous"],
+      "headers": {
+        "Access-Control-Allow-Origin": "https://medex.nexasync.ca",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
+        "Access-Control-Allow-Credentials": "true",
+        "Access-Control-Max-Age": "86400"
+      }
+    }
+  ],
+  "mimeTypes": {
+    ".json": "application/json",
+    ".js": "text/javascript",
+    ".mjs": "text/javascript",
+    ".css": "text/css",
+    ".html": "text/html",
+    ".svg": "image/svg+xml",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".gif": "image/gif",
+    ".webp": "image/webp",
+    ".ico": "image/x-icon",
+    ".woff2": "font/woff2",
+    ".woff": "font/woff",
+    ".ttf": "font/ttf",
+    ".eot": "application/vnd.ms-fontobject",
+    ".webmanifest": "application/manifest+json"
+  },
+  "globalHeaders": {
+    "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "X-XSS-Protection": "1; mode=block",
+    "Referrer-Policy": "strict-origin-when-cross-origin",
+    "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://login.microsoftonline.com https://api.retellai.com https://ct.googleapis.com https://crt.sh https://ct.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https: blob:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://login.microsoftonline.com https://api.retellai.com https://api.openai.com https://api.emailjs.com https://*.supabase.co wss://*.supabase.co https://api.exchangerate-api.com https://open.er-api.com https://ct.googleapis.com https://crt.sh https://ct.cloudflare.com https://www.gstatic.com; frame-src 'self' https://login.microsoftonline.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content; worker-src 'self' blob:; manifest-src 'self'; media-src 'self'; report-uri /api/security/csp-report",
+    "Content-Security-Policy-Report-Only": "default-src 'self'; script-src 'self' https://login.microsoftonline.com https://api.retellai.com; style-src 'self' https://fonts.googleapis.com; report-uri /api/security/csp-report-strict",
+    "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), ambient-light-sensor=()",
+    "Cross-Origin-Embedder-Policy": "require-corp",
+    "Cross-Origin-Opener-Policy": "same-origin",
+    "Cross-Origin-Resource-Policy": "cross-origin",
+    "X-Permitted-Cross-Domain-Policies": "none",
+    "X-DNS-Prefetch-Control": "off",
+    "Expect-CT": "max-age=86400, enforce, report-uri=\"/api/security/ct-report\""
+  },
+  "platform": {
+    "apiRuntime": "node:18"
+  },
+  "forwardingGateway": {
+    "allowedForwardedHosts": ["medex.nexasync.ca"]
+  },
+  "trailingSlash": "auto"
+}

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Agent Logout Protection Test</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 1000px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #1a1a1a;
+      color: #e0e0e0;
+      line-height: 1.6;
+    }
+    h1 { color: #60a5fa; }
+    h2 { color: #34d399; margin-top: 30px; }
+    .test-section {
+      background: #2a2a2a;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 8px;
+      border: 1px solid #3a3a3a;
+    }
+    .success { color: #10b981; }
+    .error { color: #ef4444; }
+    .warning { color: #f59e0b; }
+    button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin: 5px;
+    }
+    button:hover { background: #2563eb; }
+    .result-box {
+      margin: 10px 0;
+      padding: 15px;
+      border-radius: 6px;
+      border-left: 4px solid;
+      font-family: monospace;
+      font-size: 14px;
+    }
+    .result-box.success { border-color: #10b981; background: #10b98120; }
+    .result-box.error { border-color: #ef4444; background: #ef444420; }
+    .result-box.warning { border-color: #f59e0b; background: #f59e0b20; }
+    .info { border-color: #3b82f6; background: #3b82f620; }
+    pre { margin: 0; white-space: pre-wrap; }
+    .step {
+      background: #374151;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 6px;
+      border-left: 4px solid #6366f1;
+    }
+    .step h3 {
+      margin-top: 0;
+      color: #a5b4fc;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧪 User Agent Logout Protection Test</h1>
+  <p>This test verifies the enhanced user agent-based logout protection is working.</p>
+
+  <div class="test-section">
+    <h2>Browser Information</h2>
+    <div id="browser-info"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>Session Tracker Status</h2>
+    <button onclick="checkSessionStatus()">Check Session Status</button>
+    <div id="session-status"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>Simulate Logout</h2>
+    <button onclick="simulateLogout()">Simulate Logout (Test Only)</button>
+    <div id="logout-result"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>Test Protection</h2>
+    <button onclick="testProtection()">Test Should Force Login</button>
+    <div id="protection-result"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>Clear Session Data</h2>
+    <button onclick="clearSessionData()">Clear All Session Data</button>
+    <div id="clear-result"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>Manual Test Instructions</h2>
+    <div class="step">
+      <h3>Step 1: Login and Logout</h3>
+      <p>1. Login to the main application normally</p>
+      <p>2. Navigate around to ensure you're logged in</p>
+      <p>3. Use the logout button to logout completely</p>
+    </div>
+
+    <div class="step">
+      <h3>Step 2: Test Time-Based Protection</h3>
+      <p>1. Wait 5-10 minutes after logout</p>
+      <p>2. Return to the main application URL</p>
+      <p>3. ✅ <strong>Expected:</strong> You should see LOGIN page (not MFA)</p>
+      <p>4. ❌ <strong>Bug (should be fixed):</strong> Being taken directly to MFA page</p>
+    </div>
+
+    <div class="step">
+      <h3>Step 3: Test Cross-Tab Protection</h3>
+      <p>1. Open the app in a new tab after logout</p>
+      <p>2. ✅ <strong>Expected:</strong> LOGIN page in new tab too</p>
+      <p>3. Close and reopen browser entirely</p>
+      <p>4. ✅ <strong>Expected:</strong> Still shows LOGIN page</p>
+    </div>
+  </div>
+
+  <script>
+    function displayBrowserInfo() {
+      const info = {
+        userAgent: navigator.userAgent,
+        platform: navigator.platform,
+        language: navigator.language,
+        cookieEnabled: navigator.cookieEnabled,
+        onLine: navigator.onLine
+      };
+
+      let html = '<div class="result-box info"><pre>';
+      html += 'User Agent: ' + info.userAgent.substring(0, 100) + '...\n';
+      html += 'Platform: ' + info.platform + '\n';
+      html += 'Language: ' + info.language + '\n';
+      html += 'Cookies Enabled: ' + info.cookieEnabled + '\n';
+      html += 'Online: ' + info.onLine;
+      html += '</pre></div>';
+
+      document.getElementById('browser-info').innerHTML = html;
+    }
+
+    function checkSessionStatus() {
+      const resultDiv = document.getElementById('session-status');
+      let html = '<h3>Session Status:</h3>';
+
+      // Check if browserSessionTracker is available
+      if (typeof window.browserSessionTracker !== 'undefined') {
+        const debugInfo = window.browserSessionTracker.getDebugInfo();
+
+        html += '<div class="result-box success">';
+        html += '<strong>✅ Browser Session Tracker Available</strong><br>';
+        html += '<pre>' + JSON.stringify(debugInfo, null, 2) + '</pre>';
+        html += '</div>';
+
+        if (debugInfo.shouldForceLogin) {
+          html += '<div class="result-box warning">';
+          html += '<strong>⚠️ PROTECTION ACTIVE:</strong> Browser will be forced to login page<br>';
+          html += `Time remaining: ${Math.round(debugInfo.protectionTimeRemaining / 60000)} minutes`;
+          html += '</div>';
+        } else {
+          html += '<div class="result-box success">';
+          html += '<strong>✅ NO PROTECTION:</strong> Browser can access app normally';
+          html += '</div>';
+        }
+      } else {
+        html += '<div class="result-box error">';
+        html += '<strong>❌ Browser Session Tracker not available</strong><br>';
+        html += 'Make sure you\'re testing this from within the main application';
+        html += '</div>';
+      }
+
+      resultDiv.innerHTML = html;
+    }
+
+    function simulateLogout() {
+      const resultDiv = document.getElementById('logout-result');
+
+      if (typeof window.browserSessionTracker !== 'undefined') {
+        window.browserSessionTracker.recordLogout();
+
+        resultDiv.innerHTML = `
+          <div class="result-box success">
+            ✅ Logout recorded for current browser/user agent<br>
+            <strong>Note:</strong> This is a test simulation - use real logout button for actual logout
+          </div>
+        `;
+      } else {
+        resultDiv.innerHTML = `
+          <div class="result-box error">
+            ❌ Cannot simulate logout - browserSessionTracker not available
+          </div>
+        `;
+      }
+    }
+
+    function testProtection() {
+      const resultDiv = document.getElementById('protection-result');
+
+      if (typeof window.browserSessionTracker !== 'undefined') {
+        const shouldForce = window.browserSessionTracker.shouldForceLogin();
+
+        if (shouldForce) {
+          resultDiv.innerHTML = `
+            <div class="result-box warning">
+              🚫 <strong>PROTECTION ACTIVE:</strong> Browser would be forced to login page<br>
+              This means the logout protection is working correctly.
+            </div>
+          `;
+        } else {
+          resultDiv.innerHTML = `
+            <div class="result-box success">
+              ✅ <strong>NO PROTECTION:</strong> Browser would allow normal access<br>
+              Either you haven't logged out recently, or protection period has expired.
+            </div>
+          `;
+        }
+      } else {
+        resultDiv.innerHTML = `
+          <div class="result-box error">
+            ❌ Cannot test protection - browserSessionTracker not available
+          </div>
+        `;
+      }
+    }
+
+    function clearSessionData() {
+      const resultDiv = document.getElementById('clear-result');
+
+      if (typeof window.browserSessionTracker !== 'undefined') {
+        window.browserSessionTracker.clearAllSessions();
+
+        resultDiv.innerHTML = `
+          <div class="result-box success">
+            ✅ All browser session data cleared<br>
+            <strong>Note:</strong> This removes logout protection for testing purposes
+          </div>
+        `;
+      } else {
+        resultDiv.innerHTML = `
+          <div class="result-box error">
+            ❌ Cannot clear data - browserSessionTracker not available
+          </div>
+        `;
+      }
+    }
+
+    // Auto-run browser info on load
+    window.onload = () => {
+      displayBrowserInfo();
+      checkSessionStatus();
+    };
+
+    // Refresh session status every 30 seconds
+    setInterval(checkSessionStatus, 30000);
+  </script>
+</body>
+</html>

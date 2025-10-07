@@ -1,0 +1,38 @@
+# MedEx Healthcare CRM - Block all search engines
+# This is a private HIPAA-compliant healthcare application
+
+User-agent: *
+Disallow: /
+
+# Block common search engine bots explicitly
+User-agent: Googlebot
+Disallow: /
+
+User-agent: Googlebot-Image
+Disallow: /
+
+User-agent: Bingbot
+Disallow: /
+
+User-agent: Slurp
+Disallow: /
+
+User-agent: DuckDuckBot
+Disallow: /
+
+User-agent: Baiduspider
+Disallow: /
+
+User-agent: YandexBot
+Disallow: /
+
+User-agent: Sogou
+Disallow: /
+
+User-agent: ia_archiver
+Disallow: /
+
+User-agent: archive.org_bot
+Disallow: /
+
+# No sitemap - this site should not be indexed

@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CareXPS User Setup</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2563eb;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #64748b;
+            margin-bottom: 30px;
+        }
+        .user-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background-color: #f8fafc;
+        }
+        .user-title {
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 10px;
+        }
+        .user-details {
+            margin-bottom: 15px;
+        }
+        .user-details div {
+            margin-bottom: 5px;
+        }
+        button {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #1d4ed8;
+        }
+        button:disabled {
+            background-color: #94a3b8;
+            cursor: not-allowed;
+        }
+        .success {
+            color: #059669;
+            font-weight: bold;
+        }
+        .error {
+            color: #dc2626;
+            font-weight: bold;
+        }
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .status.success {
+            background-color: #d1fae5;
+            border: 1px solid #059669;
+        }
+        .status.error {
+            background-color: #fee2e2;
+            border: 1px solid #dc2626;
+        }
+        .clear-btn {
+            background-color: #dc2626;
+        }
+        .clear-btn:hover {
+            background-color: #b91c1c;
+        }
+        .test-btn {
+            background-color: #059669;
+        }
+        .test-btn:hover {
+            background-color: #047857;
+        }
+        .info-box {
+            background-color: #dbeafe;
+            border: 1px solid #2563eb;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .credentials-box {
+            background-color: #f3f4f6;
+            border: 1px solid #9ca3af;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 20px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏥 CareXPS Healthcare CRM - User Setup</h1>
+        <p class="subtitle">Set up clean user profiles for development and testing</p>
+
+        <div class="info-box">
+            <strong>📋 Setup Instructions:</strong><br>
+            This tool creates users that work with the localStorage-based authentication system.
+            These users will be available immediately in the CareXPS application.
+        </div>
+
+        <div class="user-card">
+            <div class="user-title">👤 Pierre User (Admin)</div>
+            <div class="user-details">
+                <div><strong>Email:</strong> pierre@phaetonai.com</div>
+                <div><strong>Password:</strong> $Ineed1millie$_carexps</div>
+                <div><strong>Role:</strong> admin (super user privileges)</div>
+                <div><strong>Name:</strong> Pierre PhaetonAI</div>
+            </div>
+            <button onclick="createPierreUser()">Create Pierre User</button>
+            <button onclick="testPierreUser()" class="test-btn">Test Login</button>
+            <div id="pierreStatus"></div>
+        </div>
+
+        <div class="user-card">
+            <div class="user-title">👥 Guest User (Staff)</div>
+            <div class="user-details">
+                <div><strong>Email:</strong> guest@email.com</div>
+                <div><strong>Password:</strong> Guest1000!</div>
+                <div><strong>Role:</strong> staff (standard user privileges)</div>
+                <div><strong>Name:</strong> Guest User</div>
+            </div>
+            <button onclick="createGuestUser()">Create Guest User</button>
+            <button onclick="testGuestUser()" class="test-btn">Test Login</button>
+            <div id="guestStatus"></div>
+        </div>
+
+        <div style="border-top: 1px solid #e2e8f0; padding-top: 20px;">
+            <button onclick="clearAllUsers()" class="clear-btn">🧹 Clear All Users</button>
+            <button onclick="createAllUsers()">🚀 Create Both Users</button>
+            <button onclick="showCurrentUser()" class="test-btn">👀 Show Current User</button>
+        </div>
+
+        <div id="globalStatus"></div>
+
+        <div class="credentials-box">
+            <strong>🔑 Quick Reference - Login Credentials:</strong><br><br>
+            <strong>Pierre (Admin):</strong><br>
+            Email: pierre@phaetonai.com<br>
+            Password: $Ineed1millie$_carexps<br><br>
+            <strong>Guest (Staff):</strong><br>
+            Email: guest@email.com<br>
+            Password: Guest1000!
+        </div>
+    </div>
+
+    <script>
+        // User data with exact role mapping
+        const users = {
+            pierre: {
+                id: 'pierre-user-001',
+                azure_ad_id: 'pierre-azure-001',
+                email: 'pierre@phaetonai.com',
+                password: '$Ineed1millie$_carexps', // Store for testing only
+                name: 'Pierre PhaetonAI',
+                role: 'admin', // Mapped from super_user
+                permissions: [
+                    { resource: 'dashboard', actions: ['read'] },
+                    { resource: 'calls', actions: ['read', 'write', 'delete'] },
+                    { resource: 'sms', actions: ['read', 'write', 'delete'] },
+                    { resource: 'analytics', actions: ['read', 'write'] },
+                    { resource: 'settings', actions: ['read', 'write'] },
+                    { resource: 'users', actions: ['read', 'write', 'delete'] },
+                    { resource: 'admin', actions: ['read', 'write', 'delete'] }
+                ],
+                lastLogin: null,
+                mfa_enabled: false,
+                isActive: true,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                avatar: null,
+                metadata: {
+                    created_by: 'setup_script',
+                    setup_date: new Date().toISOString(),
+                    user_type: 'admin'
+                }
+            },
+            guest: {
+                id: 'guest-user-001',
+                azure_ad_id: 'guest-azure-001',
+                email: 'guest@email.com',
+                password: 'Guest1000!', // Store for testing only
+                name: 'Guest User',
+                role: 'staff', // Mapped from user
+                permissions: [
+                    { resource: 'dashboard', actions: ['read'] },
+                    { resource: 'calls', actions: ['read', 'write'] },
+                    { resource: 'sms', actions: ['read', 'write'] },
+                    { resource: 'analytics', actions: ['read'] },
+                    { resource: 'settings', actions: ['read'] }
+                ],
+                lastLogin: null,
+                mfa_enabled: false,
+                isActive: true,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                avatar: null,
+                metadata: {
+                    created_by: 'setup_script',
+                    setup_date: new Date().toISOString(),
+                    user_type: 'staff'
+                }
+            }
+        };
+
+        function showStatus(elementId, message, isSuccess = true) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="status ${isSuccess ? 'success' : 'error'}">${message}</div>`;
+        }
+
+        function createUser(userKey, statusElementId) {
+            try {
+                const user = users[userKey];
+
+                // Create user storage key
+                const storageKey = `user_${user.email.replace(/[@.]/g, '_')}`;
+
+                // Store user data
+                localStorage.setItem(storageKey, JSON.stringify(user));
+
+                // Also store in a users registry
+                const usersRegistry = JSON.parse(localStorage.getItem('carexps_users') || '{}');
+                usersRegistry[user.email] = {
+                    id: user.id,
+                    storageKey: storageKey,
+                    created: new Date().toISOString()
+                };
+                localStorage.setItem('carexps_users', JSON.stringify(usersRegistry));
+
+                showStatus(statusElementId, `✅ ${user.name} created successfully!`, true);
+                console.log(`User created: ${user.name} (${user.email}) with role: ${user.role}`);
+
+                return true;
+            } catch (error) {
+                showStatus(statusElementId, `❌ Failed to create user: ${error.message}`, false);
+                console.error('Error creating user:', error);
+                return false;
+            }
+        }
+
+        function createPierreUser() {
+            createUser('pierre', 'pierreStatus');
+        }
+
+        function createGuestUser() {
+            createUser('guest', 'guestStatus');
+        }
+
+        function createAllUsers() {
+            const pierreSuccess = createUser('pierre', 'pierreStatus');
+            const guestSuccess = createUser('guest', 'guestStatus');
+
+            if (pierreSuccess && guestSuccess) {
+                showStatus('globalStatus', '🎉 Both users created successfully! You can now sign in to CareXPS.', true);
+            } else {
+                showStatus('globalStatus', '⚠️ Some users failed to create. Check individual status messages.', false);
+            }
+        }
+
+        function clearAllUsers() {
+            try {
+                // Clear individual user storage
+                Object.values(users).forEach(user => {
+                    const storageKey = `user_${user.email.replace(/[@.]/g, '_')}`;
+                    localStorage.removeItem(storageKey);
+                });
+
+                // Clear users registry
+                localStorage.removeItem('carexps_users');
+
+                // Clear current user if set
+                localStorage.removeItem('currentUser');
+                localStorage.removeItem('mfa_verified');
+
+                // Clear status displays
+                document.getElementById('pierreStatus').innerHTML = '';
+                document.getElementById('guestStatus').innerHTML = '';
+
+                showStatus('globalStatus', '🧹 All users cleared successfully!', true);
+                console.log('All users cleared from localStorage');
+            } catch (error) {
+                showStatus('globalStatus', `❌ Failed to clear users: ${error.message}`, false);
+                console.error('Error clearing users:', error);
+            }
+        }
+
+        function testLogin(userKey, statusElementId) {
+            try {
+                const user = users[userKey];
+                const storageKey = `user_${user.email.replace(/[@.]/g, '_')}`;
+
+                // Check if user exists in storage
+                const storedUser = localStorage.getItem(storageKey);
+                if (!storedUser) {
+                    showStatus(statusElementId, `❌ User not found. Create the user first.`, false);
+                    return false;
+                }
+
+                // Parse and validate stored user
+                const userData = JSON.parse(storedUser);
+
+                // Simulate login by setting as current user
+                localStorage.setItem('currentUser', JSON.stringify(userData));
+                localStorage.setItem('mfa_verified', 'true'); // Skip MFA for testing
+
+                showStatus(statusElementId, `✅ Login test successful! ${userData.name} is now logged in. Refresh the CareXPS app to see the change.`, true);
+                console.log(`Login test successful for: ${userData.name} (${userData.email})`);
+
+                return true;
+            } catch (error) {
+                showStatus(statusElementId, `❌ Login test failed: ${error.message}`, false);
+                console.error('Login test error:', error);
+                return false;
+            }
+        }
+
+        function testPierreUser() {
+            testLogin('pierre', 'pierreStatus');
+        }
+
+        function testGuestUser() {
+            testLogin('guest', 'guestStatus');
+        }
+
+        function showCurrentUser() {
+            try {
+                const currentUser = localStorage.getItem('currentUser');
+                if (currentUser) {
+                    const userData = JSON.parse(currentUser);
+                    showStatus('globalStatus', `👤 Current User: ${userData.name} (${userData.email}) - Role: ${userData.role}`, true);
+                } else {
+                    showStatus('globalStatus', `ℹ️ No user currently logged in.`, true);
+                }
+            } catch (error) {
+                showStatus('globalStatus', `❌ Error checking current user: ${error.message}`, false);
+            }
+        }
+
+        // Auto-detect current user on page load
+        window.addEventListener('load', function() {
+            showCurrentUser();
+
+            // Show helpful message
+            setTimeout(() => {
+                if (!document.getElementById('globalStatus').innerHTML) {
+                    showStatus('globalStatus', 'ℹ️ Ready to set up users. Create the users you need and test their login.', true);
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

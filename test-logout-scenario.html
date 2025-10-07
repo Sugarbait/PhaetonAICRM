@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Logout Scenario</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button { padding: 10px 20px; margin: 5px; border: none; border-radius: 4px; cursor: pointer; }
+        .primary { background: #007bff; color: white; }
+        .danger { background: #dc3545; color: white; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Logout Scenario</h1>
+    <p>This page tests the exact scenario you described - setting justLoggedOut flag and checking if credentials persist.</p>
+
+    <div id="status" class="status info">
+        Ready to test...
+    </div>
+
+    <div>
+        <button class="primary" onclick="simulateLogout()">1. Simulate Logout</button>
+        <button class="primary" onclick="checkAfterLogout()">2. Check After Logout</button>
+        <button class="danger" onclick="refreshPage()">3. Refresh Page</button>
+        <button onclick="clearAll()">Clear All</button>
+    </div>
+
+    <div id="results">
+        <h3>Results:</h3>
+        <pre id="output">Click buttons above to run tests...</pre>
+    </div>
+
+    <script>
+        function log(message) {
+            const output = document.getElementById('output');
+            const timestamp = new Date().toLocaleTimeString();
+            output.textContent += `[${timestamp}] ${message}\n`;
+            console.log(message);
+        }
+
+        function updateStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+        }
+
+        function simulateLogout() {
+            log('🔄 Simulating logout process...');
+
+            // Step 1: Set justLoggedOut flag like AuthContext does
+            localStorage.setItem('justLoggedOut', 'true');
+            log('✅ Set justLoggedOut flag');
+
+            // Step 2: Clear all credential storage like AuthContext does
+            sessionStorage.removeItem('retell_credentials_backup');
+            localStorage.removeItem('__emergencyRetellCredentials');
+            localStorage.removeItem('__fallbackRetellConfig');
+            if (window.__retellCredentialsBackup) {
+                delete window.__retellCredentialsBackup;
+            }
+            log('✅ Cleared all credential storage');
+
+            // Step 3: Clear user data
+            localStorage.removeItem('currentUser');
+            log('✅ Cleared currentUser');
+
+            // Step 4: Clear settings
+            const settingsKeys = Object.keys(localStorage).filter(key => key.startsWith('settings_'));
+            settingsKeys.forEach(key => localStorage.removeItem(key));
+            log(`✅ Cleared ${settingsKeys.length} settings keys`);
+
+            updateStatus('Logout simulation completed', 'success');
+            log('🎯 Logout simulation completed - flag is set, credentials cleared');
+        }
+
+        function checkAfterLogout() {
+            log('🔍 Checking state after logout...');
+
+            const state = {
+                justLoggedOut: localStorage.getItem('justLoggedOut'),
+                currentUser: localStorage.getItem('currentUser'),
+                sessionCredentials: sessionStorage.getItem('retell_credentials_backup'),
+                emergencyCredentials: localStorage.getItem('__emergencyRetellCredentials'),
+                memoryCredentials: !!window.__retellCredentialsBackup,
+                settingsCount: Object.keys(localStorage).filter(key => key.startsWith('settings_')).length,
+                msalKeys: Object.keys(localStorage).filter(key => key.startsWith('msal.')).length
+            };
+
+            log('Current state after logout:');
+            log(JSON.stringify(state, null, 2));
+
+            // Check if this is a clean logout state
+            const isClean = state.justLoggedOut === 'true' &&
+                           !state.currentUser &&
+                           !state.sessionCredentials &&
+                           !state.emergencyCredentials &&
+                           !state.memoryCredentials &&
+                           state.settingsCount === 0;
+
+            if (isClean) {
+                updateStatus('✅ Logout state is CLEAN', 'success');
+                log('✅ LOGOUT STATE IS CLEAN - No credentials or user data found');
+            } else {
+                updateStatus('❌ Logout state is DIRTY', 'error');
+                log('❌ LOGOUT STATE IS DIRTY - Found remaining data:');
+                if (state.currentUser) log('  - currentUser still exists');
+                if (state.sessionCredentials) log('  - sessionStorage credentials found');
+                if (state.emergencyCredentials) log('  - emergency credentials found');
+                if (state.memoryCredentials) log('  - memory credentials found');
+                if (state.settingsCount > 0) log(`  - ${state.settingsCount} settings keys found`);
+            }
+
+            return isClean;
+        }
+
+        function refreshPage() {
+            log('🔄 Refreshing page to test behavior...');
+            updateStatus('Refreshing page...', 'info');
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        }
+
+        function clearAll() {
+            log('🗑️ Clearing all data...');
+
+            // Clear localStorage
+            const localKeys = Object.keys(localStorage);
+            localKeys.forEach(key => localStorage.removeItem(key));
+
+            // Clear sessionStorage
+            sessionStorage.clear();
+
+            // Clear memory
+            if (window.__retellCredentialsBackup) {
+                delete window.__retellCredentialsBackup;
+            }
+
+            log(`✅ Cleared ${localKeys.length} localStorage keys and all sessionStorage`);
+            updateStatus('All data cleared', 'success');
+        }
+
+        // Auto-check state on page load
+        window.addEventListener('load', () => {
+            log('📱 Page loaded, checking initial state...');
+
+            const justLoggedOut = localStorage.getItem('justLoggedOut');
+            if (justLoggedOut === 'true') {
+                log('🛑 justLoggedOut flag detected - this is post-logout state');
+                updateStatus('Post-logout state detected', 'info');
+
+                // Check if credentials were prevented from loading
+                setTimeout(() => {
+                    const credentialsExist = sessionStorage.getItem('retell_credentials_backup') ||
+                                           localStorage.getItem('__emergencyRetellCredentials') ||
+                                           window.__retellCredentialsBackup;
+
+                    if (credentialsExist) {
+                        log('❌ FAIL: Credentials found after logout');
+                        updateStatus('❌ CREDENTIALS FOUND AFTER LOGOUT', 'error');
+                    } else {
+                        log('✅ SUCCESS: No credentials found after logout');
+                        updateStatus('✅ LOGOUT SUCCESSFUL', 'success');
+                    }
+                }, 2000);
+            } else {
+                log('ℹ️ Normal page load (no logout flag)');
+                updateStatus('Normal page load', 'info');
+            }
+        });
+
+        log('🚀 Test page loaded. Use buttons above to test logout scenario.');
+    </script>
+</body>
+</html>

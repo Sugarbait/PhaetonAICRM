@@ -12,7 +12,7 @@ export const TENANT_CONFIG = {
   // All available tenants
   TENANTS: {
     CAREXPS: 'carexps',
-    MEDEX: 'medex'
+    MEDEX: 'medex',
     ARTLEE: 'artlee'
   } as const
 } as const

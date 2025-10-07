@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import {
-  PhoneIcon,
   DownloadIcon,
-  UserIcon,
   ClockIcon,
   CalendarIcon,
   DollarSignIcon,
@@ -14,29 +12,15 @@ import {
 } from 'lucide-react'
 import { CallNotes } from './CallNotes'
 import { patientIdService } from '@/services/patientIdService'
+import type { RetellCall } from '@/services/retellService'
 
 interface CallDetailModalProps {
-  call: {
-    call_id: string
+  call: RetellCall & {
     patient_id?: string
-    phone_number?: string
-    from_number?: string
-    to_number?: string
-    call_status: string
-    start_timestamp: number
-    end_timestamp?: number
     call_length_seconds?: number
-    call_summary?: string
-    transcript?: string
-    call_type?: string
     sentiment_analysis?: {
       overall_sentiment: 'positive' | 'negative' | 'neutral'
       confidence_score: number
-    }
-    metadata?: {
-      patient_name?: string
-      call_type?: string
-      [key: string]: any
     }
     cost?: number
   }
@@ -223,6 +207,45 @@ export const CallDetailModal: React.FC<CallDetailModalProps> = ({ call, isOpen, 
               <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Call Summary</h3>
                 <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{call.call_summary}</p>
+              </div>
+            )}
+
+            {/* Post-Call Analytics */}
+            {(call.call_analysis?.in_voicemail !== undefined ||
+              call.call_analysis?.call_successful !== undefined ||
+              call.disconnection_reason) && (
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Post-Call Data</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {call.call_analysis?.in_voicemail !== undefined && (
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Voicemail Detection</label>
+                      <p className={`text-gray-900 dark:text-gray-100 ${call.call_analysis.in_voicemail ? 'text-yellow-600' : 'text-green-600'}`}>
+                        {call.call_analysis.in_voicemail ? 'Reached Voicemail' : 'Live Answer'}
+                      </p>
+                    </div>
+                  )}
+                  {call.call_analysis?.call_successful !== undefined && (
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Call Success</label>
+                      <p className={`text-gray-900 dark:text-gray-100 ${call.call_analysis.call_successful ? 'text-green-600' : 'text-red-600'}`}>
+                        {call.call_analysis.call_successful ? 'Goal Achieved' : 'Goal Not Achieved'}
+                      </p>
+                    </div>
+                  )}
+                  {call.disconnection_reason && (
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Disconnection Reason</label>
+                      <p className="text-gray-900 dark:text-gray-100">{call.disconnection_reason}</p>
+                    </div>
+                  )}
+                  {call.direction && (
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Call Direction</label>
+                      <p className="text-gray-900 dark:text-gray-100 capitalize">{call.direction}</p>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 

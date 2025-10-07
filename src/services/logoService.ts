@@ -206,22 +206,22 @@ class LogoService {
         return this.cachedLogos
       }
 
-      // Return default logos
+      // Return empty logos (no defaults)
       return {
-        headerLogo: '/images/artlee-logo.png',
-        footerLogoLight: '/images/artlee-logo.png',
-        footerLogoDark: '/images/artlee-logo.png',
-        favicon: '/images/artlee-favicon.png'
+        headerLogo: '',
+        footerLogoLight: '',
+        footerLogoDark: '',
+        favicon: '/favicon.png'
       }
     } catch (error) {
       console.error('Failed to get logos:', error)
 
-      // Return default logos
+      // Return empty logos (no defaults)
       return {
-        headerLogo: '/images/artlee-logo.png',
-        footerLogoLight: '/images/artlee-logo.png',
-        footerLogoDark: '/images/artlee-logo.png',
-        favicon: '/images/artlee-favicon.png'
+        headerLogo: '',
+        footerLogoLight: '',
+        footerLogoDark: '',
+        favicon: '/favicon.png'
       }
     }
   }

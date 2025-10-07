@@ -66,11 +66,11 @@ interface CallMetrics {
 // Using RetellCall interface from service
 type Call = RetellCall & {
   // Add any additional fields for compatibility
-  patient_id?: string
+  customer_id?: string
   call_length_seconds?: number
   call_summary?: string
   metadata?: {
-    patient_name?: string
+    customer_name?: string
     call_type?: string
     [key: string]: any
   }
@@ -365,15 +365,15 @@ export const CallsPage: React.FC<CallsPageProps> = ({ user }) => {
 
         return {
           ...retellCall,
-          patient_id: retellCall.metadata?.patient_id || `patient_${Math.random().toString(36).substr(2, 9)}`,
+          customer_id: retellCall.metadata?.customer_id || `customer_${Math.random().toString(36).substr(2, 9)}`,
           call_length_seconds: durationSeconds,
           call_summary: retellCall.call_analysis?.call_summary || undefined,
           sentiment_analysis: retellCall.call_analysis?.user_sentiment ? {
-            overall_sentiment: retellCall.call_analysis.user_sentiment as 'positive' | 'negative' | 'neutral',
+            overall_sentiment: retellCall.call_analysis.user_sentiment.toLowerCase() as 'positive' | 'negative' | 'neutral',
             confidence_score: 0.8 // Default confidence score
           } : undefined,
           metadata: {
-            patient_name: retellCall.metadata?.patient_name || `Patient ${retellCall.metadata?.patient_id || 'Unknown'}`,
+            customer_name: retellCall.metadata?.customer_name || `Caller Unknown`,
             call_type: retellCall.call_type === 'phone_call' ? 'Phone Call' : 'Web Call',
             ...retellCall.metadata
           }
@@ -900,7 +900,8 @@ export const CallsPage: React.FC<CallsPageProps> = ({ user }) => {
     // Apply status and sentiment filters to search results
     return searchFilteredCalls.filter(call => {
       const matchesStatus = statusFilter === 'all' || call.call_status === statusFilter
-      const matchesSentiment = sentimentFilter === 'all' || call.sentiment_analysis?.overall_sentiment === sentimentFilter
+      const matchesSentiment = sentimentFilter === 'all' ||
+        call.sentiment_analysis?.overall_sentiment?.toLowerCase() === sentimentFilter.toLowerCase()
 
       return matchesStatus && matchesSentiment
     })
@@ -1163,11 +1164,11 @@ export const CallsPage: React.FC<CallsPageProps> = ({ user }) => {
         {/* Search and Filters */}
         <div className="mb-4 sm:mb-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-5 lg:p-6">
           <div className="flex flex-col gap-3 sm:gap-4">
-            <div className="flex-1 relative">
+            <div className="relative w-full sm:w-80">
               <SearchIcon className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
               <input
                 type="search"
-                placeholder="Search calls by patient name, ID, or content..."
+                placeholder="Search calls by customer name, ID, or content..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-12 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[44px] text-sm sm:text-base touch-manipulation"
@@ -1186,24 +1187,14 @@ export const CallsPage: React.FC<CallsPageProps> = ({ user }) => {
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
               <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 sm:px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px] text-sm sm:text-base flex-1 sm:min-w-[120px] touch-manipulation"
-              >
-                <option value="all">All Status</option>
-                <option value="active">Active</option>
-                <option value="completed">Completed</option>
-                <option value="failed">Failed</option>
-              </select>
-              <select
                 value={sentimentFilter}
                 onChange={(e) => setSentimentFilter(e.target.value)}
-                className="px-3 sm:px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px] text-sm sm:text-base flex-1 sm:min-w-[130px] touch-manipulation"
+                className="px-3 sm:px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px] text-sm sm:text-base w-full sm:w-80 touch-manipulation capitalize"
               >
                 <option value="all">All Sentiment</option>
-                <option value="positive">Positive</option>
-                <option value="neutral">Neutral</option>
-                <option value="negative">Negative</option>
+                <option value="positive" className="capitalize">positive</option>
+                <option value="neutral" className="capitalize">neutral</option>
+                <option value="negative" className="capitalize">negative</option>
               </select>
             </div>
           </div>
@@ -1220,12 +1211,11 @@ export const CallsPage: React.FC<CallsPageProps> = ({ user }) => {
             <div className="overflow-x-auto">
               {/* Table Header */}
               <div className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 px-4 sm:px-6 py-3 hidden lg:block">
-                <div className="grid grid-cols-12 gap-2 lg:gap-4 text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
+                <div className="grid grid-cols-10 gap-2 lg:gap-4 text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
                   <div className="col-span-1">#</div>
-                  <div className="col-span-3">Patient</div>
+                  <div className="col-span-3">Customer</div>
                   <div className="col-span-2">Date & Time</div>
                   <div className="col-span-2">Duration</div>
-                  <div className="col-span-2">Status</div>
                   <div className="col-span-2">Cost</div>
                 </div>
               </div>
@@ -1249,18 +1239,18 @@ export const CallsPage: React.FC<CallsPageProps> = ({ user }) => {
                       }}
                     >
                       {/* Desktop Layout */}
-                      <div className="hidden lg:grid grid-cols-12 gap-2 lg:gap-4 items-center">
+                      <div className="hidden lg:grid grid-cols-10 gap-2 lg:gap-4 items-center">
                         {/* Row Number */}
                         <div className="col-span-1">
                           <span className="text-sm font-medium text-gray-500 dark:text-gray-400">#{rowNumber}</span>
                         </div>
 
-                        {/* Patient Info */}
+                        {/* Customer Info */}
                         <div className="col-span-3">
                         <div className="flex items-center">
                           <div>
                             <div className="font-medium text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                              {call.metadata?.patient_name || `Patient ${call.patient_id}`}
+                              {call.metadata?.customer_name || 'Caller Unknown'}
                               {hasNotes(call.call_id) && (
                                 <div className="flex items-center gap-1">
                                   <StickyNoteIcon className="h-4 w-4 text-blue-500" />
@@ -1297,20 +1287,6 @@ export const CallsPage: React.FC<CallsPageProps> = ({ user }) => {
                         </div>
                       </div>
 
-                      {/* Status */}
-                      <div className="col-span-2">
-                        <div className="flex items-center gap-2">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(call.call_status)}`}>
-                            {call.call_status}
-                          </span>
-                          {call.sentiment_analysis && (
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getSentimentColor(call.sentiment_analysis.overall_sentiment)}`}>
-                              {call.sentiment_analysis.overall_sentiment}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
                       {/* Cost */}
                       <div className="col-span-2">
                         <div className="flex items-center gap-2">
@@ -1318,6 +1294,11 @@ export const CallsPage: React.FC<CallsPageProps> = ({ user }) => {
                           <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                             {formatCallCost(call)}
                           </span>
+                          {call.sentiment_analysis && (
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getSentimentColor(call.sentiment_analysis.overall_sentiment)}`}>
+                              {call.sentiment_analysis.overall_sentiment}
+                            </span>
+                          )}
                         </div>
                       </div>
 
@@ -1329,7 +1310,7 @@ export const CallsPage: React.FC<CallsPageProps> = ({ user }) => {
                         <div className="flex items-center min-w-0 flex-1">
                           <div className="min-w-0 flex-1">
                             <div className="font-semibold text-sm sm:text-base text-gray-900 dark:text-gray-100 truncate">
-                              {call.metadata?.patient_name || `Patient ${call.patient_id}`}
+                              {call.metadata?.customer_name || 'Caller Unknown'}
                               {hasNotes(call.call_id) && (
                                 <span className="ml-2 inline-flex items-center gap-1">
                                   <StickyNoteIcon className="h-3 w-3 text-blue-500" />
@@ -1347,9 +1328,6 @@ export const CallsPage: React.FC<CallsPageProps> = ({ user }) => {
                       </div>
 
                       <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(call.call_status)}`}>
-                          {call.call_status}
-                        </span>
                         <span className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
                           <ClockIcon className="w-3 h-3" />
                           {formatDuration(call.call_length_seconds)}

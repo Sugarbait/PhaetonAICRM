@@ -210,42 +210,69 @@ export const CallDetailModal: React.FC<CallDetailModalProps> = ({ call, isOpen, 
               </div>
             )}
 
-            {/* Post-Call Analytics */}
-            {(call.call_analysis?.in_voicemail !== undefined ||
-              call.call_analysis?.call_successful !== undefined ||
-              call.disconnection_reason) && (
+            {/* Post-Call Analysis */}
+            {call.call_analysis && (
               <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Post-Call Data</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Post-Call Analysis</h3>
+
+                {/* Call Summary (full width if present) */}
+                {call.call_analysis.call_summary && (
+                  <div className="mb-4">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Call Summary</label>
+                    <p className="text-gray-900 dark:text-gray-100 mt-1">{call.call_analysis.call_summary}</p>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {call.call_analysis?.in_voicemail !== undefined && (
+                  {call.call_analysis.in_voicemail !== undefined && (
                     <div>
                       <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Voicemail Detection</label>
-                      <p className={`text-gray-900 dark:text-gray-100 ${call.call_analysis.in_voicemail ? 'text-yellow-600' : 'text-green-600'}`}>
+                      <p className={`text-gray-900 dark:text-gray-100 font-medium ${call.call_analysis.in_voicemail ? 'text-yellow-600' : 'text-green-600'}`}>
                         {call.call_analysis.in_voicemail ? 'Reached Voicemail' : 'Live Answer'}
                       </p>
                     </div>
                   )}
-                  {call.call_analysis?.call_successful !== undefined && (
+                  {call.call_analysis.call_successful !== undefined && (
                     <div>
-                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Call Success</label>
-                      <p className={`text-gray-900 dark:text-gray-100 ${call.call_analysis.call_successful ? 'text-green-600' : 'text-red-600'}`}>
-                        {call.call_analysis.call_successful ? 'Goal Achieved' : 'Goal Not Achieved'}
+                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Call Successful</label>
+                      <p className={`text-gray-900 dark:text-gray-100 font-medium ${call.call_analysis.call_successful ? 'text-green-600' : 'text-red-600'}`}>
+                        {call.call_analysis.call_successful ? 'Yes' : 'No'}
                       </p>
                     </div>
                   )}
-                  {call.disconnection_reason && (
+                  {call.call_analysis.user_sentiment && (
                     <div>
-                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Disconnection Reason</label>
-                      <p className="text-gray-900 dark:text-gray-100">{call.disconnection_reason}</p>
-                    </div>
-                  )}
-                  {call.direction && (
-                    <div>
-                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Call Direction</label>
-                      <p className="text-gray-900 dark:text-gray-100 capitalize">{call.direction}</p>
+                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">User Sentiment</label>
+                      <p className={`text-gray-900 dark:text-gray-100 font-medium ${
+                        call.call_analysis.user_sentiment.toLowerCase() === 'positive' ? 'text-green-600' :
+                        call.call_analysis.user_sentiment.toLowerCase() === 'negative' ? 'text-red-600' :
+                        call.call_analysis.user_sentiment.toLowerCase() === 'neutral' ? 'text-blue-600' :
+                        'text-gray-600'
+                      }`}>
+                        {call.call_analysis.user_sentiment}
+                      </p>
                     </div>
                   )}
                 </div>
+
+                {/* Custom Analysis Data */}
+                {call.call_analysis.custom_analysis_data && Object.keys(call.call_analysis.custom_analysis_data).length > 0 && (
+                  <div className="mt-4">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">Custom Analysis Data</label>
+                    <div className="bg-white dark:bg-gray-800 rounded border border-gray-300 dark:border-gray-600 p-3 space-y-2">
+                      {Object.entries(call.call_analysis.custom_analysis_data).map(([key, value]) => (
+                        <div key={key} className="flex justify-between items-start">
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300 capitalize">
+                            {key.replace(/_/g, ' ')}:
+                          </span>
+                          <span className="text-sm text-gray-900 dark:text-gray-100 ml-2 text-right">
+                            {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

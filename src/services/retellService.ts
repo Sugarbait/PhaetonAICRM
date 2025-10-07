@@ -14,15 +14,30 @@ import { cloudCredentialService } from './cloudCredentialService'
 export interface RetellCall {
   call_id: string
   agent_id: string
+  agent_version?: string
   call_type: 'web_call' | 'phone_call'
   call_status: 'registered' | 'ongoing' | 'ended' | 'error'
   start_timestamp: number
   end_timestamp?: number
   duration_ms?: number
   transcript?: string
+  transcript_object?: Array<{
+    role: 'agent' | 'user'
+    content: string
+    words?: Array<{
+      word: string
+      start: number
+      end: number
+    }>
+  }>
   recording_url?: string
+  recording_multi_channel_url?: string
+  scrubbed_recording_url?: string
+  public_log_url?: string
+  knowledge_base_retrieved_contents_url?: string
   call_analysis?: {
     call_summary?: string
+    in_voicemail?: boolean
     user_sentiment?: 'positive' | 'negative' | 'neutral'
     call_successful?: boolean
     custom_analysis_data?: any
@@ -33,7 +48,41 @@ export interface RetellCall {
       unit_price: number
       cost: number
     }>
+    total_duration_seconds?: number
+    total_duration_unit_price?: number
     combined_cost: number
+  }
+  latency?: {
+    e2e?: {
+      p50?: number
+      p90?: number
+      p95?: number
+      p99?: number
+      max?: number
+      min?: number
+      num?: number
+    }
+    llm?: {
+      p50?: number
+      p90?: number
+      p95?: number
+      p99?: number
+      max?: number
+      min?: number
+    }
+    tts?: {
+      p50?: number
+      p90?: number
+      p95?: number
+      p99?: number
+      max?: number
+      min?: number
+    }
+  }
+  llm_token_usage?: {
+    prompt_tokens?: number
+    completion_tokens?: number
+    total_tokens?: number
   }
   telephony_identifier?: {
     twilio_call_sid?: string
@@ -42,6 +91,8 @@ export interface RetellCall {
   disconnection_reason?: string
   from_number?: string
   to_number?: string
+  direction?: 'inbound' | 'outbound'
+  data_storage_setting?: string
 }
 
 export interface RetellChat {

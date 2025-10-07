@@ -38,27 +38,25 @@ export interface RetellCredentials {
  */
 export const HARDCODED_RETELL_CREDENTIALS: RetellCredentials = {
   // Retell AI API Key - ARTLEE Business Platform CRM
-  apiKey: 'key_c42b5524eea5e4430641a9f26b43',
+  apiKey: 'key_3660938283961c067186004a50e3',
 
   // Call Agent ID for voice interactions - ARTLEE Voice Agent
-  callAgentId: 'agent_59bb4cd5200c7e77584ac36d53',
+  callAgentId: 'agent_ca2a01536c2e94d0ff4e50df70',
 
-  // SMS/Chat Agent ID for text-based interactions - ARTLEE Chat Agent
-  smsAgentId: 'agent_840d4bfc9d4dac35a6d64546ad'
+  // SMS/Chat Agent ID for text-based interactions - ARTLEE Chat Agent (blank - not configured)
+  smsAgentId: ''
 }
 
 /**
  * Credential validation utility
+ * Note: SMS Agent ID is optional - can be empty string if SMS functionality is not configured
  */
 export function validateCredentials(credentials: Partial<RetellCredentials>): boolean {
-  return !!(
-    credentials.apiKey &&
-    credentials.apiKey.startsWith('key_') &&
-    credentials.callAgentId &&
-    credentials.callAgentId.startsWith('agent_') &&
-    credentials.smsAgentId &&
-    credentials.smsAgentId.startsWith('agent_')
-  )
+  const hasValidApiKey = !!(credentials.apiKey && credentials.apiKey.startsWith('key_'))
+  const hasValidCallAgent = !!(credentials.callAgentId && credentials.callAgentId.startsWith('agent_'))
+  const hasValidSmsAgent = !credentials.smsAgentId || credentials.smsAgentId.startsWith('agent_')
+
+  return hasValidApiKey && hasValidCallAgent && hasValidSmsAgent
 }
 
 /**
@@ -167,7 +165,10 @@ export function initializeCredentialPersistence(): void {
   console.log('🚀 Hardcoded credential persistence initialized')
 }
 
-// Auto-initialize when module loads
+// Auto-initialization DISABLED - User-entered credentials take priority
+// The hardcoded credentials above serve only as documentation/reference
+// Users must configure their own credentials via Settings > API Configuration
+/*
 if (typeof window !== 'undefined') {
   // Initialize after a short delay to ensure all systems are ready
   setTimeout(() => {
@@ -178,3 +179,4 @@ if (typeof window !== 'undefined') {
     }
   }, 100)
 }
+*/

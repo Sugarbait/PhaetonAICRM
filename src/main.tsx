@@ -123,9 +123,10 @@ setTimeout(() => {
     import('./services/globalServiceInitializer').then(({ globalServiceInitializer }) =>
       globalServiceInitializer.initialize()
     ).catch(() => console.log('Global service init skipped')),
-    import('./services/bulletproofCredentialInitializer').then(({ bulletproofCredentialInitializer }) =>
-      bulletproofCredentialInitializer.initialize()
-    ).catch(() => console.log('Bulletproof credentials skipped')),
+    // DISABLED: Bulletproof credential initializer prevents users from saving their own API keys
+    // import('./services/bulletproofCredentialInitializer').then(({ bulletproofCredentialInitializer }) =>
+    //   bulletproofCredentialInitializer.initialize()
+    // ).catch(() => console.log('Bulletproof credentials skipped')),
     // Initialize authentication fixes for login loop issues
     import('./services/authFlowEnhancer').then(({ authFlowEnhancer }) =>
       authFlowEnhancer.initialize()

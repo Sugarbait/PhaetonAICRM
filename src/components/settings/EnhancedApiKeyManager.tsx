@@ -40,16 +40,16 @@ interface OriginalApiKeyState {
 
 export const EnhancedApiKeyManager: React.FC<EnhancedApiKeyManagerProps> = ({ user }) => {
   const [apiKeys, setApiKeys] = useState<ApiKeyState>({
-    retell_api_key: 'key_c42b5524eea5e4430641a9f26b43',
-    call_agent_id: 'agent_59bb4cd5200c7e77584ac36d53',
-    sms_agent_id: 'agent_840d4bfc9d4dac35a6d64546ad'
+    retell_api_key: '',
+    call_agent_id: '',
+    sms_agent_id: ''
   })
 
   // Track original/saved state to properly detect unsaved changes
   const [originalApiKeys, setOriginalApiKeys] = useState<OriginalApiKeyState>({
-    retell_api_key: 'key_c42b5524eea5e4430641a9f26b43',
-    call_agent_id: 'agent_59bb4cd5200c7e77584ac36d53',
-    sms_agent_id: 'agent_840d4bfc9d4dac35a6d64546ad'
+    retell_api_key: '',
+    call_agent_id: '',
+    sms_agent_id: ''
   })
 
   const [isLoading, setIsLoading] = useState(false)
@@ -101,9 +101,9 @@ export const EnhancedApiKeyManager: React.FC<EnhancedApiKeyManagerProps> = ({ us
 
     // Always use the hardwired ARTLEE credentials
     const hardwiredApiKeys = {
-      retell_api_key: 'key_c42b5524eea5e4430641a9f26b43',
-      call_agent_id: 'agent_59bb4cd5200c7e77584ac36d53',
-      sms_agent_id: 'agent_840d4bfc9d4dac35a6d64546ad'
+      retell_api_key: 'key_3660938283961c067186004a50e3',
+      call_agent_id: 'agent_ca2a01536c2e94d0ff4e50df70',
+      sms_agent_id: ''
     }
 
     // Set in component state immediately
@@ -168,9 +168,9 @@ export const EnhancedApiKeyManager: React.FC<EnhancedApiKeyManagerProps> = ({ us
           })
 
           const localApiKeys = {
-            retell_api_key: settings.retellApiKey || 'key_c42b5524eea5e4430641a9f26b43',
-            call_agent_id: settings.callAgentId || 'agent_59bb4cd5200c7e77584ac36d53',
-            sms_agent_id: settings.smsAgentId || 'agent_840d4bfc9d4dac35a6d64546ad'
+            retell_api_key: settings.retellApiKey || 'key_3660938283961c067186004a50e3',
+            call_agent_id: settings.callAgentId || 'agent_ca2a01536c2e94d0ff4e50df70',
+            sms_agent_id: settings.smsAgentId || ''
           }
 
           setApiKeys(localApiKeys)
@@ -211,9 +211,9 @@ export const EnhancedApiKeyManager: React.FC<EnhancedApiKeyManagerProps> = ({ us
 
           // Use the known correct ARTLEE API key instead
           const correctApiKeys = {
-            retell_api_key: 'key_c42b5524eea5e4430641a9f26b43',
-            call_agent_id: response.data.call_agent_id || 'agent_59bb4cd5200c7e77584ac36d53',
-            sms_agent_id: response.data.sms_agent_id || 'agent_840d4bfc9d4dac35a6d64546ad'
+            retell_api_key: 'key_3660938283961c067186004a50e3',
+            call_agent_id: response.data.call_agent_id || 'agent_ca2a01536c2e94d0ff4e50df70',
+            sms_agent_id: response.data.sms_agent_id || ''
           }
 
           setApiKeys(correctApiKeys)
@@ -242,9 +242,9 @@ export const EnhancedApiKeyManager: React.FC<EnhancedApiKeyManagerProps> = ({ us
         } else {
           // Use the response data as-is (not encrypted)
           const loadedApiKeys = {
-            retell_api_key: response.data.retell_api_key || 'key_c42b5524eea5e4430641a9f26b43',
-            call_agent_id: response.data.call_agent_id || 'agent_59bb4cd5200c7e77584ac36d53',
-            sms_agent_id: response.data.sms_agent_id || 'agent_840d4bfc9d4dac35a6d64546ad'
+            retell_api_key: response.data.retell_api_key || 'key_3660938283961c067186004a50e3',
+            call_agent_id: response.data.call_agent_id || 'agent_ca2a01536c2e94d0ff4e50df70',
+            sms_agent_id: response.data.sms_agent_id || ''
           }
 
           setApiKeys(loadedApiKeys)
@@ -261,9 +261,9 @@ export const EnhancedApiKeyManager: React.FC<EnhancedApiKeyManagerProps> = ({ us
       } else {
         console.log('No API keys found, using ARTLEE default values and saving to cloud')
         const defaultApiKeys = {
-          retell_api_key: 'key_c42b5524eea5e4430641a9f26b43',
-          call_agent_id: 'agent_59bb4cd5200c7e77584ac36d53',
-          sms_agent_id: 'agent_840d4bfc9d4dac35a6d64546ad'
+          retell_api_key: 'key_3660938283961c067186004a50e3',
+          call_agent_id: 'agent_ca2a01536c2e94d0ff4e50df70',
+          sms_agent_id: ''
         }
 
         setApiKeys(defaultApiKeys)
@@ -299,9 +299,9 @@ export const EnhancedApiKeyManager: React.FC<EnhancedApiKeyManagerProps> = ({ us
       console.error('Exception loading API keys:', err)
       setError(`Failed to load API keys: ${err.message}`)
       const defaultApiKeys = {
-        retell_api_key: 'key_c42b5524eea5e4430641a9f26b43',
-        call_agent_id: 'agent_59bb4cd5200c7e77584ac36d53',
-        sms_agent_id: 'agent_840d4bfc9d4dac35a6d64546ad'
+        retell_api_key: 'key_3660938283961c067186004a50e3',
+        call_agent_id: 'agent_ca2a01536c2e94d0ff4e50df70',
+        sms_agent_id: ''
       }
 
       setApiKeys(defaultApiKeys)

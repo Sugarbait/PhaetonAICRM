@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Complete Guest Reset - ARTLEE</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; background: #f5f5f5; }
+        .box { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        button { padding: 15px 30px; font-size: 18px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 4px; }
+        button:hover { background: #45a049; }
+        .success { color: green; font-weight: bold; }
+        .error { color: red; }
+        pre { background: #f4f4f4; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Complete Guest Account Reset</h1>
+    
+    <div class="box">
+        <h2>Step 1: Reset Everything</h2>
+        <button onclick="completeReset()" style="width: 100%; padding: 20px; font-size: 20px;">
+            🧹 CLEAR EVERYTHING & RESET
+        </button>
+        <div id="resetResult" style="margin-top: 20px;"></div>
+    </div>
+
+    <div class="box">
+        <h2>Step 2: Login Info</h2>
+        <pre style="font-size: 16px;">
+Email:    guest@guest.com
+Password: Guest123
+        </pre>
+        <button onclick="window.open('http://localhost:3007', '_blank')" style="width: 100%;">
+            🚀 Open ARTLEE CRM
+        </button>
+    </div>
+
+    <script>
+        function completeReset() {
+            const cleared = [];
+            
+            // 1. Clear failed login attempts (3-tries lockout)
+            if (localStorage.getItem('failed_login_attempts')) {
+                localStorage.removeItem('failed_login_attempts');
+                cleared.push('✅ Cleared login attempt lockout (3 tries)');
+            }
+            
+            // 2. Clear MFA lockouts
+            if (localStorage.getItem('mfa_lockout_data')) {
+                localStorage.removeItem('mfa_lockout_data');
+                cleared.push('✅ Cleared MFA lockout data');
+            }
+            
+            // 3. Clear current user
+            if (localStorage.getItem('currentUser')) {
+                localStorage.removeItem('currentUser');
+                cleared.push('✅ Cleared current user session');
+            }
+            
+            // 4. Clear any session tokens
+            const sessionKeys = ['session', 'auth', 'token', 'msal'];
+            let sessionCleared = 0;
+            Object.keys(localStorage).forEach(key => {
+                sessionKeys.forEach(term => {
+                    if (key.toLowerCase().includes(term)) {
+                        localStorage.removeItem(key);
+                        sessionCleared++;
+                    }
+                });
+            });
+            if (sessionCleared > 0) {
+                cleared.push(`✅ Cleared ${sessionCleared} session/auth keys`);
+            }
+            
+            // 5. Clear session storage
+            const ssCount = sessionStorage.length;
+            sessionStorage.clear();
+            if (ssCount > 0) {
+                cleared.push(`✅ Cleared ${ssCount} items from sessionStorage`);
+            }
+            
+            document.getElementById('resetResult').innerHTML = 
+                '<div class="success">' +
+                '<h3>🎉 RESET COMPLETE!</h3>' +
+                '<p>' + cleared.join('<br>') + '</p>' +
+                '<p style="margin-top: 20px; font-size: 18px; color: #4CAF50;">✅ You can now login without any lockouts!</p>' +
+                '</div>';
+        }
+    </script>
+</body>
+</html>

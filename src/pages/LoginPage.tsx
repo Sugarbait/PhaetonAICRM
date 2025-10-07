@@ -570,7 +570,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
       }
 
       // Clear lockouts for system users before attempting authentication
-      if (email === 'elmfarrell@yahoo.com' || email === 'pierre@phaetonai.com' || email === 'guest@email.com') {
+      if (email === 'elmfarrell@yahoo.com' || email === 'pierre@phaetonai.com' || email === 'guest@email.com' || email === 'guest@guest.com') {
         // Clear failed login attempts for system users
         const failedAttempts = localStorage.getItem('failed_login_attempts')
         if (failedAttempts) {

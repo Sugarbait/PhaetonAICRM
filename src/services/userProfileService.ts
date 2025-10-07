@@ -1443,10 +1443,13 @@ export class UserProfileService {
     try {
       // Try Supabase first
       try {
+        const currentTenantId = getCurrentTenantId()
+        console.log(`🏢 [TENANT DEBUG] getUserByEmail - Filtering by tenant_id: "${currentTenantId}" for email: "${email}"`)
+
         const { data: user, error: userError } = await supabase
           .from('users')
           .select('*')
-          .eq('tenant_id', 'medex')
+          .eq('tenant_id', currentTenantId)
           .eq('email', email)
           .maybeSingle()
 

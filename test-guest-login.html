@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Guest Login - ARTLEE</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+        button { padding: 10px 20px; margin: 5px; font-size: 16px; cursor: pointer; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        pre { background: #f4f4f4; padding: 10px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>ARTLEE Guest Login Test</h1>
+
+    <h2>Step 1: Clear MFA Lockouts</h2>
+    <button onclick="clearLockouts()">Clear All MFA Lockouts</button>
+    <div id="lockoutResult"></div>
+
+    <h2>Step 2: Clear All Storage (Fresh Start)</h2>
+    <button onclick="clearAll()">Clear All LocalStorage</button>
+    <div id="clearResult"></div>
+
+    <h2>Step 3: Check Login Credentials</h2>
+    <pre>
+Email: guest@guest.com
+Password: Guest123
+    </pre>
+
+    <h2>Step 4: Open ARTLEE</h2>
+    <button onclick="window.open('http://localhost:3007', '_blank')">Open ARTLEE CRM</button>
+
+    <h2>Debug Info</h2>
+    <button onclick="showDebug()">Show LocalStorage Contents</button>
+    <div id="debugResult"></div>
+
+    <script>
+        function clearLockouts() {
+            const removed = [];
+
+            // Clear LOGIN ATTEMPT LOCKOUT (3 failed tries) - THIS IS THE KEY!
+            localStorage.removeItem('failed_login_attempts');
+            removed.push('failed_login_attempts');
+
+            // Clear MFA lockout data
+            localStorage.removeItem('mfa_lockout_data');
+            removed.push('mfa_lockout_data');
+
+            // Clear user-specific lockouts
+            localStorage.removeItem('mfa_lockout_766134df-6bc2-4e07-a0cc-b009c8b889cc');
+            removed.push('mfa_lockout_766134df-6bc2-4e07-a0cc-b009c8b889cc');
+
+            localStorage.removeItem('guest@guest.com_mfa_lockout');
+            removed.push('guest@guest.com_mfa_lockout');
+
+            // Clear any other lockouts
+            Object.keys(localStorage).forEach(key => {
+                if (key.includes('lockout') || key.includes('mfa') || key.includes('attempt')) {
+                    localStorage.removeItem(key);
+                    removed.push(key);
+                }
+            });
+
+            document.getElementById('lockoutResult').innerHTML =
+                '<p class="success">✅ Cleared ' + removed.length + ' lockout keys (including login attempts):</p>' +
+                '<pre>' + removed.join('\\n') + '</pre>' +
+                '<p class="info"><strong>✅ LOGIN LOCKOUT CLEARED! Now refresh ARTLEE and login!</strong></p>';
+        }
+
+        function clearAll() {
+            const count = localStorage.length;
+            localStorage.clear();
+            document.getElementById('clearResult').innerHTML =
+                '<p class="success">✅ Cleared all ' + count + ' items from localStorage</p>';
+        }
+
+        function showDebug() {
+            const items = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                const value = localStorage.getItem(key);
+                items.push(key + ': ' + (value.length > 100 ? value.substring(0, 100) + '...' : value));
+            }
+
+            document.getElementById('debugResult').innerHTML =
+                '<p class="info">LocalStorage (' + localStorage.length + ' items):</p>' +
+                '<pre>' + (items.length ? items.join('\\n\\n') : 'EMPTY') + '</pre>';
+        }
+    </script>
+</body>
+</html>

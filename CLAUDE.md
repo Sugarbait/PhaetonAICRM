@@ -2,20 +2,22 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-# **MedEx Healthcare CRM - Claude Development Guide**
+# **ARTLEE CRM - Claude Development Guide**
 
-## **🔴 CRITICAL: MedEx vs CareXPS - Separate Tenant Systems**
+## **🔴 CRITICAL: Complete Tenant Isolation - ARTLEE System**
 
-**IMPORTANT:** This is **MedEx Healthcare CRM**, a separate tenant-isolated system that shares the same Supabase database with CareXPS but maintains complete data separation through `tenant_id` filtering.
+**IMPORTANT:** This is **ARTLEE CRM**, a completely isolated tenant system. ARTLEE shares the same Supabase database with CareXPS and MedEx but maintains **100% COMPLETE DATA SEPARATION** through `tenant_id` filtering.
 
 ### **Tenant Isolation Architecture:**
+- **ARTLEE Tenant ID**: `'artlee'` - All ARTLEE users have `tenant_id = 'artlee'`
 - **MedEx Tenant ID**: `'medex'` - All MedEx users have `tenant_id = 'medex'`
 - **CareXPS Tenant ID**: `'carexps'` - All CareXPS users have `tenant_id = 'carexps'`
 - **Database**: Shared Supabase PostgreSQL database (`cpkslvmydfdevdftieck`)
 - **RLS Policies**: Row Level Security ensures data isolation at database level
-- **Application Filtering**: All queries include `.eq('tenant_id', 'medex')` filter
+- **Application Filtering**: All queries MUST include `.eq('tenant_id', getCurrentTenantId())` filter
 
 ### **Authentication Differences:**
+- **ARTLEE**: Uses **Supabase Auth** with real authentication (email/password via Supabase Auth API)
 - **MedEx**: Uses **Supabase Auth** with real authentication (email/password via Supabase Auth API)
 - **CareXPS**: Uses **demo users** with localStorage-based authentication
 - **Hybrid Support**: `userManagementService.authenticateUser()` (lines 209-239) tries Supabase Auth first, then falls back to local credentials
@@ -23,7 +25,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### **Key Implementation - Dual Authentication:**
 ```typescript
 // userManagementService.ts - Lines 209-239
-// Try Supabase Auth first (for MedEx users created through Supabase Auth)
+// Try Supabase Auth first (for ARTLEE/MedEx users created through Supabase Auth)
 const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
   email,
   password
@@ -44,20 +46,62 @@ if (!authSuccess) {
 }
 ```
 
-### **Critical Tenant Filtering Pattern:**
-**ALL database queries MUST include tenant filter:**
-```typescript
-// ✅ CORRECT: Filter by tenant_id
-const { data: users } = await supabase
-  .from('users')
-  .select('*')
-  .eq('tenant_id', 'medex')  // CRITICAL: Ensures MedEx only sees MedEx users
+### **🔐 MANDATORY Tenant Filtering Pattern - ZERO TOLERANCE:**
 
-// ❌ INCORRECT: Missing tenant filter - will return ALL users from both systems
+**EVERY database query MUST include tenant filter - NO EXCEPTIONS:**
+
+```typescript
+// ✅ ALWAYS DO THIS - Use getCurrentTenantId():
+import { getCurrentTenantId } from '@/config/tenantConfig'
+
 const { data: users } = await supabase
   .from('users')
   .select('*')
+  .eq('tenant_id', getCurrentTenantId())  // CRITICAL: Dynamic tenant filtering
+
+// ✅ ALWAYS DO THIS - Include tenant_id on insert:
+const { data: newUser } = await supabase
+  .from('users')
+  .insert({
+    ...userData,
+    tenant_id: getCurrentTenantId()  // CRITICAL: Set tenant on creation
+  })
+
+// ❌ NEVER DO THIS - Missing tenant filter (SECURITY VIOLATION):
+const { data: users } = await supabase
+  .from('users')
+  .select('*')
+
+// ❌ NEVER DO THIS - Hardcoded tenant (breaks multi-tenant):
+.eq('tenant_id', 'artlee')  // Don't hardcode - use getCurrentTenantId()
 ```
+
+### **🚨 CRITICAL BUG FIX - October 7, 2025:**
+
+**Issue Found:** `userProfileService.ts` line 1449 had HARDCODED `tenant_id = 'medex'` filter, causing authentication failures in ARTLEE CRM.
+
+**Root Cause:** When ARTLEE user (guest@guest.com with tenant_id='artlee') tried to login:
+1. `getUserByEmail()` searched with `.eq('tenant_id', 'medex')`
+2. User not found (because guest has tenant_id='artlee')
+3. Authentication failed with "User not found" error
+
+**Fix Applied:**
+```typescript
+// ❌ BEFORE (Line 1449) - HARDCODED tenant
+const { data: user, error: userError } = await supabase
+  .from('users')
+  .select('*')
+  .eq('tenant_id', 'medex')  // WRONG! Breaks ARTLEE
+
+// ✅ AFTER - Dynamic tenant filtering
+const currentTenantId = getCurrentTenantId()
+const { data: user, error: userError } = await supabase
+  .from('users')
+  .select('*')
+  .eq('tenant_id', currentTenantId)  // Correct! Works for all tenants
+```
+
+**Lesson:** NEVER hardcode tenant IDs. Always use `getCurrentTenantId()` for dynamic tenant resolution.
 
 ### **Tenant Isolation Migration:**
 - **Migration File**: `supabase/migrations/20251003000005_tenant_isolation.sql`
@@ -70,17 +114,20 @@ const { data: users } = await supabase
 - **User**: Regular user with limited access
 - **No "admin" role**: Only `'super_user'` and `'user'` are valid roles
 
-### **VIOLATION PROTOCOL:**
-- Any database query without `tenant_id` filter must be **IMMEDIATELY FIXED**
-- Never modify authentication logic to remove Supabase Auth support
-- Always preserve tenant isolation in all data operations
-- When creating new users, ALWAYS set `tenant_id = 'medex'`
+### **🚨 VIOLATION PROTOCOL - MANDATORY ENFORCEMENT:**
+- **SECURITY FIRST:** Any database query without `tenant_id` filter must be **IMMEDIATELY FIXED**
+- **NO CROSS-TENANT ACCESS:** ARTLEE users must NEVER see MedEx/CareXPS data
+- **NO HARDCODED TENANTS:** Always use `getCurrentTenantId()` - never hardcode 'artlee'
+- **SUPABASE EXPERT:** For tenant isolation verification, use the `supabase-expert` agent
+- **100% ISOLATION:** Complete tenant separation is a SECURITY REQUIREMENT, not a feature
 
 ---
 
 ## **Project Overview**
 
-MedEx is a HIPAA-compliant healthcare CRM built with React/TypeScript and Vite. It integrates with Retell AI for voice calls, Supabase for data persistence, Supabase Auth for authentication, and includes comprehensive security features for healthcare compliance.
+ARTLEE is a business platform CRM built with React/TypeScript and Vite. It integrates with Retell AI for voice calls, Supabase for data persistence, Supabase Auth for authentication, and includes comprehensive security features.
+
+**IMPORTANT:** ARTLEE is a **business platform**, not a healthcare system. Remove all healthcare-specific references when updating UI/documentation.
 
 **Key Features:**
 - AI-powered voice calling via Retell AI

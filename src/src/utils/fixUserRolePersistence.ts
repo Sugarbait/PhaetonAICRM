@@ -1,7 +1,7 @@
 /**
  * Fix User Role Persistence Issues
  *
- * This utility fixes issues where Super User roles revert to Staff/healthcare_provider
+ * This utility fixes issues where Super User roles revert to Staff/business_provider
  * after login or page refresh. It ensures proper mapping between Azure AD accounts
  * and Super User profiles.
  */

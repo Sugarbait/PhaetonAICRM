@@ -6,7 +6,7 @@
  * - Critical variable validation
  * - Environment-specific requirements
  * - Early failure detection (fail fast)
- * - HIPAA compliance checks
+ * - compliance checks
  * - Secure credential validation
  */
 
@@ -85,7 +85,7 @@ const ENV_VARIABLES: EnvVariable[] = [
   {
     name: 'VITE_HIPAA_MODE',
     level: 'required',
-    description: 'HIPAA compliance mode',
+    description: 'compliance mode',
     environments: ['production'],
     validator: (value) => value === 'true'
   },
@@ -292,7 +292,7 @@ ${!result.valid
 ## Security Notes
 ${currentEnv === 'production'
   ? `
-✅ HIPAA mode enabled
+✅ mode enabled
 ✅ Encryption keys configured
 ✅ Production security requirements met
   `

@@ -39,7 +39,7 @@ export const SimpleUserManager: React.FC = () => {
     name: '',
     email: '',
     password: '',
-    role: 'healthcare_provider'
+    role: 'business_provider'
   })
 
   // Password change form
@@ -114,7 +114,7 @@ export const SimpleUserManager: React.FC = () => {
       if (response.status === 'success') {
         alert(`User ${newUser.email} created successfully! Account is disabled by default - enable it when ready.`)
         setShowAddUser(false)
-        setNewUser({ name: '', email: '', password: '', role: 'healthcare_provider' })
+        setNewUser({ name: '', email: '', password: '', role: 'business_provider' })
         await loadUsers()
       } else {
         alert(`Failed to create user: ${response.error}`)
@@ -317,7 +317,7 @@ export const SimpleUserManager: React.FC = () => {
               onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
               className="px-3 py-2 border rounded dark:bg-gray-800 dark:border-gray-600 dark:text-white"
             >
-              <option value="healthcare_provider">Healthcare Provider</option>
+              <option value="business_provider">Business Provider</option>
               <option value="admin">Admin</option>
               <option value="super_user">Super User</option>
               <option value="staff">Staff</option>
@@ -334,7 +334,7 @@ export const SimpleUserManager: React.FC = () => {
             <button
               onClick={() => {
                 setShowAddUser(false)
-                setNewUser({ name: '', email: '', password: '', role: 'healthcare_provider' })
+                setNewUser({ name: '', email: '', password: '', role: 'business_provider' })
               }}
               className="px-6 py-2 bg-gray-500 dark:bg-gray-600 text-white rounded hover:bg-gray-600 dark:hover:bg-gray-700 font-medium"
             >
@@ -372,7 +372,7 @@ export const SimpleUserManager: React.FC = () => {
                     <span className={`px-2 py-1 text-xs rounded-full ${
                       user.role === 'super_user' ? 'bg-purple-100 text-purple-700' :
                       user.role === 'admin' ? 'bg-blue-100 text-blue-700' :
-                      user.role === 'healthcare_provider' ? 'bg-green-100 text-green-700' :
+                      user.role === 'business_provider' ? 'bg-green-100 text-green-700' :
                       'bg-gray-100 text-gray-700 dark:text-gray-300'
                     }`}>
                       {user.role === 'super_user' ? 'Super User' : user.role.replace('_', ' ')}

@@ -1,5 +1,5 @@
 /**
- * HIPAA-Compliant Server-Side API Service
+ * Secure Server-Side API Service
  *
  * Handles all server-side operations for PHI data to ensure
  * sensitive operations never happen client-side

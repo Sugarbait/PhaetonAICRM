@@ -15,7 +15,7 @@ export interface Database {
           azure_ad_id: string
           email: string
           name: string
-          role: 'admin' | 'healthcare_provider' | 'staff'
+          role: 'admin' | 'business_provider' | 'staff'
           mfa_enabled: boolean
           avatar_url: string | null
           last_login: string | null
@@ -29,7 +29,7 @@ export interface Database {
           azure_ad_id: string
           email: string
           name: string
-          role?: 'admin' | 'healthcare_provider' | 'staff'
+          role?: 'admin' | 'business_provider' | 'staff'
           mfa_enabled?: boolean
           avatar_url?: string | null
           last_login?: string | null
@@ -43,7 +43,7 @@ export interface Database {
           azure_ad_id?: string
           email?: string
           name?: string
-          role?: 'admin' | 'healthcare_provider' | 'staff'
+          role?: 'admin' | 'business_provider' | 'staff'
           mfa_enabled?: boolean
           avatar_url?: string | null
           last_login?: string | null
@@ -1032,7 +1032,7 @@ export interface Database {
       }
       user_has_role: {
         Args: {
-          required_role: 'admin' | 'healthcare_provider' | 'staff'
+          required_role: 'admin' | 'business_provider' | 'staff'
         }
         Returns: boolean
       }
@@ -1049,7 +1049,7 @@ export interface Database {
       }
     }
     Enums: {
-      user_role: 'admin' | 'healthcare_provider' | 'staff'
+      user_role: 'admin' | 'business_provider' | 'staff'
       call_status: 'active' | 'completed' | 'failed'
       sms_direction: 'inbound' | 'outbound'
       sms_status: 'sent' | 'delivered' | 'read' | 'failed'

@@ -1,6 +1,6 @@
 /**
  * Audit Log Integrity Verifier
- * Implements tamper detection for HIPAA audit logs
+ * Implements tamper detection for audit logs
  *
  * Features:
  * - HMAC-SHA256 signatures for each log entry
@@ -282,9 +282,9 @@ ${verification.errors.length > 0
   ? verification.errors.map(e => `- ${e}`).join('\n')
   : 'No errors detected'}
 
-## HIPAA Compliance
+## Compliance
 ${verification.valid
-  ? '✅ Audit trail integrity meets HIPAA § 164.312(c)(2) requirements'
+  ? '✅ Audit trail integrity meets § 164.312(c)(2) requirements'
   : '❌ SECURITY INCIDENT: Audit trail integrity compromised - investigate immediately'}
 
 ## Recommendations

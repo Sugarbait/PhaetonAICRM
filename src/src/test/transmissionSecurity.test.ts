@@ -393,7 +393,7 @@ describe('Enhanced Transmission Security System', () => {
       expect(['D', 'F']).toContain(lowGrade)
     })
 
-    it('should check HIPAA compliance', () => {
+    it('should check compliance', () => {
       const compliantHeaders: SecurityHeaderCheck[] = [
         {
           header: 'Strict-Transport-Security',

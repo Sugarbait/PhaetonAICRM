@@ -1058,7 +1058,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
                   <div className="flex-1">
                     <h3 className="text-sm sm:text-base font-medium text-gray-900 dark:text-gray-100">Session Timeout</h3>
                     <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300">
-                      Automatically log out after inactivity (HIPAA required)
+                      Automatically log out after inactivity (required)
                     </p>
                   </div>
                   <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -1440,7 +1440,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
                 <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100">
-                  HIPAA Audit Logs
+                  Audit Logs
                 </h2>
                 <button
                   onClick={downloadAuditLogs}
@@ -1455,7 +1455,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
               <div className="mb-4">
                 <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300">
                   Complete audit trail of all system access and PHI data operations.
-                  Required for HIPAA compliance and security monitoring.
+                  Required for compliance and security monitoring.
                 </p>
               </div>
 
@@ -1534,7 +1534,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
                     <h4 className="text-sm sm:text-base font-medium text-blue-900 dark:text-blue-100 mb-2">Audit Log Information</h4>
                     <ul className="text-xs sm:text-sm text-blue-800 dark:text-blue-300 space-y-1">
                       <li>• All PHI access is logged and encrypted</li>
-                      <li>• Logs are retained for 6+ years per HIPAA requirements</li>
+                      <li>• Logs are retained for 6+ years per requirements</li>
                       <li>• Failed access attempts are automatically flagged</li>
                       <li>• Regular compliance reports are generated</li>
                     </ul>

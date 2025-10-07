@@ -109,7 +109,7 @@ class ClientEmailService {
             notification_title: notification.title,
             notification_message: notification.message,
             timestamp: notification.timestamp.toISOString(),
-            app_name: 'CareXPS Healthcare CRM',
+            app_name: 'CareXPS Business Platform CRM',
             app_url: import.meta.env.VITE_APP_URL || 'https://carexps.nexasync.ca'
           }
 
@@ -161,7 +161,7 @@ class ClientEmailService {
     const testNotification: EmailNotification = {
       type: 'systemAlert',
       title: 'Email Configuration Test',
-      message: 'This is a test email to verify your healthcare CRM email notification system is working correctly.',
+      message: 'This is a test email to verify your business CRM email notification system is working correctly.',
       timestamp: new Date()
     }
 

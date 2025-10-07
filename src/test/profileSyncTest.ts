@@ -28,7 +28,7 @@ export class ProfileSyncTest {
         role: 'staff',
         department: 'Emergency Medicine',
         phone: '+1-555-0123',
-        bio: 'Test healthcare provider',
+        bio: 'Test business provider',
         location: 'Toronto General Hospital',
         display_name: 'Dr. Test',
         mfa_enabled: false

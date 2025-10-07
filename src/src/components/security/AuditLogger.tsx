@@ -71,7 +71,7 @@ export const AuditLogger: React.FC<AuditLoggerProps> = ({ user }) => {
       }
     }
 
-    // Monitor form submissions for HIPAA compliance
+    // Monitor form submissions for compliance
     const handleFormSubmit = (event: SubmitEvent) => {
       const form = event.target as HTMLFormElement
       logUserAction('form_submission', {
@@ -86,7 +86,7 @@ export const AuditLogger: React.FC<AuditLoggerProps> = ({ user }) => {
     document.addEventListener('click', handleClick)
     document.addEventListener('submit', handleFormSubmit)
 
-    // Log session activity every 5 minutes for HIPAA compliance
+    // Log session activity every 5 minutes for compliance
     const sessionInterval = setInterval(() => {
       logUserAction('session_heartbeat', {
         active_time: Date.now() - (parseInt(localStorage.getItem('session_start') || '0') || Date.now())

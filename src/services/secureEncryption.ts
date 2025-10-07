@@ -1,8 +1,8 @@
 /**
- * HIPAA-Compliant Secure Encryption Service
+ * Secure Secure Encryption Service
  *
  * Uses session-derived keys instead of exposed environment variables
- * Implements NIST 800-53 security controls for healthcare data
+ * Implements NIST 800-53 security controls for business data
  * Keys are never exposed client-side or stored in localStorage
  */
 

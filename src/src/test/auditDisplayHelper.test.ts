@@ -1,5 +1,5 @@
 /**
- * Test for HIPAA Audit Display Helper
+ * Test for Audit Display Helper
  * Verifies that encrypted user data is properly decrypted and displayed
  */
 

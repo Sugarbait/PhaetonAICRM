@@ -1,7 +1,7 @@
 /**
  * REAL-TIME INTEGRITY MONITORING SERVICE
  *
- * Comprehensive integrity monitoring system for HIPAA compliance that continuously
+ * Comprehensive integrity monitoring system for compliance that continuously
  * monitors critical system files and data integrity without breaking existing functionality.
  *
  * Features:

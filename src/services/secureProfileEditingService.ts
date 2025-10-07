@@ -8,7 +8,7 @@
  * - Encrypted storage for sensitive profile data
  * - Real-time Supabase synchronization
  * - Cross-device conflict resolution
- * - HIPAA audit logging for all changes
+ * - audit logging for all changes
  * - Input validation and sanitization
  * - Emergency rollback capabilities
  */

@@ -131,7 +131,7 @@ export const MfaProtectedRoute: React.FC<MfaProtectedRouteProps> = ({
               Multi-Factor Authentication Required
             </h2>
             <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-              This page requires additional security verification to access sensitive healthcare data.
+              This page requires additional security verification to access sensitive business data.
             </p>
           </div>
 
@@ -142,7 +142,7 @@ export const MfaProtectedRoute: React.FC<MfaProtectedRouteProps> = ({
                 <div>
                   <h3 className="font-medium text-gray-900 dark:text-gray-100">Security Notice</h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    Access to Call and SMS pages requires MFA for HIPAA compliance and patient data protection.
+                    Access to Call and SMS pages requires MFA for compliance and patient data protection.
                   </p>
                 </div>
               </div>

@@ -2,7 +2,7 @@
  * Audit Display Helper
  *
  * SAFE IMPLEMENTATION: Enhances audit display without modifying core audit logging
- * - Maintains HIPAA compliance by keeping storage encrypted
+ * - Maintains compliance by keeping storage encrypted
  * - Only decrypts data for display purposes
  * - Does not modify the protected audit logging system
  */

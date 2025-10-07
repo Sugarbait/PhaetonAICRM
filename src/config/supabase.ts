@@ -100,7 +100,7 @@ const createSupabaseClient = () => {
         detectSessionInUrl: false,
         persistSession: false,
         autoRefreshToken: false,
-        storageKey: 'medex-auth'
+        storageKey: 'artlee-auth'
       },
       realtime: {
         params: {
@@ -144,7 +144,7 @@ const createSupabaseClient = () => {
       },
       global: {
         headers: {
-          'X-Client-Info': 'medex-healthcare-crm/1.0.0',
+          'X-Client-Info': 'artlee-business-crm/1.0.0',
           'Authorization': `Bearer ${supabaseAnonKey}`
         }
       }
@@ -168,12 +168,12 @@ export const supabaseAdmin = supabaseServiceRoleKey && supabaseUrl
     })
   : null
 
-// HIPAA Compliance Configuration
+// Compliance Configuration
 export const hipaaConfig = {
   encryptionEnabled: ((typeof __VITE_HIPAA_MODE__ !== 'undefined' ? __VITE_HIPAA_MODE__ : null)
     || (import.meta as any).env?.VITE_HIPAA_MODE) === 'true',
   auditLoggingEnabled: true,
-  dataRetentionDays: 2555, // 7 years for HIPAA compliance
+  dataRetentionDays: 2555, // 7 years for compliance
   sessionTimeoutMinutes: 15,
   maxFailedLoginAttempts: 3,
   passwordExpirationDays: 90,
@@ -187,7 +187,7 @@ export const encryptionConfig = {
   algorithm: 'AES-256-GCM'
 }
 
-// Validate encryption keys are present when HIPAA mode is enabled
+// Validate encryption keys are present when mode is enabled
 if (hipaaConfig.encryptionEnabled && (!encryptionConfig.phiKey || !encryptionConfig.auditKey)) {
-  throw new Error('SECURITY ERROR: PHI encryption keys are required when HIPAA mode is enabled. Please configure VITE_PHI_ENCRYPTION_KEY and VITE_AUDIT_ENCRYPTION_KEY in your environment.')
+  throw new Error('SECURITY ERROR: PHI encryption keys are required when mode is enabled. Please configure VITE_PHI_ENCRYPTION_KEY and VITE_AUDIT_ENCRYPTION_KEY in your environment.')
 }

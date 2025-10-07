@@ -12,7 +12,7 @@ export interface EnhancedUserProfile {
   id: string
   email: string
   name: string
-  role: 'admin' | 'healthcare_provider' | 'staff' | 'super_user'
+  role: 'admin' | 'business_provider' | 'staff' | 'super_user'
   is_super_user: boolean
   is_enabled: boolean
   profile_status: 'enabled' | 'disabled' | 'suspended' | 'pending'
@@ -597,7 +597,7 @@ export class EnhancedUserService {
   static async createUser(userData: {
     email: string
     name: string
-    role?: 'admin' | 'healthcare_provider' | 'staff'
+    role?: 'admin' | 'business_provider' | 'staff'
     first_name?: string
     last_name?: string
     department?: string

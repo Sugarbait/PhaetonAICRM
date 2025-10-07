@@ -7,7 +7,7 @@
  * - Encrypted user tokens
  * - Backup codes
  *
- * Implements end-to-end encryption and device verification for HIPAA compliance.
+ * Implements end-to-end encryption and device verification for compliance.
  */
 
 import { supabase, supabaseConfig } from '@/config/supabase'

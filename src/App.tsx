@@ -275,12 +275,12 @@ const AppContent: React.FC<{
       {/* Security Alerts Component */}
       <SecurityAlerts />
 
-      {/* HIPAA Compliance Banner - Hidden on mobile */}
+      {/* Compliance Banner - Hidden on mobile */}
       {hipaaMode && (
         <div className="hidden lg:block fixed top-0 left-0 right-0 bg-blue-600 text-white px-4 py-2 text-sm z-50">
           <div className="flex items-center gap-2">
             <ShieldCheckIcon className="w-4 h-4" />
-            <span>HIPAA Compliant Mode Active - All actions are audited</span>
+            <span>Compliant Mode Active - All actions are audited</span>
             <div className="ml-auto flex items-center gap-4 text-xs">
               <span>Session: {user?.name}</span>
               <span>Encrypted</span>
@@ -967,7 +967,7 @@ const App: React.FC = () => {
           // MFA requirement will be enforced by page-level protection
           // ⚠️ CRITICAL: Do not globally disable MFA requirement
 
-          // Log authentication event for HIPAA audit
+          // Log authentication event for audit
           try {
             await auditLogger.logAuthenticationEvent(
               AuditAction.LOGIN,

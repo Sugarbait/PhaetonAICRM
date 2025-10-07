@@ -892,7 +892,7 @@ export const SecureProfileEditor: React.FC<SecureProfileEditorProps> = ({
           <div className="flex items-start gap-3">
             <Shield className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
             <div>
-              <h4 className="font-medium text-blue-900 dark:text-blue-100">HIPAA-Compliant Profile Management</h4>
+              <h4 className="font-medium text-blue-900 dark:text-blue-100">Secure Profile Management</h4>
               <p className="text-sm text-blue-800 dark:text-blue-200 mt-1">
                 Your profile information is encrypted, synchronized across devices, and all changes are audited for compliance.
                 Sensitive fields like phone numbers are encrypted using AES-256-GCM encryption.

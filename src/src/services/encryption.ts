@@ -1,7 +1,7 @@
 /**
- * HIPAA-Compliant Encryption Service
+ * Secure Encryption Service
  * Uses AES-256-GCM for symmetric encryption of PHI data
- * Implements NIST 800-53 security controls for healthcare data
+ * Implements NIST 800-53 security controls for business data
  */
 
 export interface EncryptedData {
@@ -267,7 +267,7 @@ class HIPAAEncryptionService {
    */
   async testEncryption(): Promise<boolean> {
     try {
-      const testData = 'HIPAA Test Data: Patient John Doe, DOB: 1980-01-01'
+      const testData = 'Test Data: Patient John Doe, DOB: 1980-01-01'
       const encrypted = await this.encrypt(testData)
       const decrypted = await this.decrypt(encrypted)
       return decrypted === testData

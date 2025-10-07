@@ -247,7 +247,7 @@ export const NotesImplementationTest: React.FC = () => {
               <li>• Cross-device persistence</li>
               <li>• Edit history and user attribution</li>
               <li>• Status indicators and error handling</li>
-              <li>• HIPAA compliance features</li>
+              <li>• compliance features</li>
             </ul>
           </div>
 

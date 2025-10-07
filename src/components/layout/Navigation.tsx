@@ -58,8 +58,8 @@ export const Navigation: React.FC = () => {
           <div className="flex items-center gap-2 mb-8">
             <ShieldCheckIcon className="w-8 h-8 text-primary-500" />
             <div>
-              <h1 className="text-lg font-semibold text-neutral-900 dark:text-gray-100">MedEx</h1>
-              <p className="text-sm text-neutral-600 dark:text-gray-400">Healthcare CRM</p>
+              <h1 className="text-lg font-semibold text-neutral-900 dark:text-gray-100">ARTLEE</h1>
+              <p className="text-sm text-neutral-600 dark:text-gray-400">Business Platform CRM</p>
             </div>
           </div>
 
@@ -71,7 +71,7 @@ export const Navigation: React.FC = () => {
                   key={item.name}
                   to={item.href}
                   className={({ isActive }) =>
-                    `healthcare-nav-item ${isActive ? 'active' : ''}`
+                    `business-nav-item ${isActive ? 'active' : ''}`
                   }
                 >
                   <Icon className="w-5 h-5" />

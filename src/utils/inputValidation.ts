@@ -249,7 +249,7 @@ export function validatePasswordStrength(password: string): PasswordStrength {
     }
   }
 
-  // SECURITY FIX: Minimum 12 characters for healthcare compliance (was 8)
+  // SECURITY FIX: Minimum 12 characters for business compliance (was 8)
   if (password.length < 12) {
     issues.push('Password must be at least 12 characters long')
   }

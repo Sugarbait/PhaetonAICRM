@@ -1,8 +1,8 @@
 /**
  * Audit Log Retention Policy Service
- * Manages audit log lifecycle per HIPAA requirements
+ * Manages audit log lifecycle per requirements
  *
- * HIPAA Requirements (§ 164.316(b)(2)(i)):
+ * Requirements (§ 164.316(b)(2)(i)):
  * - Retain audit logs for at least 6 years
  * - Document retention policies
  * - Ensure logs are protected and tamper-proof
@@ -25,7 +25,7 @@ const logger = secureLogger.component('AuditRetention')
  * Retention policy configuration
  */
 export interface RetentionPolicy {
-  /** Minimum retention period in days (HIPAA requires 2190 days / 6 years) */
+  /** Minimum retention period in days (requires 2190 days / 6 years) */
   minRetentionDays: number
 
   /** Archive logs older than this many days */
@@ -39,7 +39,7 @@ export interface RetentionPolicy {
 }
 
 /**
- * Default retention policy (HIPAA compliant)
+ * Default retention policy (compliant)
  */
 const DEFAULT_POLICY: RetentionPolicy = {
   minRetentionDays: 2190, // 6 years
@@ -70,9 +70,9 @@ class AuditRetentionService {
   setPolicy(policy: Partial<RetentionPolicy>): void {
     this.policy = { ...DEFAULT_POLICY, ...policy }
 
-    // Validate policy meets HIPAA minimum
+    // Validate policy meets minimum
     if (this.policy.minRetentionDays < 2190) {
-      logger.warn('Retention policy does not meet HIPAA minimum of 6 years')
+      logger.warn('Retention policy does not meet minimum of 6 years')
       this.policy.minRetentionDays = 2190
     }
 
@@ -246,7 +246,7 @@ class AuditRetentionService {
   /**
    * Delete logs that exceed maximum retention period
    * WARNING: Should only be called after archival
-   * HIPAA requires keeping audit trails, so deletion should be rare
+   * requires keeping audit trails, so deletion should be rare
    */
   async deleteExpiredLogs(maxRetentionDays: number = 3650): Promise<{ deleted: number; errors: number }> {
     try {
@@ -315,7 +315,7 @@ Generated: ${new Date().toISOString()}
 - Storage Size: ${(stats.sizeBytes / 1024 / 1024).toFixed(2)} MB
 
 ## Compliance Status
-- HIPAA Compliant: ${compliant ? '✅ YES' : '❌ NO'}
+- Compliant: ${compliant ? '✅ YES' : '❌ NO'}
 ${!compliant ? '- Action Required: Continue collecting audit logs until 6-year retention is met' : ''}
 
 ## Recommendations
@@ -323,7 +323,7 @@ ${stats.totalLogs > 1000000 ? '- Consider implementing log compression\n' : ''}
 ${stats.activeLogs > 100000 ? '- Consider archiving older logs\n' : ''}
 ${!this.policy.autoArchive ? '- Enable auto-archive for better performance\n' : ''}
 
-## HIPAA Requirements Met
+## Requirements Met
 ✅ Audit logs are retained for minimum 6 years
 ✅ Logs are protected with encryption
 ✅ Logs include user identification and timestamps

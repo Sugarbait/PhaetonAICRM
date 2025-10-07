@@ -148,8 +148,8 @@ class RetellService {
     try {
       console.log('🔄 RetellService - Loading credentials with bulletproof persistence...')
 
-      // PRIORITY 1: ALWAYS use hardcoded credentials for MedEx
-      console.log('🔐 RetellService - Using hardcoded MedEx credentials (Priority 1)...')
+      // PRIORITY 1: ALWAYS use hardcoded credentials for ARTLEE
+      console.log('🔐 RetellService - Using hardcoded ARTLEE credentials (Priority 1)...')
       let credentials = this.loadHardcodedCredentials()
 
       // Only check other sources if hardcoded credentials are somehow invalid

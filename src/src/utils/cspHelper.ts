@@ -100,7 +100,7 @@ export function registerCSPViolationListener(): void {
 }
 
 /**
- * Recommended CSP directives for healthcare applications
+ * Recommended CSP directives for business applications
  */
 export const RECOMMENDED_CSP = {
   // Core directives

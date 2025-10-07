@@ -1,5 +1,5 @@
 /**
- * Demo Authentication Service for MedEx CRM
+ * Demo Authentication Service for ARTLEE CRM
  * Provides simple username/password login for demo/testing purposes
  */
 

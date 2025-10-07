@@ -327,7 +327,7 @@ export class CallNotesValidator {
   }
 
   /**
-   * Validate HIPAA compliance
+   * Validate compliance
    */
   static validateHIPAACompliance(note: DecryptedCallNote): { compliant: boolean; issues: string[] } {
     const issues: string[] = []

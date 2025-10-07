@@ -1,8 +1,8 @@
 /**
- * HIPAA-Compliant Audit Logging Service
+ * Secure Audit Logging Service
  *
- * Implements HIPAA Security Rule § 164.312(b) - Audit Controls
- * Follows NIST 800-66 guidelines for healthcare audit logging
+ * Implements Security Rule § 164.312(b) - Audit Controls
+ * Follows NIST 800-66 guidelines for business audit logging
  *
  * Requirements:
  * - Log all PHI access, creation, modification, deletion
@@ -163,7 +163,7 @@ class HIPAAAuditLogger {
       additionalInfo: {
         ...additionalInfo,
         phiDataType: resourceType,
-        complianceNote: 'HIPAA PHI access logged per § 164.312(b)'
+        complianceNote: 'PHI access logged per § 164.312(b)'
       }
     })
   }
@@ -187,7 +187,7 @@ class HIPAAAuditLogger {
       failureReason,
       additionalInfo: {
         encryptionStandard: 'AES-256-GCM',
-        complianceNote: 'HIPAA encryption operation per § 164.312(a)(2)(iv)'
+        complianceNote: 'encryption operation per § 164.312(a)(2)(iv)'
       }
     })
   }
@@ -210,7 +210,7 @@ class HIPAAAuditLogger {
       failureReason,
       additionalInfo: {
         authenticationMethod: 'local-storage-demo', // In production: Azure AD, MFA, etc.
-        complianceNote: 'HIPAA authentication event per § 164.312(d)'
+        complianceNote: 'authentication event per § 164.312(d)'
       }
     })
   }
@@ -285,7 +285,7 @@ class HIPAAAuditLogger {
       additionalInfo: {
         ...additionalInfo,
         originalEventType: eventType,
-        complianceNote: 'HIPAA security event logged per § 164.312(b)'
+        complianceNote: 'security event logged per § 164.312(b)'
       }
     })
   }
@@ -362,7 +362,7 @@ class HIPAAAuditLogger {
    * NOTE: user_name and failure_reason are NOT encrypted because:
    * 1. User names/emails and failure reasons are NOT PHI under HIPAA
    * 2. Audit logs must be readable for compliance reviews
-   * 3. HIPAA requires audit logs to show WHO accessed data and WHY actions failed
+   * 3. requires audit logs to show WHO accessed data and WHY actions failed
    * 4. Failure reasons (e.g., "Invalid password", "Account locked") are system messages, not patient data
    */
   private async encryptAuditEntry(entry: AuditLogEntry): Promise<any> {
@@ -395,11 +395,11 @@ class HIPAAAuditLogger {
    * Store audit entry in database
    */
   private async storeAuditEntry(encryptedEntry: any): Promise<void> {
-    // HIPAA Compliance: Store audit logs server-side with localStorage backup
+    // Compliance: Store audit logs server-side with localStorage backup
     console.log('Audit logging: Storing to Supabase with localStorage backup')
 
     try {
-      // Primary: Store in Supabase database (HIPAA compliant)
+      // Primary: Store in Supabase database (compliant)
       await this.storeAuditEntrySupabase(encryptedEntry)
     } catch (error) {
       console.error('Primary audit storage failed, using backup:', error)
@@ -415,7 +415,7 @@ class HIPAAAuditLogger {
   }
 
   /**
-   * Store audit entry in Supabase database (HIPAA compliant)
+   * Store audit entry in Supabase database (compliant)
    */
   private async storeAuditEntrySupabase(encryptedEntry: any): Promise<void> {
     try {
@@ -474,7 +474,7 @@ CREATE TABLE IF NOT EXISTS public.audit_logs (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Enable Row Level Security for HIPAA compliance
+-- Enable Row Level Security for compliance
 ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 
 -- Create policy for users to access their own audit logs
@@ -494,12 +494,12 @@ CREATE POLICY "Admins can view all audit logs" ON public.audit_logs
           throw new Error('Audit logs table missing - using localStorage fallback')
         }
 
-        throw new Error(`HIPAA audit storage failed: ${error.message}`)
+        throw new Error(`audit storage failed: ${error.message}`)
       }
 
-      console.log('✅ HIPAA audit entry stored successfully in Supabase')
+      console.log('✅ audit entry stored successfully in Supabase')
     } catch (error) {
-      console.error('❌ Critical: HIPAA audit storage failed:', error)
+      console.error('❌ Critical: audit storage failed:', error)
       throw error
     }
   }
@@ -779,7 +779,7 @@ CREATE POLICY "Admins can view all audit logs" ON public.audit_logs
     return JSON.stringify({
       exportTimestamp: new Date().toISOString(),
       exportedBy: this.currentUser?.name || 'System',
-      complianceNote: 'HIPAA audit log export per § 164.312(b)',
+      complianceNote: 'audit log export per § 164.312(b)',
       retentionRequirement: '6 years minimum',
       ...auditReport
     }, null, 2)

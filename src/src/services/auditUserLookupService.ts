@@ -2,7 +2,7 @@
  * Audit User Lookup Service
  *
  * Specialized service for resolving user information in audit logs
- * Provides multiple lookup strategies while maintaining HIPAA compliance
+ * Provides multiple lookup strategies while maintaining compliance
  */
 
 import { supabase } from '@/config/supabase'

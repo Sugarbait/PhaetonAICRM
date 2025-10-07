@@ -2,7 +2,7 @@
  * Tenant-Aware Supabase Client Wrapper
  *
  * This wrapper automatically adds tenant_id filtering to all queries,
- * ensuring complete data isolation between MedEx and CareXPS.
+ * ensuring complete data isolation between ARTLEE and CareXPS.
  */
 
 import { supabase, supabaseAdmin } from './supabase'

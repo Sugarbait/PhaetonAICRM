@@ -1,5 +1,5 @@
 /**
- * HIPAA-Compliant Conflict Resolution Service
+ * Secure Conflict Resolution Service
  *
  * Handles data conflicts that arise during cross-device synchronization
  * with intelligent resolution strategies and audit compliance.

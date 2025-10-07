@@ -39,7 +39,7 @@ interface TOTPData {
 
 class SecureTOTPService {
   private readonly config = {
-    issuer: 'MedEx Healthcare CRM',
+    issuer: 'ARTLEE Business Platform CRM',
     algorithm: 'SHA1' as const,
     digits: 6,
     period: 30,

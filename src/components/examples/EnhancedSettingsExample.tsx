@@ -26,7 +26,7 @@ export const EnhancedSettingsExample: React.FC = () => {
     id: 'demo-user-123',
     email: 'demo@example.com',
     name: 'Demo User',
-    role: 'healthcare_provider',
+    role: 'business_provider',
     avatar: undefined
   })
 
@@ -196,7 +196,7 @@ export const EnhancedSettingsExample: React.FC = () => {
             onClick={() => setDemoUser(prev => ({
               ...prev,
               name: `${prev.name} (Updated ${new Date().getSeconds()})`,
-              role: prev.role === 'admin' ? 'healthcare_provider' : 'admin'
+              role: prev.role === 'admin' ? 'business_provider' : 'admin'
             }))}
             className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >

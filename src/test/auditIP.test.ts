@@ -1,5 +1,5 @@
 /**
- * Tests for HIPAA Audit Logger IP Detection
+ * Tests for Audit Logger IP Detection
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 

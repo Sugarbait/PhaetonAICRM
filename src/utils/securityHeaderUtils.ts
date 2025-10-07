@@ -719,7 +719,7 @@ export function configToHttpHeaders(config: SecurityHeadersConfig): Record<strin
 }
 
 /**
- * Check if headers meet HIPAA compliance requirements
+ * Check if headers meet compliance requirements
  */
 export function checkHIPAACompliance(checks: SecurityHeaderCheck[]): {
   compliant: boolean
@@ -739,7 +739,7 @@ export function checkHIPAACompliance(checks: SecurityHeaderCheck[]): {
 
   const issues: string[] = []
 
-  // Check specific HIPAA requirements
+  // Check specific requirements
   const hstsCheck = checks.find(c => c.header === 'Strict-Transport-Security')
   if (!hstsCheck?.compliant) {
     issues.push('HSTS not properly configured for PHI protection in transit')

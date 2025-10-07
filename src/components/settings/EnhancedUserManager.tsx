@@ -51,7 +51,7 @@ export const EnhancedUserManager: React.FC<EnhancedUserManagerProps> = ({ curren
     name: '',
     first_name: '',
     last_name: '',
-    role: 'staff' as 'admin' | 'healthcare_provider' | 'staff',
+    role: 'staff' as 'admin' | 'business_provider' | 'staff',
     department: '',
     phone: ''
   })
@@ -245,7 +245,7 @@ export const EnhancedUserManager: React.FC<EnhancedUserManagerProps> = ({ curren
     switch (role) {
       case 'super_user': return 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
       case 'admin': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
-      case 'healthcare_provider': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+      case 'business_provider': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
       case 'staff': return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
       default: return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
     }
@@ -434,7 +434,7 @@ export const EnhancedUserManager: React.FC<EnhancedUserManagerProps> = ({ curren
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="staff">Staff</option>
-                <option value="healthcare_provider">Healthcare Provider</option>
+                <option value="business_provider">Business Provider</option>
                 <option value="admin">Admin</option>
               </select>
             </div>

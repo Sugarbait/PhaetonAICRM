@@ -2,7 +2,7 @@
  * INCIDENT RESPONSE SYSTEM TYPES
  *
  * TypeScript definitions for automated incident response and security monitoring
- * Supports HIPAA compliance and integrates with existing audit logging
+ * Supports compliance and integrates with existing audit logging
  */
 
 export interface SecurityIncident {
@@ -246,7 +246,7 @@ export interface IncidentMetrics {
   manualInterventionRate: number
   escalationRate: number
 
-  // HIPAA Compliance Metrics
+  // Compliance Metrics
   hipaaIncidents: number
   phiRelatedIncidents: number
   complianceViolations: number
@@ -304,7 +304,7 @@ export interface IncidentResponsePlan {
   requireContainment: boolean
   containmentActions: ContainmentAction[]
 
-  // HIPAA Compliance
+  // Compliance
   hipaaRequired: boolean
   retentionPeriod: number // days
   encryptionRequired: boolean
@@ -338,7 +338,7 @@ export interface IncidentDashboardData {
   configuration: IncidentConfiguration
   responsePlans: IncidentResponsePlan[]
 
-  // HIPAA Compliance
+  // Compliance
   complianceStatus: 'COMPLIANT' | 'WARNING' | 'NON_COMPLIANT'
   lastComplianceCheck: Date
 }

@@ -2,7 +2,7 @@
  * AUTOMATED INCIDENT RESPONSE SERVICE
  *
  * Provides comprehensive security incident detection, response, and management
- * for HIPAA-compliant healthcare applications. Integrates seamlessly with
+ * for HIPAA-compliant business applications. Integrates seamlessly with
  * existing audit logging without modifying protected systems.
  *
  * Features:
@@ -885,7 +885,7 @@ export class IncidentResponseService {
 
       Please review this incident in the security dashboard.
 
-      This is an automated security alert from CareXPS Healthcare CRM.
+      This is an automated security alert from CareXPS Business Platform CRM.
     `
 
     return { subject, body }
@@ -1117,7 +1117,7 @@ export class IncidentResponseService {
   private isPrivilegeEscalation(oldRole: string, newRole: string): boolean {
     const roleHierarchy = {
       'staff': 1,
-      'healthcare_provider': 2,
+      'business_provider': 2,
       'admin': 3,
       'super_user': 4
     }

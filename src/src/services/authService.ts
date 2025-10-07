@@ -86,7 +86,7 @@ class AuthService {
             })
           }
         } else {
-          // NEVER create generic healthcare profiles - always try to get real user info
+          // NEVER create generic business profiles - always try to get real user info
           logger.info('User not found in database, attempting to get Azure AD profile', accountId)
 
           // Try to get actual user info from Azure AD/MSAL
@@ -116,7 +116,7 @@ class AuthService {
             azure_ad_id: accountId,
             email: userEmail,
             name: userName,
-            role: 'super_user', // Always create as super_user instead of healthcare_provider
+            role: 'super_user', // Always create as super_user instead of business_provider
             permissions: [
               { resource: '*', actions: ['*'] } // Full permissions for super users
             ],

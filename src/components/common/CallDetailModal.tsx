@@ -602,7 +602,7 @@ export const CallDetailModal: React.FC<CallDetailModalProps> = ({ call, isOpen, 
               </button>
               <div className="ml-auto flex items-center gap-2">
                 <CheckCircleIcon className="w-4 h-4 text-green-500" />
-                <span className="text-sm text-green-600 font-medium">HIPAA Compliant</span>
+                <span className="text-sm text-green-600 font-medium">Compliant</span>
               </div>
             </div>
           </div>

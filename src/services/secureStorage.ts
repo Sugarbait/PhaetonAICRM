@@ -1,5 +1,5 @@
 /**
- * HIPAA-Compliant Encrypted Storage Service
+ * Secure Encrypted Storage Service
  *
  * Provides encrypted localStorage wrapper with:
  * - AES-256-GCM encryption for all stored data

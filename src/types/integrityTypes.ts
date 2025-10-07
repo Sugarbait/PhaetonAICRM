@@ -2,7 +2,7 @@
  * INTEGRITY MONITORING TYPE DEFINITIONS
  *
  * Comprehensive type definitions for real-time integrity monitoring system
- * that provides continuous security monitoring for HIPAA compliance.
+ * that provides continuous security monitoring for compliance.
  *
  * Features:
  * - File integrity monitoring with hash verification

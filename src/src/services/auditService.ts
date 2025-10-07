@@ -58,7 +58,7 @@ export interface SecurityEventQuery {
 }
 
 /**
- * Audit logging and security event tracking service for HIPAA compliance
+ * Audit logging and security event tracking service for compliance
  */
 export class AuditService extends SupabaseService {
   /**

@@ -1,5 +1,5 @@
 /**
- * PHI Access Guard - HIPAA Compliance Component
+ * PHI Access Guard - Compliance Component
  *
  * Ensures that Protected Health Information can only be accessed by users with:
  * 1. Valid authentication

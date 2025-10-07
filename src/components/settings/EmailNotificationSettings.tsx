@@ -422,17 +422,17 @@ export const EmailNotificationSettings: React.FC<EmailNotificationSettingsProps>
         </button>
       </div>
 
-      {/* HIPAA Compliance Notice */}
+      {/* Compliance Notice */}
       <div className="mt-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
         <div className="flex items-start gap-2">
           <Shield className="w-5 h-5 text-blue-600 mt-0.5" />
           <div>
             <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-              HIPAA Compliance Notice
+              Compliance Notice
             </p>
             <p className="text-sm text-blue-800 dark:text-blue-200 mt-1">
               Email notifications contain NO Protected Health Information (PHI). Only general activity
-              alerts are sent (e.g., "1 New SMS message received") to maintain HIPAA compliance.
+              alerts are sent (e.g., "1 New SMS message received") to maintain compliance.
             </p>
           </div>
         </div>

@@ -1,8 +1,8 @@
 /**
- * HIPAA-Compliant Fuzzy Search Service
+ * Secure Fuzzy Search Service
  *
  * Implements intelligent fuzzy search functionality for SMS and calls pages
- * with HIPAA compliance and PHI protection.
+ * with compliance and PHI protection.
  *
  * Features:
  * - Fuse.js-based fuzzy search with configurable thresholds

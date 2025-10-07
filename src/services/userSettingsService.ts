@@ -1214,7 +1214,7 @@ class UserSettingsServiceClass {
       // Log what we got after transformation
       console.log(`📊 FORCE SYNC: Transformed settings keys:`, Object.keys(localSettings))
       if (localSettings.retell_config) {
-        console.log(`🔑 FORCE SYNC: API credentials after decryption: [REDACTED - HIPAA PROTECTED]`)
+        console.log(`🔑 FORCE SYNC: API credentials after decryption: [REDACTED - PROTECTED]`)
         console.log(`   - API Key: [REDACTED]`)
         console.log(`   - Call Agent ID: [REDACTED]`)
         console.log(`   - SMS Agent ID: [REDACTED]`)

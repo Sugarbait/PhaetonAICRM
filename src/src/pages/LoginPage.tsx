@@ -97,7 +97,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         e.preventDefault()
         console.log('Emergency unlock triggered')
 
-        // MedEx: Emergency lockout clear (no demo users)
+        // ARTLEE: Emergency lockout clear (no demo users)
         try {
           // Clear any global lockout data
           LoginAttemptTracker.emergencyClearAll()
@@ -920,7 +920,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
 
   // Helper method for demo account handling - DISABLED FOR MEDEX
   const handleDemoAccountLogin = async (email: string, password: string): Promise<boolean> => {
-    // MedEx: Demo accounts disabled - production users only
+    // ARTLEE: Demo accounts disabled - production users only
     return false
 
     // OLD DEMO LOGIC DISABLED:
@@ -1077,19 +1077,19 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
 
         <div className="text-center mb-8">
           <img
-            src={logos.headerLogo || "/images/medex-logo.png"}
-            alt="MedEx Logo"
+            src={logos.headerLogo || "/images/artlee-logo.png"}
+            alt="ARTLEE Logo"
             className="max-h-20 w-auto mx-auto mb-4 object-contain"
             referrerPolicy="no-referrer"
           />
-          <p className="text-gray-600 text-sm">Healthcare CRM</p>
-          <p className="text-gray-500 text-xs">Secure HIPAA-Compliant Platform</p>
+          <p className="text-gray-600 text-sm">Business Platform CRM</p>
+          <p className="text-gray-500 text-xs">Secure Secure Platform</p>
         </div>
 
         <div className="bg-white p-6 rounded-lg shadow-md mb-4">
           <div className="text-center mb-4">
             <h2 className="text-lg font-semibold text-gray-800 mb-1">Welcome Back</h2>
-            <p className="text-gray-600 text-sm">Sign in to your healthcare account</p>
+            <p className="text-gray-600 text-sm">Sign in to your business account</p>
           </div>
 
           {error && (

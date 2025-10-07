@@ -1,5 +1,5 @@
 /**
- * HIPAA-Compliant Real-Time Sync Manager Service
+ * Secure Real-Time Sync Manager Service
  *
  * Manages real-time data synchronization across devices with offline support
  * and conflict resolution capabilities.

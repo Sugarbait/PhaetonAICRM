@@ -1,5 +1,5 @@
 /**
- * HIPAA-Compliant Secure Logging Service
+ * Secure Secure Logging Service
  *
  * Replaces console.log with secure logging that:
  * - Filters out PHI data

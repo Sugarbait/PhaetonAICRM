@@ -1,7 +1,7 @@
 /**
  * Tenant Configuration for Multi-Tenant Isolation
  *
- * ARTLEE uses tenant-based data isolation to separate data from CareXPS and MedEx.
+ * ARTLEE uses tenant-based data isolation to separate data from CareXPS and ARTLEE.
  * All database queries automatically filter by tenant_id.
  */
 

@@ -3,7 +3,7 @@
  *
  * Test suite to verify that the integrity monitoring system works correctly
  * and does not break existing functionality. These tests ensure compatibility
- * with the existing healthcare CRM infrastructure.
+ * with the existing business CRM infrastructure.
  *
  * Tests cover:
  * - Service initialization without breaking existing services

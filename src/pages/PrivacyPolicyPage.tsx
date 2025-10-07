@@ -1,6 +1,6 @@
 /**
  * Privacy Policy Page
- * HIPAA & PIPEDA Compliant Privacy Policy
+ * & PIPEDA Compliant Privacy Policy
  */
 
 import React from 'react'
@@ -26,7 +26,7 @@ export const PrivacyPolicyPage: React.FC = () => {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">1. Introduction</h2>
             <p className="text-gray-700 dark:text-gray-300 mb-4">
-              MedEx Healthcare CRM ("we," "our," or "us") is committed to protecting your privacy and ensuring the security
+              ARTLEE Business Platform CRM ("we," "our," or "us") is committed to protecting your privacy and ensuring the security
               of your Protected Health Information (PHI). This Privacy Policy describes how we collect, use, disclose, and
               safeguard your information in compliance with:
             </p>
@@ -53,7 +53,7 @@ export const PrivacyPolicyPage: React.FC = () => {
               <li>Voice call recordings and transcripts</li>
               <li>SMS/text message conversations</li>
               <li>Patient interaction data</li>
-              <li>Healthcare service usage information</li>
+              <li>Business service usage information</li>
             </ul>
 
             <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3 mt-4">2.3 Technical Information</h3>
@@ -68,12 +68,12 @@ export const PrivacyPolicyPage: React.FC = () => {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">3. How We Use Your Information</h2>
             <p className="text-gray-700 dark:text-gray-300 mb-4">
-              We use your information only for legitimate healthcare purposes:
+              We use your information only for legitimate business purposes:
             </p>
             <ul className="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-2 ml-4">
-              <li>Providing healthcare communication services</li>
+              <li>Providing business communication services</li>
               <li>Maintaining patient care records</li>
-              <li>Ensuring HIPAA compliance and audit trails</li>
+              <li>Ensuring compliance and audit trails</li>
               <li>Improving service quality and user experience</li>
               <li>Meeting legal and regulatory requirements</li>
             </ul>
@@ -110,7 +110,7 @@ export const PrivacyPolicyPage: React.FC = () => {
 
           {/* Your Rights (HIPAA) */}
           <section className="mb-8">
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">6. Your HIPAA Rights</h2>
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">6. Your Rights</h2>
             <p className="text-gray-700 dark:text-gray-300 mb-4">
               Under HIPAA, you have the following rights regarding your PHI:
             </p>
@@ -131,7 +131,7 @@ export const PrivacyPolicyPage: React.FC = () => {
             </p>
             <ul className="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-2 ml-4">
               <li><strong>PHI:</strong> Minimum 6 years as required by HIPAA</li>
-              <li><strong>Audit Logs:</strong> 6 years for HIPAA compliance</li>
+              <li><strong>Audit Logs:</strong> 6 years for compliance</li>
               <li><strong>Personal Information:</strong> As long as necessary for legitimate purposes</li>
             </ul>
           </section>
@@ -149,7 +149,7 @@ export const PrivacyPolicyPage: React.FC = () => {
               <li><strong>Microsoft Azure:</strong> Cloud hosting (BAA in place)</li>
             </ul>
             <p className="text-gray-700 dark:text-gray-300 mt-4">
-              All Business Associates have signed HIPAA Business Associate Agreements (BAAs) and comply with HIPAA requirements.
+              All Business Associates have signed Business Associate Agreements (BAAs) and comply with requirements.
             </p>
           </section>
 
@@ -160,7 +160,7 @@ export const PrivacyPolicyPage: React.FC = () => {
               In the event of a data breach involving your PHI, we will:
             </p>
             <ul className="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-2 ml-4">
-              <li>Notify affected individuals within 60 days (HIPAA requirement)</li>
+              <li>Notify affected individuals within 60 days (requirement)</li>
               <li>Notify the HHS Secretary if breach affects 500+ individuals</li>
               <li>Notify the Privacy Commissioner of Canada if required by PIPEDA</li>
               <li>Provide information about the breach and mitigation steps</li>
@@ -176,7 +176,7 @@ export const PrivacyPolicyPage: React.FC = () => {
             <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
               <p className="text-gray-700 dark:text-gray-300">
                 <strong>Privacy Officer</strong><br />
-                MedEx Healthcare CRM<br />
+                ARTLEE Business Platform CRM<br />
                 Email: privacy@medex.com<br />
                 Phone: 1-800-MEDEX-PRIVACY
               </p>

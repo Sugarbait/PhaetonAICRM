@@ -420,7 +420,7 @@ export const CallsPage: React.FC<CallsPageProps> = ({ user }) => {
 
       setMetrics(metricsWithTwilio)
 
-      // Log audit event for HIPAA compliance
+      // Log audit event for compliance
       await auditLogger.logPHIAccess(
         AuditAction.VIEW,
         ResourceType.CALL,
@@ -836,7 +836,7 @@ export const CallsPage: React.FC<CallsPageProps> = ({ user }) => {
       // Footer on last page
       doc.setFontSize(8)
       doc.setFont('helvetica', 'italic')
-      doc.text('🤖 Generated with MedEx Healthcare CRM', margin, pageHeight - 20)
+      doc.text('🤖 Generated with ARTLEE Business Platform CRM', margin, pageHeight - 20)
       doc.text(`Exported by: ${user?.email || 'System'}`, margin, pageHeight - 12)
       doc.text(`Total Pages: ${doc.getNumberOfPages()}`, pageWidth - margin - 40, pageHeight - 12)
 

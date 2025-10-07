@@ -1,7 +1,7 @@
 /**
  * Comprehensive Security Fixes Test Suite
  *
- * Tests all Phase 2 critical security fixes to ensure HIPAA compliance
+ * Tests all Phase 2 critical security fixes to ensure compliance
  * and verify that existing functionality is preserved
  */
 
@@ -178,7 +178,7 @@ class SecurityFixesTestRunner {
         azure_ad_id: 'test-azure-id',
         email: 'test@example.com',
         name: 'Test User',
-        role: 'healthcare_provider',
+        role: 'business_provider',
         mfa_enabled: true,
         is_active: true
       }
@@ -403,8 +403,8 @@ class SecurityFixesTestRunner {
       }
     }))
 
-    // Test 3: HIPAA compliance check
-    tests.push(await this.runTest('HIPAA Compliance Check', async () => {
+    // Test 3: compliance check
+    tests.push(await this.runTest('Compliance Check', async () => {
       // Check that sensitive data is not in localStorage
       const localStorageKeys = Object.keys(localStorage)
       const hasCurrentUserInLocalStorage = localStorageKeys.includes('currentUser')

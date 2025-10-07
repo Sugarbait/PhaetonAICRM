@@ -3,7 +3,7 @@
  *
  * SECURITY NOTICE: This service is designed for general site help only.
  * NO PHI (Protected Health Information) data should ever be sent to this service.
- * This service is isolated from all patient data and healthcare information.
+ * This service is isolated from all patient data and business information.
  *
  * ANALYTICS CAPABILITY: Can access aggregated, anonymized statistics only.
  */
@@ -44,11 +44,11 @@ class ChatGPTService {
    * System prompt that defines the chatbot's role and restrictions
    */
   private getSystemPrompt(): string {
-    return `You are a helpful assistant for the MedEx healthcare platform. You help users navigate and use the platform features, and can provide insights based on aggregated analytics data.
+    return `You are a helpful assistant for the ARTLEE business platform. You help users navigate and use the platform features, and can provide insights based on aggregated analytics data.
 
 CRITICAL SECURITY RESTRICTIONS:
-- You have NO access to any patient data, PHI (Protected Health Information), or healthcare records
-- You cannot and must not discuss specific patients, medical records, or any healthcare data
+- You have NO access to any patient data, PHI (Protected Health Information), or business records
+- You cannot and must not discuss specific patients, medical records, or any business data
 - You can only access aggregated, anonymized statistics and platform usage data
 - If asked about patient data, medical information, or PHI, politely decline and redirect to general platform help
 
@@ -96,7 +96,7 @@ When users ask about statistics, patterns, or historical data, provide comprehen
       if (this.containsPotentialPHI(userMessage)) {
         return {
           success: false,
-          error: 'I cannot discuss specific patient information or healthcare data. I can help you with platform navigation and general features instead.'
+          error: 'I cannot discuss specific patient information or business data. I can help you with platform navigation and general features instead.'
         }
       }
 
@@ -422,7 +422,7 @@ When users ask about statistics, patterns, or historical data, provide comprehen
 
     // Help and getting started
     if (message.includes('help') || message.includes('start') || message.includes('how to')) {
-      return `I'm your MedEx Assistant! I can help you with:
+      return `I'm your ARTLEE Assistant! I can help you with:
 
 **📱 SMS/Chat Features:**
 • View and manage SMS conversations
@@ -538,7 +538,7 @@ The platform is designed to be intuitive - most features are accessible through 
     }
 
     // Default helpful response
-    return `I'm your MedEx Assistant! I can help you with platform navigation, SMS/chat features, call management, analytics, and general platform usage.
+    return `I'm your ARTLEE Assistant! I can help you with platform navigation, SMS/chat features, call management, analytics, and general platform usage.
 
 **Quick Help:**
 • **SMS/Chat:** View conversations, add notes, track costs
@@ -559,11 +559,11 @@ What specific area would you like help with? You can ask about features, navigat
 
     // Try to handle analytics questions even in fallback mode
     if (this.isAnalyticsQuestion(userMessage)) {
-      return "I can help you analyze your MedEx usage patterns and statistics! I can provide insights about call volumes, peak hours, costs, SMS usage, and more. However, I need the platform's analytics service to be available. Please try asking about specific metrics like 'What time do I get the most calls?' or 'What are my total costs?'"
+      return "I can help you analyze your ARTLEE usage patterns and statistics! I can provide insights about call volumes, peak hours, costs, SMS usage, and more. However, I need the platform's analytics service to be available. Please try asking about specific metrics like 'What time do I get the most calls?' or 'What are my total costs?'"
     }
 
     if (message.includes('help') || message.includes('how')) {
-      return "I'm here to help you navigate the MedEx platform! I can assist with features like SMS management, call handling, notes, settings, usage analytics, and general platform usage. What would you like to know about?"
+      return "I'm here to help you navigate the ARTLEE platform! I can assist with features like SMS management, call handling, notes, settings, usage analytics, and general platform usage. What would you like to know about?"
     }
 
     if (message.includes('sms') || message.includes('chat')) {
@@ -575,7 +575,7 @@ What specific area would you like help with? You can ask about features, navigat
     }
 
     if (message.includes('stats') || message.includes('data') || message.includes('analytics')) {
-      return "I can help you understand your MedEx usage analytics! Ask me questions like:\n\n• What time do I get the most calls?\n• What are my total communication costs?\n• Which day is busiest for calls?\n• How long are my average calls?\n• What are my SMS usage patterns?\n\nAll analytics are based on aggregated, anonymized data with full PHI protection."
+      return "I can help you understand your ARTLEE usage analytics! Ask me questions like:\n\n• What time do I get the most calls?\n• What are my total communication costs?\n• Which day is busiest for calls?\n• How long are my average calls?\n• What are my SMS usage patterns?\n\nAll analytics are based on aggregated, anonymized data with full PHI protection."
     }
 
     return "I can help you with platform navigation, SMS/chat features, call management, notes, settings, usage analytics, and general platform usage. What specific area would you like help with?"

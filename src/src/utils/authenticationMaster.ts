@@ -223,8 +223,8 @@ Use the comprehensive fix instead.`
         { email: 'elmfarrell@yahoo.com', password: this.generateSecurePassword() }
       ]
 
-      // SECURITY: Demo account setup completed (credentials redacted for HIPAA compliance)
-      console.log('🔐 SECURITY: Demo account setup completed - [CREDENTIALS-REDACTED - HIPAA PROTECTED]')
+      // SECURITY: Demo account setup completed (credentials redacted for compliance)
+      console.log('🔐 SECURITY: Demo account setup completed - [CREDENTIALS-REDACTED - PROTECTED]')
       console.log(`📊 Generated ${demoUserEmails.length} demo accounts with secure credentials`)
 
       const demoUsers = []

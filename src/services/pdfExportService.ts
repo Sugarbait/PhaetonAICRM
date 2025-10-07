@@ -99,7 +99,7 @@ class PDFExportService {
     this.pdf.setTextColor(255, 255, 255)
     this.pdf.setFontSize(24)
     this.pdf.setFont('helvetica', 'bold')
-    this.pdf.text(options.companyName || 'CareXPS Healthcare CRM', centerX, 45, { align: 'center' })
+    this.pdf.text(options.companyName || 'CareXPS Business Platform CRM', centerX, 45, { align: 'center' })
 
     this.pdf.setFontSize(16)
     this.pdf.setFont('helvetica', 'normal')
@@ -154,7 +154,7 @@ class PDFExportService {
     this.pdf.setFontSize(10)
     this.pdf.setTextColor(156, 163, 175) // Gray-400
     this.pdf.text(`Generated on ${format(new Date(), 'MMMM dd, yyyy at HH:mm')}`, centerX, 270, { align: 'center' })
-    this.pdf.text('Confidential Healthcare Data - HIPAA Compliant', centerX, 280, { align: 'center' })
+    this.pdf.text('Confidential Business Data - Compliant', centerX, 280, { align: 'center' })
   }
 
   private generateMetricsPage(metrics: DashboardMetrics, options: ExportOptions): void {
@@ -514,14 +514,14 @@ class PDFExportService {
     this.pdf.setFontSize(12)
     this.pdf.setFont('helvetica', 'bold')
     this.pdf.setTextColor(153, 27, 27) // Red-800
-    this.pdf.text('HIPAA Compliance Notice', this.margin + 5, yPosition + 12)
+    this.pdf.text('Compliance Notice', this.margin + 5, yPosition + 12)
 
     this.pdf.setFontSize(9)
     this.pdf.setFont('helvetica', 'normal')
     this.pdf.setTextColor(127, 29, 29) // Red-900
 
     const complianceText = [
-      'This report contains Protected Health Information (PHI) and is subject to HIPAA regulations.',
+      'This report contains Protected Health Information (PHI) and is subject to regulations.',
       'Unauthorized disclosure is prohibited. Handle according to your organization\'s privacy policies.',
       'All data has been encrypted and anonymized where possible to ensure patient privacy.'
     ]

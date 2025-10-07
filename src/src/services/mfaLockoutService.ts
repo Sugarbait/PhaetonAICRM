@@ -5,7 +5,7 @@
  * - Tracks failed MFA attempts per user
  * - Enforces 3-attempt limit before lockout
  * - Implements 30-minute lockout period
- * - Maintains HIPAA compliance with audit logging
+ * - Maintains compliance with audit logging
  * - Persists lockout state across browser sessions
  */
 
@@ -94,7 +94,7 @@ export class MfaLockoutService {
     if (record.attempts >= this.MAX_ATTEMPTS) {
       record.lockedUntil = now + this.LOCKOUT_DURATION
 
-      // Log lockout event for HIPAA compliance
+      // Log lockout event for compliance
       await auditLogger.logPHIAccess(
         AuditAction.SYSTEM_ACTION,
         ResourceType.SYSTEM,

@@ -7,10 +7,10 @@ import { logoService, CompanyLogos } from '@/services/logoService'
 
 export const useCompanyLogos = () => {
   const [logos, setLogos] = useState<CompanyLogos>({
-    headerLogo: '/images/medex-logo.png',
-    footerLogoLight: '/images/medex-logo.png',
-    footerLogoDark: '/images/medex-logo.png',
-    favicon: '/images/medex-favicon.png'
+    headerLogo: '/images/artlee-logo.png',
+    footerLogoLight: '/images/artlee-logo.png',
+    footerLogoDark: '/images/artlee-logo.png',
+    favicon: '/images/artlee-favicon.png'
   })
   const [isLoading, setIsLoading] = useState(true)
 

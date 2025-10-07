@@ -20,7 +20,7 @@ type CallNoteInsert = Database['public']['Tables']['call_notes']['Insert']
 type CallNoteUpdate = Database['public']['Tables']['call_notes']['Update']
 
 /**
- * Service for managing encrypted call notes with HIPAA compliance
+ * Service for managing encrypted call notes with compliance
  * Handles CRUD operations, real-time synchronization, and audit logging
  * Includes localStorage fallback when Supabase is unavailable
  */

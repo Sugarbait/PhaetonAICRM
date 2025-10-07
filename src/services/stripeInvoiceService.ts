@@ -273,7 +273,7 @@ class StripeInvoiceService {
       const newCustomer = await this.stripe.customers.create({
         email: customerInfo.email,
         name: customerInfo.name,
-        description: customerInfo.description || 'CareXPS Healthcare CRM Customer'
+        description: customerInfo.description || 'CareXPS Business Platform CRM Customer'
       })
 
       return newCustomer.id
@@ -350,7 +350,7 @@ class StripeInvoiceService {
           : 30,
         description: `CareXPS Services - ${options.dateRange.label || invoiceData.dateRange.label}`,
         metadata: {
-          service: 'CareXPS Healthcare CRM',
+          service: 'CareXPS Business Platform CRM',
           date_range_start: options.dateRange.start.toISOString(),
           date_range_end: options.dateRange.end.toISOString(),
           total_calls: invoiceData.callCosts.totalCalls.toString(),

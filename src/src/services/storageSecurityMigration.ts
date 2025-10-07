@@ -2,7 +2,7 @@
  * Storage Security Migration Service
  *
  * Migrates all insecure localStorage usage to encrypted secureStorage
- * for HIPAA compliance and PHI protection
+ * for compliance and PHI protection
  */
 
 import { secureStorage } from '@/services/secureStorage'

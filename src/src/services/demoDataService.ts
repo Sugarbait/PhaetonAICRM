@@ -1,5 +1,5 @@
 /**
- * Demo Data Service for MedEx CRM
+ * Demo Data Service for ARTLEE CRM
  * Provides fake data for testing without any external API calls
  * NO CONNECTIONS TO CAREXPS OR ANY EXTERNAL APIS
  */

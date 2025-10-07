@@ -463,7 +463,7 @@ const SecurityDashboard: React.FC<SecurityDashboardProps> = ({ className = '' })
                       <CheckCircle className="h-8 w-8 text-green-500 mr-2" />
                       <span className="text-lg font-medium text-gray-900">Audit Logging</span>
                     </div>
-                    <p className="text-sm text-gray-600 mt-2">HIPAA compliant</p>
+                    <p className="text-sm text-gray-600 mt-2">compliant</p>
                   </div>
                 </div>
               </div>

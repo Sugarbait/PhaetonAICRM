@@ -97,9 +97,9 @@ export const EnhancedApiKeyManager: React.FC<EnhancedApiKeyManagerProps> = ({ us
   }, [user.id])
 
   const forceHardwiredCredentials = () => {
-    console.log('🔧 API KEY MANAGEMENT: Forcing hardwired MedEx credentials immediately')
+    console.log('🔧 API KEY MANAGEMENT: Forcing hardwired ARTLEE credentials immediately')
 
-    // Always use the hardwired MedEx credentials
+    // Always use the hardwired ARTLEE credentials
     const hardwiredApiKeys = {
       retell_api_key: 'key_c42b5524eea5e4430641a9f26b43',
       call_agent_id: 'agent_59bb4cd5200c7e77584ac36d53',
@@ -209,7 +209,7 @@ export const EnhancedApiKeyManager: React.FC<EnhancedApiKeyManagerProps> = ({ us
         if (response.data.retell_api_key?.includes('cbc:') || response.data.retell_api_key?.includes('gcm:')) {
           console.log('Received encrypted API key from service - setting known correct key')
 
-          // Use the known correct MedEx API key instead
+          // Use the known correct ARTLEE API key instead
           const correctApiKeys = {
             retell_api_key: 'key_c42b5524eea5e4430641a9f26b43',
             call_agent_id: response.data.call_agent_id || 'agent_59bb4cd5200c7e77584ac36d53',
@@ -259,7 +259,7 @@ export const EnhancedApiKeyManager: React.FC<EnhancedApiKeyManagerProps> = ({ us
           )
         }
       } else {
-        console.log('No API keys found, using MedEx default values and saving to cloud')
+        console.log('No API keys found, using ARTLEE default values and saving to cloud')
         const defaultApiKeys = {
           retell_api_key: 'key_c42b5524eea5e4430641a9f26b43',
           call_agent_id: 'agent_59bb4cd5200c7e77584ac36d53',

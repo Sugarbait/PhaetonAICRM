@@ -436,7 +436,7 @@ class EmailNotificationServiceClass {
             <div class="logo">
                 <img src="cid:logo" alt="CareXPS Logo" style="max-width: 220px; height: auto; margin-bottom: 10px;" />
             </div>
-            <h1>CareXPS Healthcare CRM</h1>
+            <h1>CareXPS Business Platform CRM</h1>
             <p style="margin: 10px 0 0 0; opacity: 0.9;">System Notification</p>
         </div>
 
@@ -474,12 +474,12 @@ class EmailNotificationServiceClass {
         </div>
 
         <div class="footer">
-            <p><strong>CareXPS Healthcare CRM</strong></p>
-            <p>Secure Healthcare Communication Platform</p>
+            <p><strong>CareXPS Business Platform CRM</strong></p>
+            <p>Secure Business Communication Platform</p>
 
             <div class="disclaimer">
                 <p><strong>PRIVACY NOTICE:</strong> This notification contains no Protected Health Information (PHI).
-                Only general activity notifications are sent via email to maintain HIPAA compliance.</p>
+                Only general activity notifications are sent via email to maintain compliance.</p>
                 <p>© ${new Date().getFullYear()} CareXPS. All rights reserved.</p>
             </div>
         </div>

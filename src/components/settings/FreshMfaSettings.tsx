@@ -231,7 +231,7 @@ export const FreshMfaSettings: React.FC<FreshMfaSettingsProps> = ({
       <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
         <p className="text-xs text-yellow-800">
           <strong>Security Note:</strong> Multi-factor authentication adds an extra layer of security to your account.
-          We strongly recommend keeping it enabled to protect your healthcare data.
+          We strongly recommend keeping it enabled to protect your business data.
         </p>
       </div>
 

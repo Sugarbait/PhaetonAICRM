@@ -6,7 +6,7 @@
  * - Encryption/decryption of sensitive fields
  * - Cross-device synchronization
  * - Conflict resolution
- * - HIPAA audit logging
+ * - audit logging
  * - Emergency rollback functionality
  */
 
@@ -262,7 +262,7 @@ describe('SecureProfileEditingService', () => {
     })
   })
 
-  describe('HIPAA Audit Logging', () => {
+  describe('Audit Logging', () => {
     it('should log profile access events', async () => {
       await secureProfileEditingService.getCurrentProfile('test-user-1')
 

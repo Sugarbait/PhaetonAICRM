@@ -832,7 +832,7 @@ export class NotificationService {
       automatedResponseCount: incident.response.automated.length,
       dashboardUrl: `${window.location.origin}/security/incidents/${incident.id}`,
       currentTime: new Date().toISOString(),
-      systemName: 'CareXPS Healthcare CRM'
+      systemName: 'CareXPS Business Platform CRM'
     }
   }
 

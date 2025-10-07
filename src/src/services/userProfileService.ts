@@ -21,7 +21,7 @@ export interface UserProfileData {
   id: string
   email: string
   name: string
-  role: 'admin' | 'super_user' | 'healthcare_provider' | 'staff' | 'user'
+  role: 'admin' | 'super_user' | 'business_provider' | 'staff' | 'user'
   avatar?: string
   mfa_enabled?: boolean
   isActive?: boolean // User activation status (for pending approvals)
@@ -869,18 +869,18 @@ export class UserProfileService {
             console.log('UserProfileService: Migrated users with updated date fields')
           }
           } catch (parseError) {
-            console.error('UserProfileService: Failed to parse stored users - returning empty array for MedEx:', parseError)
+            console.error('UserProfileService: Failed to parse stored users - returning empty array for ARTLEE:', parseError)
             users = []
           }
         } else {
-          console.log('UserProfileService: No stored users found - returning empty array for MedEx')
+          console.log('UserProfileService: No stored users found - returning empty array for ARTLEE')
           users = []
-          // Don't seed demo users for MedEx - keep it clean
+          // Don't seed demo users for ARTLEE - keep it clean
         }
 
-        // MedEx: Skip demo user restoration logic - keep user list clean
-        // (No demo user seeding for MedEx)
-        if (false) { // Disabled for MedEx
+        // ARTLEE: Skip demo user restoration logic - keep user list clean
+        // (No demo user seeding for ARTLEE)
+        if (false) { // Disabled for ARTLEE
         const deletedUsers = localStorage.getItem('deletedUsers')
         let deletedUserIds = []
         if (deletedUsers) {
@@ -944,7 +944,7 @@ export class UserProfileService {
             console.log('Preserving existing demo user changes')
           }
         })
-        } // End of disabled demo user logic for MedEx
+        } // End of disabled demo user logic for ARTLEE
 
         allUsers = users
 
@@ -2276,7 +2276,7 @@ export class UserProfileService {
   /**
    * Map existing database role values to expected CareXPS role values
    */
-  private static mapExistingRoleToExpected(existingRole: string): 'admin' | 'super_user' | 'healthcare_provider' | 'staff' {
+  private static mapExistingRoleToExpected(existingRole: string): 'admin' | 'super_user' | 'business_provider' | 'staff' {
     if (!existingRole) return 'staff'
 
     const role = existingRole.toLowerCase()
@@ -2286,8 +2286,8 @@ export class UserProfileService {
       return 'super_user'
     } else if (role === 'admin' || role === 'administrator') {
       return 'admin'
-    } else if (role === 'provider' || role === 'healthcare_provider' || role === 'doctor' || role === 'physician') {
-      return 'healthcare_provider'
+    } else if (role === 'provider' || role === 'business_provider' || role === 'doctor' || role === 'physician') {
+      return 'business_provider'
     } else {
       return 'staff' // Default fallback
     }
@@ -2297,7 +2297,7 @@ export class UserProfileService {
    * Map CareXPS role values to database schema roles
    * CRITICAL FIX: Database schema supports 'super_user' role - DO NOT convert to 'admin'
    */
-  private static mapRoleForDatabase(careXpsRole: string): 'admin' | 'healthcare_provider' | 'staff' | 'super_user' {
+  private static mapRoleForDatabase(careXpsRole: string): 'admin' | 'business_provider' | 'staff' | 'super_user' {
     const role = careXpsRole.toLowerCase()
 
     // Map CareXPS roles to database schema roles
@@ -2306,8 +2306,8 @@ export class UserProfileService {
       return 'super_user' // FIXED: Database schema supports super_user role directly
     } else if (role === 'admin' || role === 'administrator') {
       return 'admin'
-    } else if (role === 'provider' || role === 'healthcare_provider' || role === 'doctor' || role === 'physician') {
-      return 'healthcare_provider'
+    } else if (role === 'provider' || role === 'business_provider' || role === 'doctor' || role === 'physician') {
+      return 'business_provider'
     } else {
       return 'staff' // Default fallback
     }

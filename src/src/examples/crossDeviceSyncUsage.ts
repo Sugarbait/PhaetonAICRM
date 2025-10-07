@@ -2,7 +2,7 @@
  * Cross-Device Sync Usage Examples
  *
  * This file demonstrates how to use the cross-device sync functionality
- * that was implemented across multiple services in the healthcare CRM.
+ * that was implemented across multiple services in the business CRM.
  */
 
 import React from 'react'

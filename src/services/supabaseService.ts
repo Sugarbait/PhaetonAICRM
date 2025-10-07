@@ -7,7 +7,7 @@ import { v4 as uuidv4 } from 'uuid'
 type Tables = Database['public']['Tables']
 
 /**
- * Base Supabase service with HIPAA compliance features
+ * Base Supabase service with compliance features
  */
 export class SupabaseService {
   protected static async logSecurityEvent(
@@ -154,7 +154,7 @@ export class UserService extends SupabaseService {
   static async createUser(azureAdId: string, userData: {
     email: string
     name: string
-    role?: 'admin' | 'super_user' | 'healthcare_provider' | 'staff'
+    role?: 'admin' | 'super_user' | 'business_provider' | 'staff'
   }): Promise<ServiceResponse<Tables['users']['Row']>> {
     try {
       const { data, error } = await this.withAuditLog(

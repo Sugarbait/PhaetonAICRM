@@ -22,8 +22,8 @@ interface TOTPVerificationResult {
 
 class SimplifiedTOTPService {
   private config = {
-    issuer: 'MedEx Healthcare CRM',
-    label: 'MedEx',
+    issuer: 'ARTLEE Business Platform CRM',
+    label: 'ARTLEE',
     algorithm: 'SHA1' as const,
     digits: 6,
     period: 30

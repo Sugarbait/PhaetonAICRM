@@ -109,8 +109,8 @@ export const SimpleDemoLoginPage: React.FC<SimpleDemoLoginPageProps> = ({ onLogi
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <img
-              src="/images/medex-logo.png"
-              alt="MedEx Logo"
+              src="/images/artlee-logo.png"
+              alt="ARTLEE Logo"
               className="max-h-20 w-auto mx-auto mb-4 object-contain"
             />
             <h2 className="text-2xl font-bold text-gray-800 dark:text-white">MFA Verification</h2>
@@ -177,12 +177,12 @@ export const SimpleDemoLoginPage: React.FC<SimpleDemoLoginPageProps> = ({ onLogi
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <img
-            src="/images/medex-logo.png"
-            alt="MedEx Logo"
+            src="/images/artlee-logo.png"
+            alt="ARTLEE Logo"
             className="max-h-20 w-auto mx-auto mb-4 object-contain"
           />
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">MedEx Healthcare CRM</h1>
-          <p className="text-gray-600 dark:text-gray-400">HIPAA-Compliant Healthcare Platform</p>
+          <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">ARTLEE Business Platform CRM</h1>
+          <p className="text-gray-600 dark:text-gray-400">Secure Business Platform</p>
         </div>
 
         {/* Login Form - Centered */}

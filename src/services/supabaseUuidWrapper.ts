@@ -1,6 +1,6 @@
 // Supabase UUID Wrapper Service
 // Automatically converts between string IDs and UUIDs for database operations
-// Maintains HIPAA compliance with audit logging and encryption
+// Maintains compliance with audit logging and encryption
 
 import { supabase } from '@/config/supabase'
 import { UUIDMappingService } from '@/utils/uuidMapping'
@@ -11,7 +11,7 @@ import { encryptPHI, decryptPHI } from './encryption'
 function logSecureOperation(operation: string, userId: string, details?: any) {
   auditLogger.logUserAction(userId, operation, {
     ...details,
-    // Redact sensitive information for HIPAA compliance
+    // Redact sensitive information for compliance
     email: details?.email ? '[REDACTED]' : undefined,
     name: details?.name ? '[REDACTED]' : undefined,
     encrypted_retell_api_key: details?.encrypted_retell_api_key ? '[REDACTED]' : undefined
@@ -322,7 +322,7 @@ export class SupabaseUUIDWrapper {
       }
     }
 
-    console.log('✅ Users initialized with UUID mapping and HIPAA compliance')
+    console.log('✅ Users initialized with UUID mapping and compliance')
   }
 
   /**

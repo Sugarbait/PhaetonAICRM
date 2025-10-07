@@ -175,7 +175,7 @@ export const AuditDashboard: React.FC<AuditDashboardProps> = ({ user }) => {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <ShieldCheckIcon className="w-6 h-6 text-blue-600" />
-          <h1 className="text-2xl font-black text-gray-900">HIPAA Audit Dashboard</h1>
+          <h1 className="text-2xl font-black text-gray-900">Audit Dashboard</h1>
         </div>
         <div className="flex items-center gap-3">
           <button
@@ -210,9 +210,9 @@ export const AuditDashboard: React.FC<AuditDashboardProps> = ({ user }) => {
         <div className="flex items-center gap-3">
           <ShieldCheckIcon className="w-5 h-5 text-blue-600" />
           <div>
-            <h3 className="font-medium text-blue-900">HIPAA Compliance Notice</h3>
+            <h3 className="font-medium text-blue-900">Compliance Notice</h3>
             <p className="text-sm text-blue-700 mt-1">
-              This audit log complies with HIPAA Security Rule § 164.312(b).
+              This audit log complies with Security Rule § 164.312(b).
               All PHI access is logged and encrypted. Logs are retained for minimum 6 years.
             </p>
           </div>

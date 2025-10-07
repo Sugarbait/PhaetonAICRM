@@ -27,8 +27,8 @@ export function encryptPHI(plaintext: string, keyType: 'phi' | 'audit' = 'phi'):
 
     const key = keyType === 'phi' ? encryptionConfig.phiKey : encryptionConfig.auditKey
     if (!key) {
-      // HIPAA COMPLIANCE: Never fallback to Base64 encoding - encryption keys are required
-      const errorMsg = `🚨 HIPAA VIOLATION: Encryption key not configured for type: ${keyType}. PHI cannot be stored without encryption.`
+      // COMPLIANCE: Never fallback to Base64 encoding - encryption keys are required
+      const errorMsg = `🚨 VIOLATION: Encryption key not configured for type: ${keyType}. PHI cannot be stored without encryption.`
       console.error(errorMsg)
       throw new EncryptionError(`Encryption key not configured for type: ${keyType}`)
     }
@@ -48,8 +48,8 @@ export function encryptPHI(plaintext: string, keyType: 'phi' | 'audit' = 'phi'):
     const result = iv.concat(encrypted.ciphertext)
     return 'cbc:' + result.toString(CryptoJS.enc.Base64)
   } catch (error) {
-    // HIPAA COMPLIANCE: Never fallback to Base64 encoding - throw error instead
-    console.error('🚨 HIPAA VIOLATION: Encryption failed:', error instanceof Error ? error.message : 'Unknown error')
+    // COMPLIANCE: Never fallback to Base64 encoding - throw error instead
+    console.error('🚨 VIOLATION: Encryption failed:', error instanceof Error ? error.message : 'Unknown error')
     throw new EncryptionError(`Encryption failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
 }

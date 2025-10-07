@@ -163,7 +163,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, user }) => {
             <NavLink to="/dashboard" className="hover:opacity-80 transition-opacity">
               <img
                 src={logos.headerLogo || "https://nexasync.ca/images/Logo.png"}
-                alt="MedEx Logo"
+                alt="ARTLEE Logo"
                 className="h-8 sm:h-10 w-auto object-contain cursor-pointer"
                 referrerPolicy="no-referrer"
               />

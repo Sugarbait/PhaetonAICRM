@@ -186,7 +186,7 @@ class AutoInvoiceService {
       const result = await stripeInvoiceService.generateMonthlyInvoice({
         email: customerEmail,
         name: customerName,
-        description: 'CareXPS Healthcare CRM Customer (Auto-Generated)'
+        description: 'CareXPS Business Platform CRM Customer (Auto-Generated)'
       })
 
       if (result.success) {

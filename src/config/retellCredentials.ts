@@ -16,7 +16,7 @@ export interface RetellCredentials {
 /**
  * Production Retell AI Credentials - HARDCODED FOR BULLETPROOF PERSISTENCE
  *
- * MedEx Healthcare CRM - Replace these placeholder values with your actual Retell AI credentials
+ * ARTLEE Business Platform CRM - Replace these placeholder values with your actual Retell AI credentials
  *
  * These values are permanently embedded and will ALWAYS be available regardless of:
  * - localStorage clearing
@@ -25,25 +25,25 @@ export interface RetellCredentials {
  * - Cloud service outages
  * - Browser session resets
  *
- * TODO: Replace with actual MedEx Retell AI credentials:
+ * TODO: Replace with actual ARTLEE Retell AI credentials:
  * 1. API Key (format: key_xxxxxxxxxxxxxxxxxxxxx)
  * 2. Call Agent ID (format: agent_xxxxxxxxxxxxxxxxxxxxx)
  * 3. SMS Agent ID (format: agent_xxxxxxxxxxxxxxxxxxxxx)
  */
 /**
- * MedEx Healthcare CRM - Production Credentials
+ * ARTLEE Business Platform CRM - Production Credentials
  * Last Updated: 2025-10-03
  *
- * IMPORTANT: These are YOUR MedEx credentials that will be used across all devices
+ * IMPORTANT: These are YOUR ARTLEE credentials that will be used across all devices
  */
 export const HARDCODED_RETELL_CREDENTIALS: RetellCredentials = {
-  // Retell AI API Key - MedEx Healthcare CRM
+  // Retell AI API Key - ARTLEE Business Platform CRM
   apiKey: 'key_c42b5524eea5e4430641a9f26b43',
 
-  // Call Agent ID for voice interactions - MedEx Voice Agent
+  // Call Agent ID for voice interactions - ARTLEE Voice Agent
   callAgentId: 'agent_59bb4cd5200c7e77584ac36d53',
 
-  // SMS/Chat Agent ID for text-based interactions - MedEx Chat Agent
+  // SMS/Chat Agent ID for text-based interactions - ARTLEE Chat Agent
   smsAgentId: 'agent_840d4bfc9d4dac35a6d64546ad'
 }
 

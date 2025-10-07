@@ -653,6 +653,12 @@ export const SMSPage: React.FC<SMSPageProps> = ({ user }) => {
 
   // Fetch when page changes (no debouncing for pagination)
   useEffect(() => {
+    // 🔴 CRITICAL: Don't fetch if no SMS Agent ID
+    const smsAgentId = retellService.getSmsAgentId()
+    if (!smsAgentId) {
+      console.log('⚠️ [SMS] Skipping fetch - no SMS Agent ID configured')
+      return
+    }
     fetchChatsOptimized()
   }, [currentPage])
 
@@ -1292,6 +1298,13 @@ export const SMSPage: React.FC<SMSPageProps> = ({ user }) => {
       safeLog('📅 Initial mount, preserving cached segment data')
     }
 
+    // 🔴 CRITICAL: Don't fetch if no SMS Agent ID
+    const smsAgentId = retellService.getSmsAgentId()
+    if (!smsAgentId) {
+      console.log('⚠️ [SMS] Skipping fetch - no SMS Agent ID configured')
+      return
+    }
+
     // Call fetchChatsOptimized directly for immediate execution, especially important for initial load
     console.log('🚀 [SMSPage] Triggering immediate data fetch from useEffect...')
     fetchChatsOptimized()
@@ -1305,6 +1318,12 @@ export const SMSPage: React.FC<SMSPageProps> = ({ user }) => {
 
     // Simple timeout to ensure services are initialized
     const timeoutId = setTimeout(() => {
+      // 🔴 CRITICAL: Don't fetch if no SMS Agent ID
+      const smsAgentId = retellService.getSmsAgentId()
+      if (!smsAgentId) {
+        console.log('⚠️ [SMS] Backup mount - Skipping fetch - no SMS Agent ID configured')
+        return
+      }
       console.log('🚀 [SMS DEBUG] Backup mount effect - calling fetchChatsOptimized after timeout...')
       fetchChatsOptimized()
     }, 100)
@@ -1328,6 +1347,12 @@ export const SMSPage: React.FC<SMSPageProps> = ({ user }) => {
     enabled: true,
     interval: 60000, // 1 minute
     onRefresh: useCallback(() => {
+      // 🔴 CRITICAL: Don't fetch if no SMS Agent ID
+      const smsAgentId = retellService.getSmsAgentId()
+      if (!smsAgentId) {
+        console.log('⚠️ [SMS] Auto-refresh - Skipping fetch - no SMS Agent ID configured')
+        return
+      }
       fetchChatsOptimized()
       safeLog('SMS page refreshed at:', new Date().toLocaleTimeString())
     }, [fetchChatsOptimized])

@@ -863,31 +863,42 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user }) => {
         has_more: false
       }
 
-      // Fetch real SMS chats from Retell AI
-      console.log('💬 PRODUCTION MODE: Fetching chats from Retell AI...')
-      await chatService.syncWithRetellService()
+      // Check if SMS Agent ID is configured before fetching SMS data
+      const smsAgentId = retellService.getSmsAgentId()
+      const hasSmsAgentId = !!smsAgentId
 
-      const allChatsResponse = await chatService.getChatHistory({
-        limit: 500
-      })
-      console.log(`💬 PRODUCTION MODE: Total chats fetched: ${allChatsResponse.chats.length}`)
-      console.log('💬 Sample chat data:', allChatsResponse.chats.length > 0 ? allChatsResponse.chats[0] : 'No chats')
+      let filteredChats: any[] = []
 
-      // Filter chats by date range
-      const filteredChats = allChatsResponse.chats.filter(chat => {
-        let chatTimeMs: number
-        const timestampStr = chat.start_timestamp.toString()
+      if (hasSmsAgentId) {
+        // Fetch real SMS chats from Retell AI
+        console.log('💬 PRODUCTION MODE: Fetching chats from Retell AI...')
+        await chatService.syncWithRetellService()
 
-        if (timestampStr.length <= 10) {
-          chatTimeMs = chat.start_timestamp * 1000
-        } else {
-          chatTimeMs = chat.start_timestamp
-        }
+        const allChatsResponse = await chatService.getChatHistory({
+          limit: 500
+        })
+        console.log(`💬 PRODUCTION MODE: Total chats fetched: ${allChatsResponse.chats.length}`)
+        console.log('💬 Sample chat data:', allChatsResponse.chats.length > 0 ? allChatsResponse.chats[0] : 'No chats')
 
-        return chatTimeMs >= startMs && chatTimeMs <= endMs
-      })
+        // Filter chats by date range
+        filteredChats = allChatsResponse.chats.filter(chat => {
+          let chatTimeMs: number
+          const timestampStr = chat.start_timestamp.toString()
 
-      console.log(`💬 Filtered chats for ${selectedDateRange}: ${filteredChats.length} out of ${allChatsResponse.chats.length}`)
+          if (timestampStr.length <= 10) {
+            chatTimeMs = chat.start_timestamp * 1000
+          } else {
+            chatTimeMs = chat.start_timestamp
+          }
+
+          return chatTimeMs >= startMs && chatTimeMs <= endMs
+        })
+      } else {
+        console.log('⚠️ No SMS Agent ID configured - skipping SMS data fetch')
+        filteredChats = []
+      }
+
+      console.log(`💬 Filtered chats for ${selectedDateRange}: ${filteredChats.length}`)
 
       chatsResponse = {
         chats: filteredChats,
@@ -931,18 +942,19 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user }) => {
       // Segment loading is now handled by auto-loading useEffect
       // Manual call removed - auto-loading triggers after allFilteredChats updates
 
-      // Load SMS costs for visible chats using smsCostManager (exact copy from SMS page)
-      if (filteredChats.length > 0) {
+      // Load SMS costs for visible chats using smsCostManager (only if SMS Agent ID is configured)
+      if (hasSmsAgentId && filteredChats.length > 0) {
         console.log(`🔍 Dashboard: Loading SMS costs for ${filteredChats.length} filtered chats`, {
           dateRange: selectedDateRange,
           chatIds: filteredChats.slice(0, 5).map(c => c.chat_id),
           totalChats: filteredChats.length
         })
         smsCostManager.loadCostsForChats(filteredChats)
+      } else if (!hasSmsAgentId) {
+        console.log('⚠️ Dashboard: No SMS Agent ID configured - SMS costs will be $0')
       } else {
         console.log('⚠️ Dashboard: No filtered chats to load costs for - SMS costs will be $0', {
           dateRange: selectedDateRange,
-          allChatsCount: allChatsResponse.chats.length,
           selectedRange: selectedDateRange,
           startMs,
           endMs

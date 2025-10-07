@@ -1037,10 +1037,8 @@ export const SMSPage: React.FC<SMSPageProps> = ({ user }) => {
       return
     }
 
-    console.log('🟡 [SMS DEBUG] Setting loading true and clearing error...')
-    setLoading(true)
-    setError('')
-
+    // 🔴 CRITICAL FIX: Check SMS Agent ID BEFORE setting loading state
+    // This prevents infinite loading spinner when no SMS Agent ID is configured
     try {
       // WORKING CALLS PAGE PATTERN: Simple and reliable
       console.log('🔄 [SMSPage] Using PROVEN Calls page pattern...')
@@ -1071,6 +1069,44 @@ export const SMSPage: React.FC<SMSPageProps> = ({ user }) => {
         setLoading(false)
         return
       }
+
+      // 🔴 CRITICAL: Check if SMS Agent ID is configured BEFORE setting loading state
+      // This prevents the infinite loading spinner issue
+      const smsAgentIdCheck = retellService.getSmsAgentId()
+      const hasSmsAgentId = !!smsAgentIdCheck
+
+      if (!hasSmsAgentId) {
+        console.log('⚠️ [SMS DEBUG] No SMS Agent ID configured - returning empty data')
+        // Return all 0's - NO ghost data, NO mock data, NO past Agent IDs
+        setChats([])
+        setAllFilteredChats([])
+        setTotalChatsCount(0)
+        setTotalSegments(0)
+        setMetrics({
+          totalChats: 0,
+          activeChats: 0,
+          completedChats: 0,
+          errorChats: 0,
+          avgDuration: '0s',
+          totalCost: 0,
+          avgCostPerChat: 0,
+          successRate: 0,
+          positiveSentimentCount: 0,
+          totalMessages: 0,
+          avgMessagesPerChat: 0,
+          totalSMSSegments: 0,
+          peakHour: 'N/A',
+          peakHourCount: 0
+        })
+        setLoading(false)
+        setError('No SMS Agent ID configured. Add your SMS Agent ID in Settings → API Configuration to see SMS data.')
+        return
+      }
+
+      // Only set loading state AFTER we've confirmed SMS Agent ID exists
+      console.log('🟡 [SMS DEBUG] SMS Agent ID found - setting loading true and clearing error...')
+      setLoading(true)
+      setError('')
 
       // Sync chat service with retell service
       console.log('🟡 [SMS DEBUG] Syncing chat service with retell service...')

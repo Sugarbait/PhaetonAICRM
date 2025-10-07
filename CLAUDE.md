@@ -1645,3 +1645,87 @@ Any modification to these systems requires:
 4. Documentation of all changes
 
 **These systems are working perfectly in production and must remain unchanged.**
+
+---
+
+## **🔄 CRITICAL FIXES - October 7, 2025 Session**
+
+### **1. SMS Page Infinite Loading Fix (CRITICAL)**
+
+**Issue:** SMS page showed infinite loading spinner when no SMS Agent ID was configured, instead of displaying all zeros.
+
+**Root Cause:** The `fetchChatsOptimized()` function set `loading = true` at the beginning, then checked for SMS Agent ID presence. Multiple useEffect hooks kept calling the function repeatedly, creating a race condition where loading would flip between true/false infinitely.
+
+**Fix Applied:**
+- **File:** `src/pages/SMSPage.tsx` - Lines 1040-1109
+- **Change:** Moved API Key and SMS Agent ID validation checks to happen **BEFORE** setting `loading = true`
+- **Impact:** Page now immediately displays all zeros with error message when no SMS Agent ID configured, without any loading state
+
+**Code Pattern:**
+```typescript
+// ✅ CORRECT: Check credentials BEFORE setting loading state
+const smsAgentIdCheck = retellService.getSmsAgentId()
+const hasSmsAgentId = !!smsAgentIdCheck
+
+if (!hasSmsAgentId) {
+  // Set all metrics to 0, display error, return early
+  // NEVER set loading = true
+  setLoading(false)
+  setError('No SMS Agent ID configured...')
+  return
+}
+
+// Only set loading = true if we have valid credentials
+setLoading(true)
+```
+
+**Expected Behavior:**
+- With SMS Agent ID configured: Normal data loading with spinner
+- Without SMS Agent ID: Immediate display of all $0.00 values and error message
+- No infinite loading loops or race conditions
+
+**Status:** ✅ LOCKED - Fix verified and deployed to production
+
+### **2. SMS Page Metrics Interface Fix**
+
+**Issue:** SMS page crashed with `Cannot read properties of undefined (reading 'toFixed')` error when no SMS Agent ID configured.
+
+**Root Cause:** The metrics object in early return (line 1086) used incorrect property names that didn't match the `ChatMetrics` interface:
+- Used `avgCostPerMessage` instead of `avgCostPerChat`
+- Used `totalSMSCost` instead of `totalCost`
+- Missing properties: `avgDuration`, `positiveSentimentCount`, `peakHour`, `peakHourCount`
+
+**Fix Applied:**
+- **File:** `src/pages/SMSPage.tsx` - Lines 1086-1101
+- **Change:** Updated metrics object to include all 14 required properties with correct names matching the `ChatMetrics` interface
+
+**ChatMetrics Interface (Complete):**
+```typescript
+interface ChatMetrics {
+  totalChats: number
+  activeChats: number
+  completedChats: number
+  errorChats: number
+  avgDuration: string
+  totalCost: number
+  avgCostPerChat: number
+  successRate: number
+  positiveSentimentCount: number
+  totalMessages: number
+  avgMessagesPerChat: number
+  totalSMSSegments: number
+  peakHour: string
+  peakHourCount: number
+}
+```
+
+**Status:** ✅ LOCKED - All metrics properties now properly initialized
+
+### **Lessons Learned:**
+
+1. **Validation Order Matters**: Always check credentials/configuration BEFORE setting loading states to avoid race conditions
+2. **Interface Completeness**: When setting state objects, ensure ALL interface properties are included with correct names
+3. **Early Returns**: Use early returns for invalid states to prevent unnecessary processing and side effects
+4. **Type Safety**: TypeScript interfaces prevent many bugs - ensure full compliance in all setState calls
+
+**These fixes are now part of the production SMS page and MUST NOT be modified.**

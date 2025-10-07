@@ -244,7 +244,10 @@ class RetellService {
       // Apply loaded credentials
       this.apiKey = credentials.apiKey || this.apiKey
       this.callAgentId = credentials.callAgentId || this.callAgentId
-      this.smsAgentId = credentials.smsAgentId || this.smsAgentId
+      // Allow empty string to clear SMS Agent ID (don't use || operator)
+      if (credentials.smsAgentId !== undefined) {
+        this.smsAgentId = credentials.smsAgentId
+      }
 
       // Create memory backup for future fallback
       this.createMemoryBackup()

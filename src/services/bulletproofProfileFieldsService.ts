@@ -8,6 +8,7 @@
 import { supabase, supabaseConfig } from '@/config/supabase'
 import { ServiceResponse } from '@/types/supabase'
 import { auditLogger } from './auditLogger'
+import { getCurrentTenantId } from '@/config/tenantConfig'
 
 export interface ProfileFields {
   department: string
@@ -406,6 +407,7 @@ export class BulletproofProfileFieldsService {
         phone: fields.phone || '',
         bio: fields.bio || '',
         location: fields.location || '',
+        tenant_id: getCurrentTenantId(),
         updated_at: new Date().toISOString()
       }
 
@@ -443,6 +445,7 @@ export class BulletproofProfileFieldsService {
         .from('user_profiles')
         .select('*')
         .eq('user_id', userId)
+        .eq('tenant_id', getCurrentTenantId())
         .single()
 
       if (error) {
@@ -500,6 +503,7 @@ export class BulletproofProfileFieldsService {
         .from('users')
         .select('id, name')
         .eq('email', email)
+        .eq('tenant_id', getCurrentTenantId())
         .single()
 
       if (userError || !userData) {
@@ -511,6 +515,7 @@ export class BulletproofProfileFieldsService {
         .from('user_profiles')
         .select('*')
         .eq('user_id', userData.id)
+        .eq('tenant_id', getCurrentTenantId())
         .single()
 
       if (profileError || !profileData) {

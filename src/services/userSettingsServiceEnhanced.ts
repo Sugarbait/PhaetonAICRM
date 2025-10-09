@@ -2,6 +2,7 @@ import { supabase, supabaseAdmin } from '@/config/supabase'
 import { UserSettings, ServiceResponse, RealtimePayload, Database } from '@/types/supabase'
 import { encryptPHI, decryptPHI } from '@/utils/encryption'
 import { v4 as uuidv4 } from 'uuid'
+import { getCurrentTenantId } from '@/config/tenantConfig'
 
 type UserSettingsRow = Database['public']['Tables']['user_settings']['Row']
 
@@ -91,6 +92,7 @@ export class EnhancedUserSettingsService {
         const { data } = await supabase
           .from('users')
           .select('id')
+          .eq('tenant_id', getCurrentTenantId())
           .eq('azure_ad_id', user.id)
           .eq('is_active', true)
           .single()
@@ -106,7 +108,9 @@ export class EnhancedUserSettingsService {
       }
 
       // Method 3: Try to get from secure storage
-      const secureSession = localStorage.getItem('carexps_session')
+      const { getCurrentTenantId } = require('@/config/tenantConfig')
+      const tenantId = getCurrentTenantId()
+      const secureSession = localStorage.getItem(`${tenantId}_session`)
       if (secureSession) {
         const session = JSON.parse(secureSession)
         return session.userId || null
@@ -202,6 +206,7 @@ export class EnhancedUserSettingsService {
           const { data, error } = await supabase
             .from('user_settings')
             .select('*')
+            .eq('tenant_id', getCurrentTenantId())
             .eq('user_id', userId)
             .single()
 
@@ -287,6 +292,7 @@ export class EnhancedUserSettingsService {
             .from('user_settings')
             .upsert({
               user_id: userId,
+              tenant_id: getCurrentTenantId(),
               ...settingsToSave,
               updated_at: new Date().toISOString(),
               last_synced: new Date().toISOString()
@@ -390,7 +396,10 @@ export class EnhancedUserSettingsService {
         try {
           const { data, error } = await supabase
             .from('user_settings')
-            .upsert(defaultSettings, {
+            .upsert({
+              ...defaultSettings,
+              tenant_id: getCurrentTenantId()
+            }, {
               onConflict: 'user_id',
               ignoreDuplicates: false
             })
@@ -474,6 +483,7 @@ export class EnhancedUserSettingsService {
       await supabase
         .from('user_settings')
         .update({ last_synced: new Date().toISOString() })
+        .eq('tenant_id', getCurrentTenantId())
         .eq('user_id', userId)
 
       // Notify all listeners

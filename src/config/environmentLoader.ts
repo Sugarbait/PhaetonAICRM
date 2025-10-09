@@ -81,8 +81,17 @@ function loadEnvironmentVariables(): EnvironmentConfig {
     // Window env not available, continue
   }
 
-  // Method 4: Runtime configuration API (for Azure Static Web Apps)
-  // This would be loaded asynchronously, but we'll handle that separately
+  // Method 4: Hostinger runtime configuration (window.RUNTIME_CONFIG)
+  // This is loaded from /runtime-config.js in index.html
+  try {
+    const runtimeConfig = (window as any).RUNTIME_CONFIG
+    if (runtimeConfig) {
+      config.supabaseUrl = config.supabaseUrl || runtimeConfig.SUPABASE_URL || null
+      config.supabaseAnonKey = config.supabaseAnonKey || runtimeConfig.SUPABASE_ANON_KEY || null
+    }
+  } catch (error) {
+    // Runtime config not available, continue
+  }
 
   // Method 5: Fallback to environment-specific defaults
   const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -111,14 +120,16 @@ const isAzureProduction = window.location.hostname.includes('azurestaticapps.net
                          window.location.hostname.includes('nexasync.ca')
 
 if (isDev || isAzureProduction || !sessionStorage.getItem('env-config-logged')) {
+  const hasRuntimeConfig = !!(window as any).RUNTIME_CONFIG
   console.log('🔧 Environment Configuration Loaded:', {
     supabaseUrl: environmentConfig.supabaseUrl ? '✅ configured' : '❌ missing',
     supabaseAnonKey: environmentConfig.supabaseAnonKey ? '✅ configured' : '❌ missing',
     azureClientId: environmentConfig.azureClientId ? '✅ configured' : '❌ missing',
     azureTenantId: environmentConfig.azureTenantId ? '✅ configured' : '❌ missing',
     hostname: window.location.hostname,
-    method: 'environmentLoader',
-    usingFallback: (isDev || isAzureProduction) ? 'yes - hardcoded credentials' : 'no'
+    method: hasRuntimeConfig ? 'runtime-config.js (Hostinger)' : 'environmentLoader',
+    usingFallback: (isDev || isAzureProduction) ? 'yes - hardcoded credentials' : 'no',
+    usingRuntimeConfig: hasRuntimeConfig ? 'yes - from /runtime-config.js' : 'no'
   })
   if (!isDev) {
     sessionStorage.setItem('env-config-logged', 'true')

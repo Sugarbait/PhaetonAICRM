@@ -3,6 +3,7 @@ import { Database, ServiceResponse } from '@/types/supabase'
 import { encryptionService } from './encryption'
 import { auditLogger } from './auditLogger'
 import { apiKeyFallbackService } from './apiKeyFallbackService'
+import { getCurrentTenantId } from '@/config/tenantConfig'
 
 type DatabaseUser = Database['public']['Tables']['users']['Row']
 type DatabaseUserProfile = Database['public']['Tables']['user_profiles']['Row']
@@ -132,6 +133,7 @@ export class EnhancedUserService {
       .from('users')
       .select('*')
       .eq('id', userId)
+      .eq('tenant_id', getCurrentTenantId())
       .single()
 
     if (userError || !userData) {
@@ -143,6 +145,7 @@ export class EnhancedUserService {
       .from('user_profiles')
       .select('*')
       .eq('user_id', userId)
+      .eq('tenant_id', getCurrentTenantId())
       .single()
 
     // Get settings data (optional)
@@ -150,6 +153,7 @@ export class EnhancedUserService {
       .from('user_settings')
       .select('*')
       .eq('user_id', userId)
+      .eq('tenant_id', getCurrentTenantId())
       .single()
 
     return {
@@ -214,6 +218,7 @@ export class EnhancedUserService {
             updated_at: new Date().toISOString()
           })
           .eq('id', userId)
+          .eq('tenant_id', getCurrentTenantId())
 
         if (userError) throw userError
       }
@@ -243,6 +248,7 @@ export class EnhancedUserService {
           .from('user_profiles')
           .upsert({
             user_id: userId,
+            tenant_id: getCurrentTenantId(),
             ...profileData,
             ...potentiallyMissingFields
           })
@@ -293,6 +299,7 @@ export class EnhancedUserService {
               .from('user_profiles')
               .upsert({
                 user_id: userId,
+                tenant_id: getCurrentTenantId(),
                 ...safeProfileData
               })
 
@@ -325,7 +332,10 @@ export class EnhancedUserService {
 
             const { error: settingsError } = await supabase
               .from('user_settings')
-              .upsert(settingsFallback)
+              .upsert({
+                ...settingsFallback,
+                tenant_id: getCurrentTenantId()
+              })
 
             if (settingsError) {
               console.warn('Could not store fallback data in user_settings:', settingsError)
@@ -352,6 +362,7 @@ export class EnhancedUserService {
           .from('user_settings')
           .upsert({
             user_id: userId,
+            tenant_id: getCurrentTenantId(),
             ...settingsData
           })
 
@@ -619,6 +630,7 @@ export class EnhancedUserService {
           role: userData.role || 'staff',
           is_enabled: false, // New users disabled by default
           profile_status: 'disabled',
+          tenant_id: getCurrentTenantId(),
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
@@ -637,6 +649,7 @@ export class EnhancedUserService {
           phone: userData.phone,
           role: userData.role || 'staff',
           is_active: false, // New profiles inactive by default
+          tenant_id: getCurrentTenantId(),
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
@@ -654,6 +667,7 @@ export class EnhancedUserService {
           profile_last_name: userData.last_name,
           settings_version: 1,
           sync_status: 'synced',
+          tenant_id: getCurrentTenantId(),
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
@@ -688,6 +702,7 @@ export class EnhancedUserService {
         .from('user_settings')
         .select('settings_version')
         .eq('user_id', userId)
+        .eq('tenant_id', getCurrentTenantId())
         .single()
 
       return (data?.settings_version || 0) + 1

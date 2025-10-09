@@ -1067,7 +1067,7 @@ export const SMSPage: React.FC<SMSPageProps> = ({ user }) => {
       // Check if Retell API has at minimum an API key configured - EXACT CALLS PAGE PATTERN
       const hasApiKey = !!retellService.getApiKey()
       console.log('🟡 [SMS DEBUG] API key check - hasApiKey:', hasApiKey)
-      console.log('🟡 [SMS DEBUG] retellService.getApiKey():', retellService.getApiKey())
+      // Security: Do not log API key value
 
       if (!hasApiKey) {
         console.log('🔴 [SMS DEBUG] Early exit: No API key found')
@@ -2313,11 +2313,8 @@ export const SMSPage: React.FC<SMSPageProps> = ({ user }) => {
                     }
                     localStorage.setItem(`settings_${userId}`, JSON.stringify(hardwiredApiSettings))
 
-                    console.log('✅ [SMSPage] HARDWIRED credentials forcefully reinitialized:', {
-                      apiKeyPrefix: hardwiredCreds.apiKey.substring(0, 15) + '...',
-                      callAgentId: hardwiredCreds.callAgentId,
-                      smsAgentId: hardwiredCreds.smsAgentId
-                    })
+                    console.log('✅ [SMSPage] HARDWIRED credentials forcefully reinitialized')
+                    // Security: Do not log API keys or Agent IDs
 
                     safeLog('✅ HARDWIRED API keys reinitialized')
                     setError('')

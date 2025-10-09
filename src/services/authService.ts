@@ -4,6 +4,7 @@ import { secureLogger } from '@/services/secureLogger'
 import FreshMfaService from '@/services/freshMfaService'
 import { secureStorage } from '@/services/secureStorage'
 import { encryptionService } from '@/services/encryption'
+import { getCurrentTenantId } from '@/config/tenantConfig'
 
 const logger = secureLogger.component('AuthService')
 
@@ -13,10 +14,12 @@ class AuthService {
       logger.debug('Fetching complete user profile with cross-device sync', accountId)
 
       // First, try to get user from database
+      const currentTenantId = getCurrentTenantId()
       const { data: user, error } = await supabase
         .from('users')
         .select('*')
         .eq('azure_ad_id', accountId)
+        .eq('tenant_id', currentTenantId)
         .single()
 
       if (error && error.code !== 'PGRST116') {
@@ -76,6 +79,7 @@ class AuthService {
                 email: userProfile.email,
                 name: userProfile.name,
                 role: userProfile.role,
+                tenant_id: currentTenantId,
                 last_login: new Date().toISOString(),
                 updated_at: new Date().toISOString()
               })
@@ -120,6 +124,7 @@ class AuthService {
             permissions: [
               { resource: '*', actions: ['*'] } // Full permissions for super users
             ],
+            tenant_id: currentTenantId,
             last_login: new Date().toISOString(), // Use correct database field name
             mfaEnabled: false, // Start with MFA disabled, user can enable later
             isActive: true,
@@ -148,6 +153,7 @@ class AuthService {
           .from('users')
           .update({ last_login: new Date().toISOString() })
           .eq('azure_ad_id', accountId)
+          .eq('tenant_id', currentTenantId)
 
         userProfile = user as User
       }
@@ -157,10 +163,11 @@ class AuthService {
         logger.debug('Loading user settings and API keys for cross-device sync', userProfile.id)
 
         // Get user settings from Supabase (includes API keys and preferences)
-        const { data: userSettings, error: settingsError } = await supabase
+        const { data: userSettings, error: settingsError} = await supabase
           .from('user_settings')
           .select('*')
           .eq('user_id', userProfile.id)
+          .eq('tenant_id', currentTenantId)
           .single()
 
         if (!settingsError && userSettings) {
@@ -292,11 +299,13 @@ class AuthService {
       // Store challenge in database with expiration
       const expiresAt = new Date(Date.now() + 5 * 60 * 1000) // 5 minutes
 
+      const currentTenantId = getCurrentTenantId()
       await supabase
         .from('mfa_challenges')
         .insert({
           user_id: userId,
           challenge_token: challengeToken,
+          tenant_id: currentTenantId,
           expires_at: expiresAt.toISOString(),
           created_at: new Date().toISOString()
         })
@@ -322,10 +331,12 @@ class AuthService {
       logger.debug('Verifying MFA code')
 
       // Get challenge from database
+      const currentTenantId = getCurrentTenantId()
       const { data: challengeData, error } = await supabase
         .from('mfa_challenges')
         .select('*')
         .eq('challenge_token', challenge)
+        .eq('tenant_id', currentTenantId)
         .eq('used', false)
         .single()
 
@@ -349,6 +360,7 @@ class AuthService {
           .from('mfa_challenges')
           .update({ used: true, used_at: new Date().toISOString() })
           .eq('challenge_token', challenge)
+          .eq('tenant_id', currentTenantId)
 
         logger.info('MFA verification successful', challengeData.user_id)
         return true
@@ -418,6 +430,7 @@ class AuthService {
       await secureStorage.setSessionData('carexps_session', sessionInfo)
 
       // Store session in database for audit purposes with encrypted tokens
+      const currentTenantId = getCurrentTenantId()
       const encryptedRefreshToken = await encryptionService.encryptString(refreshToken)
 
       await supabase
@@ -425,6 +438,7 @@ class AuthService {
         .insert({
           session_id: sessionId,
           user_id: userId,
+          tenant_id: currentTenantId,
           created_at: now.toISOString(),
           expires_at: expiresAt.toISOString(),
           refresh_expires_at: refreshExpiresAt.toISOString(),
@@ -477,6 +491,7 @@ class AuthService {
       await secureStorage.setSessionData('carexps_session', refreshedSession)
 
       // Invalidate old session and create new one in database
+      const currentTenantId = getCurrentTenantId()
       await supabase
         .from('user_sessions')
         .update({
@@ -484,6 +499,7 @@ class AuthService {
           invalidated_at: new Date().toISOString()
         })
         .eq('session_id', currentSession.sessionId)
+        .eq('tenant_id', currentTenantId)
 
       // Create new session record with new encrypted refresh token
       const encryptedRefreshToken = await encryptionService.encryptString(newRefreshToken)
@@ -493,6 +509,7 @@ class AuthService {
         .insert({
           session_id: newSessionId,
           user_id: currentSession.userId,
+          tenant_id: currentTenantId,
           created_at: new Date().toISOString(),
           expires_at: newExpiresAt.toISOString(),
           refresh_expires_at: newRefreshExpiresAt.toISOString(),
@@ -522,6 +539,7 @@ class AuthService {
       secureStorage.removeItem('carexps_session')
 
       // Mark as inactive in database
+      const currentTenantId = getCurrentTenantId()
       await supabase
         .from('user_sessions')
         .update({
@@ -529,6 +547,7 @@ class AuthService {
           invalidated_at: new Date().toISOString()
         })
         .eq('session_id', sessionId)
+        .eq('tenant_id', currentTenantId)
 
       logger.info('Session invalidated securely', undefined, sessionId)
 

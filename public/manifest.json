@@ -1,7 +1,7 @@
 {
-  "name": "MedEx Healthcare CRM",
-  "short_name": "MedEx",
-  "description": "HIPAA-compliant healthcare CRM",
+  "name": "ARTLEE Business CRM",
+  "short_name": "ARTLEE",
+  "description": "Business platform CRM",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -15,7 +15,7 @@
       "purpose": "any maskable"
     }
   ],
-  "categories": ["healthcare", "medical", "business"],
+  "categories": ["business", "productivity", "crm"],
   "lang": "en-US",
   "scope": "/",
   "related_applications": [],

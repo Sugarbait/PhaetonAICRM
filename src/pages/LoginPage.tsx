@@ -10,6 +10,7 @@ import { userSettingsService } from '@/services/userSettingsService'
 import { auditLogger, AuditAction, ResourceType, AuditOutcome } from '@/services/auditLogger'
 import { LoginAttemptTracker } from '@/utils/loginAttemptTracker'
 import { MfaLockoutService } from '@/services/mfaLockoutService'
+import { generalToast } from '@/services/generalToastService'
 
 interface LoginPageProps {
   onLogin: () => void
@@ -32,6 +33,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
 
   // Registration modal state
   const [showRegistration, setShowRegistration] = useState(false)
+  const [isFirstUserSystem, setIsFirstUserSystem] = useState(false)
 
   // Function to check lockout status for known users
   const checkLockoutStatus = async (emailToCheck: string) => {
@@ -102,10 +104,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
           // Clear any global lockout data
           LoginAttemptTracker.emergencyClearAll()
 
-          alert('Emergency unlock completed - all lockouts cleared')
+          generalToast.success('Emergency unlock completed - all lockouts cleared', 'Emergency Unlock')
         } catch (error) {
           console.error('Emergency unlock failed:', error)
-          alert('Emergency unlock failed - check console for details')
+          generalToast.error('Emergency unlock failed - check console for details', 'Emergency Unlock Failed')
         }
       } else if (e.ctrlKey && e.shiftKey && e.key === 'S') {
         e.preventDefault()
@@ -114,13 +116,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         try {
           const result = await setupAllUserCredentials()
           if (result.success) {
-            alert('All user credentials have been set up successfully!\n\nCheck console for login details.')
+            generalToast.success('All user credentials have been set up successfully!\n\nCheck console for login details.', 'Credential Setup Complete')
           } else {
-            alert(`Credential setup failed: ${result.error}`)
+            generalToast.error(`Credential setup failed: ${result.error}`, 'Credential Setup Failed')
           }
         } catch (error: any) {
           console.error('Credential setup failed:', error)
-          alert(`Credential setup failed: ${error.message}`)
+          generalToast.error(`Credential setup failed: ${error.message}`, 'Credential Setup Failed')
         }
       } else if (e.ctrlKey && e.shiftKey && e.key === 'T') {
         e.preventDefault()
@@ -128,10 +130,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
 
         try {
           await testAllUserAuthentication()
-          alert('Authentication test completed - check console for results')
+          generalToast.success('Authentication test completed - check console for results', 'Authentication Test Complete')
         } catch (error: any) {
           console.error('Authentication test failed:', error)
-          alert(`Authentication test failed: ${error.message}`)
+          generalToast.error(`Authentication test failed: ${error.message}`, 'Authentication Test Failed')
         }
       }
     }
@@ -140,76 +142,26 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     return () => window.removeEventListener('keydown', handleKeyPress)
   }, [])
 
-  // Create Guest and Pierre users on component mount if they don't exist
+  // Check if this is a first user system
   React.useEffect(() => {
-    const createUsersIfNeeded = async () => {
+    const checkFirstUserStatus = async () => {
       try {
-        // First, clean up any existing duplicate Guest users
-        console.log('Cleaning up duplicate system users...')
-        await cleanupDuplicateGuests()
-
-        // Then proceed with normal user checking/creation
-        // Check if system user has been explicitly deleted
-        const deletedUsers = localStorage.getItem('deletedUsers')
-        let deletedUserIds = []
-        if (deletedUsers) {
-          try {
-            deletedUserIds = JSON.parse(deletedUsers)
-          } catch (parseError) {
-            console.warn('Failed to parse deleted users list:', parseError)
-          }
-        }
-
-        // Check if system user is in the deleted list
-        const isGuestDeleted = deletedUserIds.some((id: string) =>
-          id.includes('guest') ||
-          id.toLowerCase().includes('guest') ||
-          id === 'guest-user-123' // Standard system user ID if it exists
-        )
-
-        // Only create/fix system user if it hasn't been explicitly deleted
-        if (!isGuestDeleted) {
-          // Check and create/fix system user
-          let guestResponse = await userProfileService.getUserByEmail('guest@email.com')
-          if (!guestResponse.data) {
-            // Try the old format as well
-            guestResponse = await userProfileService.getUserByEmail('Guest@email.com')
-          }
-
-          if (!guestResponse.data) {
-            console.log('Creating system user...')
-            await createGuestUser()
-            console.log('System user created successfully')
-          } else {
-            // System user exists, ensure password is set correctly
-            console.log('System user already exists, updating credentials...')
-            const userId = guestResponse.data.id
-            await PasswordDebugger.setUserPassword(userId, 'guest@email.com', 'Guest1000!')
-            console.log('System user credentials updated successfully')
-          }
-        } else {
-          console.log('System user has been deleted by user - skipping recreation')
-        }
-
-        // Check and create admin super user
-        const adminResponse = await userProfileService.getUserByEmail('pierre@phaetonai.com')
-        if (!adminResponse.data) {
-          console.log('Creating admin super user...')
-          await createPierreUser()
-          console.log('Admin super user created successfully')
-        } else {
-          // Admin exists, ensure password is set correctly
-          console.log('Admin user already exists, updating credentials...')
-          const userId = adminResponse.data.id
-          await PasswordDebugger.setUserPassword(userId, 'pierre@phaetonai.com', '$Ineed1millie$_medex')
-          console.log('Admin user credentials updated successfully')
-        }
+        const existingUsersResponse = await userManagementService.loadSystemUsers()
+        const hasUsers = existingUsersResponse.status === 'success' &&
+                        existingUsersResponse.data &&
+                        existingUsersResponse.data.length > 0
+        setIsFirstUserSystem(!hasUsers)
+        console.log('First user check:', hasUsers ? 'Users exist' : 'No users - showing first user message')
       } catch (error) {
-        console.log('User check/creation error:', error)
+        console.log('Error checking first user status:', error)
+        setIsFirstUserSystem(false)
       }
     }
-    createUsersIfNeeded()
-  }, [])
+    checkFirstUserStatus()
+  }, [showRegistration]) // Re-check when registration modal closes
+
+  // ARTLEE: Production system - no auto-user creation
+  // Users must register through the registration form
 
   // Function to handle successful authentication - MANDATORY MFA CHECK WITH ZERO BYPASSES
   const handleAuthenticationSuccess = async () => {
@@ -1080,7 +1032,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
             <img
               src={logos.headerLogo}
               alt="ARTLEE Logo"
-              className="max-h-20 w-auto mx-auto mb-4 object-contain"
+              className="max-h-32 w-auto mx-auto mb-4 object-contain"
               referrerPolicy="no-referrer"
             />
           )}
@@ -1189,6 +1141,24 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
             </div>
           </form>
         </div>
+
+        {/* First User Message */}
+        {isFirstUserSystem && (
+          <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg p-4 mt-4">
+            <div className="flex items-start gap-3">
+              <ShieldCheckIcon className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
+                  Be the first to register
+                </p>
+                <p className="text-xs text-blue-800 dark:text-blue-200">
+                  Be the first to register and become the administrator of your organization.
+                  First user automatically gets Super User privileges.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="text-center mt-6">
           {/* Light mode footer logo */}

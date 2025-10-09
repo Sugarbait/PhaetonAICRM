@@ -1,5 +1,6 @@
 import { supabase } from '@/config/supabase'
 import { auditLogger } from './auditLogger'
+import { getCurrentTenantId } from '@/config/tenantConfig'
 
 /**
  * Service specifically for handling profile field persistence
@@ -77,9 +78,16 @@ export class ProfileFieldsPersistenceService {
       // Use UPSERT pattern instead of checking for existing record
       // This is more reliable and handles race conditions better
       console.log('🔧 PROFILE PERSISTENCE: Performing UPSERT operation')
-      const { data: upsertData, error: upsertError } = await supabase
+
+      // Add tenant_id to the upsert data
+      const upsertData = {
+        ...cleanProfileFields,
+        tenant_id: getCurrentTenantId()
+      }
+
+      const { data: upsertResult, error: upsertError } = await supabase
         .from('user_profiles')
-        .upsert(cleanProfileFields, {
+        .upsert(upsertData, {
           onConflict: 'user_id',
           ignoreDuplicates: false
         })
@@ -97,9 +105,16 @@ export class ProfileFieldsPersistenceService {
 
         // Try a direct INSERT as fallback for new profiles
         console.log('🔧 PROFILE PERSISTENCE: Trying direct INSERT as fallback')
-        const { data: insertData, error: insertError } = await supabase
+
+        // Add tenant_id to the insert data
+        const insertData = {
+          ...cleanProfileFields,
+          tenant_id: getCurrentTenantId()
+        }
+
+        const { data: insertResult, error: insertError } = await supabase
           .from('user_profiles')
-          .insert(cleanProfileFields)
+          .insert(insertData)
           .select()
 
         if (insertError) {
@@ -115,11 +130,11 @@ export class ProfileFieldsPersistenceService {
         }
 
         console.log('✅ PROFILE PERSISTENCE: Fallback INSERT successful')
-        return { status: 'success', data: insertData }
+        return { status: 'success', data: insertResult }
       }
 
       console.log('✅ PROFILE PERSISTENCE: UPSERT operation successful')
-      return { status: 'success', data: upsertData }
+      return { status: 'success', data: upsertResult }
 
     } catch (error: any) {
       console.error('🔧 PROFILE PERSISTENCE: Save failed:', error)
@@ -175,6 +190,7 @@ export class ProfileFieldsPersistenceService {
         .from('user_profiles')
         .select('display_name, department, phone, bio, location, updated_at')
         .eq('user_id', String(userId)) // Ensure user_id is a string
+        .eq('tenant_id', getCurrentTenantId())
         .single()
 
       if (error) {

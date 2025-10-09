@@ -165,7 +165,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, user }) => {
                 <img
                   src={logos.headerLogo}
                   alt="ARTLEE Logo"
-                  className="h-8 sm:h-10 w-auto object-contain cursor-pointer"
+                  className="h-16 sm:h-20 w-auto object-contain cursor-pointer"
                   referrerPolicy="no-referrer"
                 />
               </NavLink>

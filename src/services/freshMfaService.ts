@@ -12,6 +12,7 @@ import * as OTPAuth from 'otpauth'
 import QRCode from 'qrcode'
 import { supabase } from '../config/supabase'
 import { userIdTranslationService } from './userIdTranslationService'
+import { getCurrentTenantId } from '@/config/tenantConfig'
 
 export interface FreshMfaSetup {
   secret: string
@@ -310,14 +311,8 @@ class FreshMfaService {
    */
   static async disableMfa(userId: string): Promise<boolean> {
     try {
-      // CRITICAL SECURITY FIX: Always translate user ID to UUID for database operations
-      const uuid = await userIdTranslationService.stringToUuid(userId)
-      if (!uuid) {
-        console.error(`❌ Failed to translate user ID to UUID for MFA disable: ${userId}`)
-        return false
-      }
-
-      console.log(`🔄 MFA Disable: ${userId} → ${uuid}`)
+      // Use user ID directly - no translation needed for ARTLEE tenant
+      console.log(`🔄 MFA Disable: Using user_id directly: ${userId}`)
 
       const { error } = await supabase
         .from('user_settings')
@@ -327,14 +322,15 @@ class FreshMfaService {
           fresh_mfa_setup_completed: false,
           fresh_mfa_backup_codes: null
         })
-        .eq('user_id', uuid) // Use translated UUID, not string ID
+        .eq('user_id', userId) // Use actual user ID from users table
+        .eq('tenant_id', getCurrentTenantId())
 
       if (error) {
         console.error('❌ Error disabling MFA:', error)
         return false
       }
 
-      console.log(`✅ MFA disabled successfully for ${userId} (UUID: ${uuid})`)
+      console.log(`✅ MFA disabled successfully for ${userId}`)
       return true
     } catch (error) {
       console.error('❌ Error disabling MFA:', error)
@@ -395,23 +391,19 @@ class FreshMfaService {
    * Store fresh MFA data in database (clean storage)
    */
   private static async storeFreshMfaData(userId: string, data: any): Promise<void> {
-    // CRITICAL SECURITY FIX: Always translate user ID to UUID for database storage
-    const uuid = await userIdTranslationService.stringToUuid(userId)
-    if (!uuid) {
-      throw new Error(`Failed to translate user ID to UUID: ${userId}`)
-    }
-
-    console.log(`🔄 MFA Storage: ${userId} → ${uuid}`)
+    // Use user ID directly - no translation needed for ARTLEE tenant
+    // The user_id in users table is already in the correct format
+    console.log(`🔄 MFA Storage: Using user_id directly: ${userId}`)
 
     const { error } = await supabase
       .from('user_settings')
       .upsert({
-        user_id: uuid, // Use translated UUID, not string ID
+        user_id: userId, // Use actual user ID from users table
+        tenant_id: getCurrentTenantId(),
         fresh_mfa_secret: data.secret, // Store as plain text - no encryption corruption
         fresh_mfa_enabled: data.enabled,
         fresh_mfa_setup_completed: data.setupCompleted,
-        fresh_mfa_backup_codes: JSON.stringify(data.backupCodes),
-        updated_at: new Date().toISOString()
+        fresh_mfa_backup_codes: JSON.stringify(data.backupCodes)
       }, {
         onConflict: 'user_id' // Specify the column for conflict resolution
       })
@@ -421,30 +413,25 @@ class FreshMfaService {
       throw new Error('Failed to store MFA data')
     }
 
-    console.log(`✅ Fresh MFA data stored successfully for ${userId} (UUID: ${uuid})`)
+    console.log(`✅ Fresh MFA data stored successfully for ${userId}`)
   }
 
   /**
    * Get fresh MFA data from database
    */
   private static async getFreshMfaData(userId: string): Promise<any> {
-    // CRITICAL SECURITY FIX: Always translate user ID to UUID for database lookup
-    const uuid = await userIdTranslationService.stringToUuid(userId)
-    if (!uuid) {
-      console.warn(`⚠️ Failed to translate user ID to UUID: ${userId}`)
-      return null
-    }
-
-    console.log(`🔍 MFA Lookup: ${userId} → ${uuid}`)
+    // Use user ID directly - no translation needed for ARTLEE tenant
+    console.log(`🔍 MFA Lookup: Using user_id directly: ${userId}`)
 
     const { data, error } = await supabase
       .from('user_settings')
       .select('fresh_mfa_secret, fresh_mfa_enabled, fresh_mfa_setup_completed, fresh_mfa_backup_codes')
-      .eq('user_id', uuid) // Use translated UUID, not string ID
+      .eq('user_id', userId) // Use actual user ID from users table
+      .eq('tenant_id', getCurrentTenantId())
       .single()
 
     if (error || !data) {
-      console.log(`ℹ️ No fresh MFA data found for user: ${userId} (UUID: ${uuid})`)
+      console.log(`ℹ️ No fresh MFA data found for user: ${userId}`)
       return null
     }
 
@@ -460,37 +447,32 @@ class FreshMfaService {
    * Enable fresh MFA after successful verification
    */
   private static async enableFreshMfa(userId: string): Promise<void> {
-    // CRITICAL FIX: Always translate user ID to UUID for database operations
-    const uuid = await userIdTranslationService.stringToUuid(userId)
-    if (!uuid) {
-      throw new Error(`Failed to translate user ID to UUID: ${userId}`)
-    }
-
-    console.log(`🔄 MFA Enable: ${userId} → ${uuid}`)
+    // Use user ID directly - no translation needed for ARTLEE tenant
+    console.log(`🔄 MFA Enable: Using user_id directly: ${userId}`)
 
     const { error } = await supabase
       .from('user_settings')
       .update({
         fresh_mfa_enabled: true,
-        fresh_mfa_setup_completed: true,
-        updated_at: new Date().toISOString()
+        fresh_mfa_setup_completed: true
       })
-      .eq('user_id', uuid) // Use translated UUID, not string ID
+      .eq('user_id', userId) // Use actual user ID from users table
+      .eq('tenant_id', getCurrentTenantId())
 
     if (error) {
       console.error('❌ Error enabling fresh MFA:', error)
       throw new Error('Failed to enable MFA')
     }
 
-    console.log(`✅ Fresh MFA enabled successfully for ${userId} (UUID: ${uuid})`)
+    console.log(`✅ Fresh MFA enabled successfully for ${userId}`)
 
     // Trigger UI update events for real-time synchronization
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('mfaSetupCompleted', {
-        detail: { userId, uuid, enabled: true }
+        detail: { userId, enabled: true }
       }))
       window.dispatchEvent(new CustomEvent('totpStatusChanged', {
-        detail: { userId, uuid, enabled: true }
+        detail: { userId, enabled: true }
       }))
       console.log('🔄 Dispatched MFA status change events for UI synchronization')
     }
@@ -638,18 +620,14 @@ class FreshMfaService {
    * Update backup codes in database (for single-use enforcement)
    */
   private static async updateBackupCodes(userId: string, updatedBackupCodes: string[]): Promise<void> {
-    const uuid = await userIdTranslationService.stringToUuid(userId)
-    if (!uuid) {
-      throw new Error(`Failed to translate user ID to UUID: ${userId}`)
-    }
-
+    // Use user ID directly - no translation needed for ARTLEE tenant
     const { error } = await supabase
       .from('user_settings')
       .update({
-        fresh_mfa_backup_codes: JSON.stringify(updatedBackupCodes),
-        updated_at: new Date().toISOString()
+        fresh_mfa_backup_codes: JSON.stringify(updatedBackupCodes)
       })
-      .eq('user_id', uuid)
+      .eq('user_id', userId) // Use actual user ID from users table
+      .eq('tenant_id', getCurrentTenantId())
 
     if (error) {
       console.error('❌ Error updating backup codes:', error)

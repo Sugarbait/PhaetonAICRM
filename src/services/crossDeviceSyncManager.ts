@@ -470,11 +470,15 @@ class CrossDeviceSyncManager {
    */
 
   private generateDeviceId(): string {
-    const stored = localStorage.getItem('carexps_device_id')
+    const { getCurrentTenantId } = require('@/config/tenantConfig')
+    const tenantId = getCurrentTenantId()
+    const deviceIdKey = `${tenantId}_device_id`
+
+    const stored = localStorage.getItem(deviceIdKey)
     if (stored) return stored
 
     const deviceId = `device_${Date.now()}_${crypto.randomUUID?.() || Math.random().toString(36).substring(2)}`
-    localStorage.setItem('carexps_device_id', deviceId)
+    localStorage.setItem(deviceIdKey, deviceId)
     return deviceId
   }
 

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clear SMS Agent ID</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 20px;
+    }
+    button {
+      background-color: #dc3545;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 10px 5px;
+    }
+    button:hover {
+      background-color: #c82333;
+    }
+    button.success {
+      background-color: #28a745;
+    }
+    button.success:hover {
+      background-color: #218838;
+    }
+    .log {
+      background-color: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      padding: 15px;
+      margin-top: 20px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      white-space: pre-wrap;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .info {
+      background-color: #d1ecf1;
+      border: 1px solid #bee5eb;
+      color: #0c5460;
+      padding: 15px;
+      border-radius: 4px;
+      margin: 20px 0;
+    }
+    .warning {
+      background-color: #fff3cd;
+      border: 1px solid #ffeeba;
+      color: #856404;
+      padding: 15px;
+      border-radius: 4px;
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧹 Clear SMS Agent ID</h1>
+
+    <div class="info">
+      <strong>What this does:</strong><br>
+      This tool removes the SMS Agent ID from all storage locations while preserving your API Key and Call Agent ID.
+    </div>
+
+    <div class="warning">
+      <strong>⚠️ Warning:</strong><br>
+      This will clear the SMS Agent ID for ALL users stored in localStorage. Make sure this is what you want.
+    </div>
+
+    <button onclick="clearSMSAgentId()">Clear SMS Agent ID Only</button>
+    <button onclick="showCurrentSettings()" class="success">Show Current Settings</button>
+
+    <div class="log" id="log"></div>
+  </div>
+
+  <script>
+    function log(message) {
+      const logDiv = document.getElementById('log');
+      const timestamp = new Date().toLocaleTimeString();
+      logDiv.textContent += `[${timestamp}] ${message}\n`;
+      logDiv.scrollTop = logDiv.scrollHeight;
+    }
+
+    function showCurrentSettings() {
+      log('=== CURRENT SETTINGS ===');
+
+      // Check all localStorage keys
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith('settings_')) {
+          const settings = JSON.parse(localStorage.getItem(key));
+          log(`\nUser: ${key}`);
+          log(`  API Key: ${settings.retellApiKey ? settings.retellApiKey.substring(0, 15) + '...' : '(empty)'}`);
+          log(`  Call Agent ID: ${settings.callAgentId || '(empty)'}`);
+          log(`  SMS Agent ID: ${settings.smsAgentId || '(empty)'}`);
+        }
+      }
+
+      // Check sessionStorage
+      if (sessionStorage.getItem('retell_credentials')) {
+        const sessionCreds = JSON.parse(sessionStorage.getItem('retell_credentials'));
+        log('\n=== SESSION STORAGE ===');
+        log(`  API Key: ${sessionCreds.apiKey ? sessionCreds.apiKey.substring(0, 15) + '...' : '(empty)'}`);
+        log(`  Call Agent ID: ${sessionCreds.callAgentId || '(empty)'}`);
+        log(`  SMS Agent ID: ${sessionCreds.smsAgentId || '(empty)'}`);
+      }
+
+      log('\n=== END ===');
+    }
+
+    function clearSMSAgentId() {
+      log('Starting SMS Agent ID cleanup...');
+
+      let clearedCount = 0;
+
+      // Clear from all localStorage settings
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith('settings_')) {
+          try {
+            const settings = JSON.parse(localStorage.getItem(key));
+            const hadSmsAgentId = !!settings.smsAgentId;
+
+            settings.smsAgentId = '';
+            localStorage.setItem(key, JSON.stringify(settings));
+
+            if (hadSmsAgentId) {
+              log(`✅ Cleared SMS Agent ID from ${key}`);
+              clearedCount++;
+            } else {
+              log(`ℹ️ ${key} already had empty SMS Agent ID`);
+            }
+          } catch (error) {
+            log(`❌ Error processing ${key}: ${error.message}`);
+          }
+        }
+      }
+
+      // Clear from sessionStorage
+      try {
+        const sessionCreds = sessionStorage.getItem('retell_credentials');
+        if (sessionCreds) {
+          const creds = JSON.parse(sessionCreds);
+          const hadSmsAgentId = !!creds.smsAgentId;
+
+          creds.smsAgentId = '';
+          sessionStorage.setItem('retell_credentials', JSON.stringify(creds));
+
+          if (hadSmsAgentId) {
+            log('✅ Cleared SMS Agent ID from sessionStorage');
+            clearedCount++;
+          }
+        }
+      } catch (error) {
+        log(`⚠️ No sessionStorage credentials found or error: ${error.message}`);
+      }
+
+      log(`\n✅ Cleanup complete! Cleared ${clearedCount} SMS Agent ID instances.`);
+      log('');
+      log('📋 Next steps:');
+      log('1. Refresh your browser (Ctrl+F5 or Cmd+Shift+R)');
+      log('2. Go to the SMS page');
+      log('3. You should see "No SMS Agent ID configured" message with $0.00 costs');
+      log('');
+      log('Current settings after cleanup:');
+
+      // Show settings after cleanup
+      showCurrentSettings();
+    }
+  </script>
+</body>
+</html>

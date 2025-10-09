@@ -2,6 +2,7 @@ import { supabase, supabaseAdmin, hipaaConfig } from '@/config/supabase'
 import { Database, ServiceResponse, PaginatedResponse } from '@/types/supabase'
 import { encryptPHI, decryptPHI, encryptObjectFields, decryptObjectFields, createAuditEntry } from '@/utils/encryption'
 import { connectionState, recordSupabaseSuccess, recordSupabaseFailure } from '@/utils/connectionState'
+import { getCurrentTenantId } from '@/config/tenantConfig'
 import { v4 as uuidv4 } from 'uuid'
 
 type Tables = Database['public']['Tables']
@@ -58,6 +59,7 @@ export class SupabaseService {
       const { data } = await supabase
         .from('users')
         .select('id')
+        .eq('tenant_id', getCurrentTenantId())
         .eq('azure_ad_id', user.id)
         .single()
 
@@ -105,6 +107,7 @@ export class SupabaseService {
             new_values: newData,
             ip_address: await this.getClientIP(),
             user_agent: navigator.userAgent,
+            tenant_id: getCurrentTenantId(),
             metadata: {
               duration_ms: Date.now() - startTime,
               success: true
@@ -130,6 +133,7 @@ export class SupabaseService {
             action,
             table_name: tableName,
             record_id: recordId,
+            tenant_id: getCurrentTenantId(),
             metadata: {
               duration_ms: Date.now() - startTime,
               success: false,
@@ -167,7 +171,8 @@ export class UserService extends SupabaseService {
               azure_ad_id: azureAdId,
               email: userData.email,
               name: userData.name,
-              role: userData.role || 'staff'
+              role: userData.role || 'staff',
+              tenant_id: getCurrentTenantId()
             })
             .select()
             .single()
@@ -198,6 +203,7 @@ export class UserService extends SupabaseService {
             actions
           )
         `)
+        .eq('tenant_id', getCurrentTenantId())
         .eq('azure_ad_id', azureAdId)
         .eq('is_active', true)
         .single()
@@ -219,6 +225,7 @@ export class UserService extends SupabaseService {
           return await supabase
             .from('users')
             .update({ last_login: new Date().toISOString() })
+            .eq('tenant_id', getCurrentTenantId())
             .eq('id', userId)
         },
         userId
@@ -244,6 +251,7 @@ export class UserSettingsService extends SupabaseService {
       const { data, error } = await supabase
         .from('user_settings')
         .select('*')
+        .eq('tenant_id', getCurrentTenantId())
         .eq('user_id', userId)
         .single()
 
@@ -278,6 +286,7 @@ export class UserSettingsService extends SupabaseService {
           const { data: existingRows, error: checkError } = await supabase
             .from('user_settings')
             .select('id, created_at, updated_at')
+            .eq('tenant_id', getCurrentTenantId())
             .eq('user_id', userId)
             .order('updated_at', { ascending: false })
 
@@ -297,6 +306,7 @@ export class UserSettingsService extends SupabaseService {
               const { error: deleteError } = await supabase
                 .from('user_settings')
                 .delete()
+                .eq('tenant_id', getCurrentTenantId())
                 .in('id', idsToDelete)
 
               if (deleteError) {
@@ -312,7 +322,10 @@ export class UserSettingsService extends SupabaseService {
           // Use upsert to handle the case where row might not exist
           const { data: upsertData, error: upsertError } = await supabase
             .from('user_settings')
-            .upsert(settingsToSave, {
+            .upsert({
+              ...settingsToSave,
+              tenant_id: getCurrentTenantId()
+            }, {
               onConflict: 'user_id',
               ignoreDuplicates: false
             })
@@ -329,6 +342,7 @@ export class UserSettingsService extends SupabaseService {
           const { data: updateData, error: updateError } = await supabase
             .from('user_settings')
             .update(settingsToSave)
+            .eq('tenant_id', getCurrentTenantId())
             .eq('user_id', userId)
             .select()
             .single()
@@ -343,6 +357,7 @@ export class UserSettingsService extends SupabaseService {
                 const { data: finalData, error: finalError } = await supabase
                   .from('user_settings')
                   .update(settingsToSave)
+                  .eq('tenant_id', getCurrentTenantId())
                   .eq('user_id', userId)
                   .select()
                   .single()
@@ -421,7 +436,10 @@ export class UserSettingsService extends SupabaseService {
       // Use upsert to handle conflicts
       const { data, error } = await supabase
         .from('user_settings')
-        .upsert(defaultSettings, {
+        .upsert({
+          ...defaultSettings,
+          tenant_id: getCurrentTenantId()
+        }, {
           onConflict: 'user_id',
           ignoreDuplicates: false
         })
@@ -453,6 +471,7 @@ export class UserSettingsService extends SupabaseService {
       const { data: existingRows, error: selectError } = await supabase
         .from('user_settings')
         .select('id, created_at, updated_at')
+        .eq('tenant_id', getCurrentTenantId())
         .eq('user_id', userId)
         .order('updated_at', { ascending: false })
 
@@ -475,6 +494,7 @@ export class UserSettingsService extends SupabaseService {
       const { error: deleteError } = await supabase
         .from('user_settings')
         .delete()
+        .eq('tenant_id', getCurrentTenantId())
         .in('id', idsToDelete)
 
       if (deleteError) {

@@ -12,6 +12,7 @@
  */
 
 import { supabase } from '@/config/supabase'
+import { getCurrentTenantId } from '@/config/tenantConfig'
 import { encryptionService } from './encryption'
 import { auditLogger } from './auditLogger'
 import { ServiceResponse } from '@/types/supabase'
@@ -49,6 +50,7 @@ export class ApiKeyFallbackService {
       const { data, error } = await supabase
         .from('user_profiles')
         .select('encrypted_agent_config, encrypted_retell_api_key')
+        .eq('tenant_id', getCurrentTenantId())
         .limit(1)
         .maybeSingle()
 
@@ -62,12 +64,14 @@ export class ApiKeyFallbackService {
           const { error: agentConfigError } = await supabase
             .from('user_profiles')
             .select('encrypted_agent_config')
+            .eq('tenant_id', getCurrentTenantId())
             .limit(1)
             .maybeSingle()
 
           const { error: retellKeyError } = await supabase
             .from('user_profiles')
             .select('encrypted_retell_api_key')
+            .eq('tenant_id', getCurrentTenantId())
             .limit(1)
             .maybeSingle()
 

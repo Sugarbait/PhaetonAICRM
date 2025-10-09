@@ -3,6 +3,7 @@ import { Database, ServiceResponse } from '@/types/supabase'
 import { userProfileService, UserProfileData } from './userProfileService'
 import { auditLogger } from './auditLogger'
 import { encryptionService } from './encryption'
+import { getCurrentTenantId } from '@/config/tenantConfig'
 
 type UserCredentials = {
   email: string
@@ -188,6 +189,15 @@ export class UserManagementService {
 
       const user = userResponse.data
 
+      // Check if user account is active
+      if (!user.isActive) {
+        await auditLogger.logSecurityEvent('USER_AUTHENTICATION_BLOCKED', 'users', false, {
+          email,
+          reason: 'Account not activated'
+        })
+        return { status: 'error', error: 'Your account is pending approval. Please wait for a Super User to activate your account.' }
+      }
+
       // Check if this is a demo user by email - if so, never lock them out
       const isDemoUser = email === 'demo@carexps.com' || email === 'elmfarrell@yahoo.com' || email === 'pierre@phaetonai.com'
 
@@ -218,25 +228,42 @@ export class UserManagementService {
         })
 
         if (authData?.session && !authError) {
-          console.log('UserManagementService: Authenticated via Supabase Auth')
+          console.log('UserManagementService: ✅ Authenticated via Supabase Auth')
           authSuccess = true
           // Sign out immediately to avoid session conflicts
           await supabase.auth.signOut()
           // Create dummy credentials for compatibility
           credentials = { email, password: '' }
+        } else if (authError) {
+          console.log('UserManagementService: ⚠️ Supabase Auth failed:', authError.message || authError)
+          console.log('UserManagementService: Falling back to local credentials (database-only auth)')
         }
-      } catch (authErr) {
-        console.log('UserManagementService: Supabase Auth not applicable, trying local credentials')
+      } catch (authErr: any) {
+        // Catch network errors, 400/406 responses, etc.
+        console.log('UserManagementService: ⚠️ Supabase Auth error:', authErr?.message || authErr)
+        console.log('UserManagementService: Falling back to local credentials (database-only auth)')
       }
 
-      // If Supabase Auth failed, try local credentials
+      // If Supabase Auth failed, try local credentials (database-only authentication)
       if (!authSuccess) {
+        console.log('UserManagementService: 🔐 Attempting database-only authentication for user:', email)
         credentials = await this.getUserCredentials(user.id)
-        if (!credentials || !await this.verifyPassword(password, credentials.password)) {
+        if (!credentials) {
+          console.error('UserManagementService: ❌ No credentials found for user:', user.id)
+          await this.recordFailedLogin(email, 'No credentials found')
+          await this.incrementLoginAttempts(user.id)
+          return { status: 'success', data: null }
+        }
+
+        const passwordValid = await this.verifyPassword(password, credentials.password)
+        if (!passwordValid) {
+          console.error('UserManagementService: ❌ Invalid password for user:', email)
           await this.recordFailedLogin(email, 'Invalid password')
           await this.incrementLoginAttempts(user.id)
           return { status: 'success', data: null }
         }
+
+        console.log('UserManagementService: ✅ Database-only authentication successful for user:', email)
       }
 
       // Reset login attempts on successful login
@@ -494,6 +521,7 @@ export class UserManagementService {
             const { data: user } = await supabase
               .from('users')
               .select('last_login')
+              .eq('tenant_id', getCurrentTenantId())
               .eq('id', userId)
               .single()
 
@@ -693,6 +721,7 @@ export class UserManagementService {
         .update({
           last_login: now
         })
+        .eq('tenant_id', getCurrentTenantId())
         .eq('id', userId)
     } catch (error) {
       console.log('Could not update last login in Supabase (table may not exist), using localStorage fallback')
@@ -725,6 +754,7 @@ export class UserManagementService {
       const { data, error } = await supabase
         .from('users')
         .select('email')
+        .eq('tenant_id', getCurrentTenantId())
         .eq('id', userId)
         .single()
 
@@ -930,10 +960,23 @@ export class UserManagementService {
 
   /**
    * Get stored credentials
+   * Enhanced with robust fallback for Hostinger/production environments
    */
   private static async getStoredCredentials(userId: string): Promise<UserCredentials | null> {
+    // STRATEGY 1: Try localStorage FIRST (most reliable for Hostinger)
     try {
-      // Try Supabase first
+      const encryptedCredentials = localStorage.getItem(`userCredentials_${userId}`)
+      if (encryptedCredentials) {
+        const decrypted = await encryptionService.decryptString(encryptedCredentials)
+        console.log('UserManagementService: ✅ Credentials loaded from localStorage')
+        return JSON.parse(decrypted)
+      }
+    } catch (localStorageError) {
+      console.log('UserManagementService: ⚠️ localStorage credential retrieval failed:', localStorageError)
+    }
+
+    // STRATEGY 2: Try Supabase as fallback (may not work on Hostinger)
+    try {
       const { data, error } = await supabase
         .from('user_profiles')
         .select('encrypted_retell_api_key')
@@ -942,28 +985,19 @@ export class UserManagementService {
 
       if (!error && data?.encrypted_retell_api_key) {
         const decrypted = await encryptionService.decryptString(data.encrypted_retell_api_key)
-        console.log('UserManagementService: Credentials loaded from Supabase')
+        console.log('UserManagementService: ✅ Credentials loaded from Supabase')
         return JSON.parse(decrypted)
+      } else if (error) {
+        console.log('UserManagementService: ⚠️ Supabase query error:', error.message || error)
       }
-    } catch (error) {
-      console.log('UserManagementService: Supabase credential retrieval failed, using localStorage fallback')
+    } catch (supabaseError: any) {
+      // Catch ALL Supabase errors including 400/406 HTTP errors
+      console.log('UserManagementService: ⚠️ Supabase credential retrieval failed:', supabaseError?.message || supabaseError)
     }
 
-    // Fallback to localStorage
-    try {
-      const encryptedCredentials = localStorage.getItem(`userCredentials_${userId}`)
-      if (!encryptedCredentials) {
-        return null
-      }
-
-      const decrypted = await encryptionService.decryptString(encryptedCredentials)
-      console.log('UserManagementService: Credentials loaded from localStorage')
-      return JSON.parse(decrypted)
-
-    } catch (error) {
-      console.error('UserManagementService: Failed to retrieve credentials:', error)
-      return null
-    }
+    // If both strategies fail, log comprehensive error
+    console.error('UserManagementService: ❌ Failed to retrieve credentials from both localStorage and Supabase')
+    return null
   }
 
   /**
@@ -1032,6 +1066,7 @@ export class UserManagementService {
           locked_reason: reason || 'Account disabled by super user',
           locked_at: new Date().toISOString()
         })
+        .eq('tenant_id', getCurrentTenantId())
         .eq('id', userId)
 
       if (updateError) {
@@ -1082,16 +1117,14 @@ export class UserManagementService {
     try {
       console.log('UserManagementService: Enabling user account:', userId)
 
-      // Clear lockout in database
+      // Enable user account in database
+      // Only update is_active to avoid schema errors with non-existent lock columns
       const { error: updateError } = await supabase
         .from('users')
         .update({
-          is_locked: false,
-          locked_reason: null,
-          locked_at: null,
-          failed_login_attempts: 0,
-          last_failed_login: null
+          is_active: true // Activate the user account
         })
+        .eq('tenant_id', getCurrentTenantId())
         .eq('id', userId)
 
       if (updateError) {
@@ -1105,6 +1138,7 @@ export class UserManagementService {
           const users = JSON.parse(systemUsers)
           const userIndex = users.findIndex((u: any) => u.id === userId)
           if (userIndex >= 0) {
+            users[userIndex].isActive = true // Activate the user
             users[userIndex].isLocked = false
             localStorage.setItem('systemUsers', JSON.stringify(users))
           }
@@ -1203,6 +1237,7 @@ export class UserManagementService {
           .update({
             last_login: new Date().toISOString()
           })
+          .eq('tenant_id', getCurrentTenantId())
           .eq('id', userId)
         console.log('UserManagementService: Updated last_login in Supabase')
       } catch (error) {
@@ -1595,6 +1630,7 @@ export class UserManagementService {
       const { data: adminUsers, error } = await supabase
         .from('users')
         .select('id')
+        .eq('tenant_id', getCurrentTenantId())
         .eq('role', 'admin')
         .eq('is_active', true)
 

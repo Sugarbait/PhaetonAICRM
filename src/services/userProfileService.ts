@@ -93,11 +93,14 @@ export class UserProfileService {
    * Generate device ID for profile sync
    */
   private static generateDeviceId(): string {
-    const stored = localStorage.getItem('carexps_device_id')
+    const tenantId = getCurrentTenantId()
+    const deviceIdKey = `${tenantId}_device_id`
+
+    const stored = localStorage.getItem(deviceIdKey)
     if (stored) return stored
 
     const deviceId = `device_${Date.now()}_${crypto.randomUUID?.() || Math.random().toString(36).substring(2)}`
-    localStorage.setItem('carexps_device_id', deviceId)
+    localStorage.setItem(deviceIdKey, deviceId)
     return deviceId
   }
 
@@ -283,6 +286,7 @@ export class UserProfileService {
           const result = await supabase
             .from('users')
             .select('*')
+            .eq('tenant_id', getCurrentTenantId())
             .eq('email', userEmail)
             .single()
           supabaseUser = result.data
@@ -451,13 +455,9 @@ export class UserProfileService {
               role: dbRole, // Use mapped role for database
               mfa_enabled: userProfileData.mfa_enabled || false,
               avatar_url: userProfileData.avatar,
-              azure_ad_id: `placeholder_${userProfileData.id}_${Date.now()}`, // Required by schema
               updated_at: currentTime,
               is_active: true,
-              metadata: {
-                original_role: userProfileData.role,
-                updated_via: 'profile_service'
-              }
+              tenant_id: getCurrentTenantId() // CRITICAL: Ensure tenant isolation
             }, { onConflict: 'id' })
 
           if (error) {
@@ -811,72 +811,9 @@ export class UserProfileService {
           }
         ]
 
-        // Load from localStorage
-        const storedUsers = localStorage.getItem('systemUsers')
-        let users = []
-
-        if (storedUsers) {
-          try {
-            users = JSON.parse(storedUsers)
-          console.log('UserProfileService: Loaded users from localStorage:', users.length)
-
-          // Data migration: Add missing date fields to existing users
-          let needsUpdate = false
-          users = users.map((user: any) => {
-            if (!user.created_at || !user.updated_at) {
-              needsUpdate = true
-              return {
-                ...user,
-                created_at: user.created_at || defaultCreatedDate,
-                updated_at: user.updated_at || defaultCreatedDate
-              }
-            }
-            return user
-          })
-
-          // Force update all demo users to have today's date for creation
-          // Check if we need to update demo users with old dates
-          const shouldUpdateDemoUsers = users.some((user: any) => {
-            const isDemo = ['super-user-456', 'pierre-user-789', 'guest-user-456'].includes(user.id)
-            if (isDemo) {
-              const createdDate = new Date(user.created_at)
-              const today = new Date()
-              // If created date is not today, update it
-              return createdDate.toDateString() !== today.toDateString()
-            }
-            return false
-          })
-
-          if (shouldUpdateDemoUsers) {
-            needsUpdate = true
-            users = users.map((user: any) => {
-              const isDemo = ['super-user-456', 'pierre-user-789', 'guest-user-456'].includes(user.id)
-              if (isDemo) {
-                return {
-                  ...user,
-                  created_at: defaultCreatedDate,
-                  updated_at: defaultCreatedDate
-                }
-              }
-              return user
-            })
-            console.log('UserProfileService: Updated demo users to have today\'s creation date')
-          }
-
-          // Save updated users back to localStorage if we migrated data
-          if (needsUpdate) {
-            localStorage.setItem('systemUsers', JSON.stringify(users))
-            console.log('UserProfileService: Migrated users with updated date fields')
-          }
-          } catch (parseError) {
-            console.error('UserProfileService: Failed to parse stored users - returning empty array for ARTLEE:', parseError)
-            users = []
-          }
-        } else {
-          console.log('UserProfileService: No stored users found - returning empty array for ARTLEE')
-          users = []
-          // Don't seed demo users for ARTLEE - keep it clean
-        }
+        // ARTLEE: Production system - no demo users, return empty array
+        console.log('UserProfileService: ARTLEE production mode - returning empty array (no demo users)')
+        const users: any[] = []
 
         // ARTLEE: Skip demo user restoration logic - keep user list clean
         // (No demo user seeding for ARTLEE)
@@ -1031,39 +968,26 @@ export class UserProfileService {
 
         console.log(`🔄 ROLE TRANSFORMATION: Input role="${userData.role}" → Database role="${dbRole}"`)
 
-        // Generate azure_ad_id placeholder for compatibility with schema
-        const azureAdId = `placeholder_${Date.now()}_${Math.random().toString(36).substring(2)}`
-
         const currentTenantId = getCurrentTenantId()
         console.log(`🏢 [TENANT DEBUG] Creating user with tenant_id: "${currentTenantId}"`)
 
+        // CRITICAL: Generate unique ID for user (database doesn't auto-generate TEXT ids)
+        const newUserId = `artlee_${Date.now()}_${crypto.randomUUID?.() || Math.random().toString(36).substring(2, 15)}`
+
         const userToInsert = {
+          id: newUserId, // CRITICAL: Must include ID for TEXT PRIMARY KEY columns
           email: userData.email,
           name: userData.name,
           role: dbRole, // Use mapped role for database
-          azure_ad_id: azureAdId, // Required by schema
           mfa_enabled: userData.mfa_enabled || false,
           is_active: userData.isActive !== undefined ? userData.isActive : true, // Respect isActive from userData, default to true
           last_login: null, // Initialize last_login as null for new users
-          metadata: {
-            created_via: 'user_management',
-            original_role: userData.role, // Store original role in metadata
-            device_id: this.currentDeviceId || 'unknown'
-          },
           tenant_id: currentTenantId // Ensure tenant_id is set for current tenant
         }
 
         console.log(`🔍 [TENANT DEBUG] User insert data - tenant_id: "${userToInsert.tenant_id}", email: "${userToInsert.email}"`)
-
         console.log('🔍 DEBUG: Creating user with is_active =', userToInsert.is_active, 'for email:', userData.email)
-        console.log(`📦 METADATA: Storing original_role="${userData.role}" in metadata for future role restoration`)
         console.log('🔍 DETAILED INSERT DATA:', JSON.stringify(userToInsert, null, 2))
-        console.log('🔍 METADATA VERIFICATION BEFORE INSERT:', {
-          metadata: userToInsert.metadata,
-          original_role_in_metadata: userToInsert.metadata?.original_role,
-          expected_original_role: userData.role,
-          db_role: userToInsert.role
-        })
 
         const { data: newUser, error: userError } = await supabase
           .from('users')
@@ -1087,13 +1011,7 @@ export class UserProfileService {
           }
 
           console.log('✅ DEBUG: User created successfully with isActive =', newUserProfileData.isActive)
-          console.log(`✅ ROLE VERIFICATION: User created with application role="${newUserProfileData.role}" (DB has "${newUser.role}", metadata has "${newUser.metadata?.original_role}")`)
-          console.log('🔍 SUPABASE RESPONSE METADATA:', JSON.stringify(newUser.metadata, null, 2))
-          console.log('🔍 METADATA COMPARISON:', {
-            sent_original_role: userData.role,
-            received_original_role: newUser.metadata?.original_role,
-            match: userData.role === newUser.metadata?.original_role
-          })
+          console.log(`✅ ROLE VERIFICATION: User created with application role="${newUserProfileData.role}" (DB has "${newUser.role}")`)
 
           // Create user settings record for cross-device sync
           if (userData.settings && Object.keys(userData.settings).length > 0) {
@@ -1597,6 +1515,7 @@ export class UserProfileService {
         const { data: user, error } = await supabase
           .from('users')
           .select('*')
+          .eq('tenant_id', getCurrentTenantId())
           .eq('id', userId)
           .single()
 
@@ -1802,6 +1721,7 @@ export class UserProfileService {
           const { error: usersError } = await supabase
             .from('users')
             .update(usersUpdateData)
+            .eq('tenant_id', getCurrentTenantId())
             .eq('id', userId)
 
           if (usersError) {
@@ -1815,7 +1735,8 @@ export class UserProfileService {
         // CRITICAL: Only include fields that were actually provided in updates to avoid overwriting existing data
         const profileFields: any = {
           user_id: userId,
-          updated_at: updatedProfile.updated_at
+          updated_at: updatedProfile.updated_at,
+          tenant_id: getCurrentTenantId() // CRITICAL: Ensure tenant isolation
         }
 
         // Only add fields that are explicitly provided in updates
@@ -2091,7 +2012,7 @@ export class UserProfileService {
 
     const { error } = await supabase
       .from('user_settings')
-      .upsert({ user_id: userId, ...settingsToUpdate })
+      .upsert({ user_id: userId, tenant_id: getCurrentTenantId(), ...settingsToUpdate })
 
     if (error) {
       throw new Error(`Failed to update settings: ${error.message}`)
@@ -2594,6 +2515,9 @@ export class UserProfileService {
       role: applicationRole,
       avatar: user.avatar_url || undefined,
       mfa_enabled: user.mfa_enabled,
+      isActive: user.is_active !== undefined ? user.is_active : true, // Map is_active from database
+      created_at: user.created_at, // Include creation timestamp to identify first user
+      updated_at: user.updated_at,
       settings: {
         theme: settings?.theme || 'light',
         notifications: settings?.notifications || {},

@@ -3,6 +3,7 @@ import { auditLogger } from './auditLogger'
 import { avatarStorageService } from './avatarStorageService'
 import { userProfileService } from './userProfileService'
 import { profileFieldsPersistenceService } from './profileFieldsPersistenceService'
+import { getCurrentTenantId } from '@/config/tenantConfig'
 
 /**
  * Enhanced Cross-Device Profile Synchronization Service
@@ -342,6 +343,7 @@ export class EnhancedCrossDeviceProfileSync {
           .from('users')
           .update(userUpdate)
           .eq('id', this.userId)
+          .eq('tenant_id', getCurrentTenantId())
 
         if (userError) {
           console.warn('⚠️ SYNC TO CLOUD: Users table update failed:', userError.message)
@@ -366,6 +368,9 @@ export class EnhancedCrossDeviceProfileSync {
             profileUpdate[field] = value
           }
         })
+
+        // Add tenant_id to profile update
+        profileUpdate.tenant_id = getCurrentTenantId()
 
         const { error: profileError } = await supabase
           .from('user_profiles')
@@ -471,6 +476,7 @@ export class EnhancedCrossDeviceProfileSync {
         .from('users')
         .select('*')
         .eq('id', this.userId)
+        .eq('tenant_id', getCurrentTenantId())
         .single()
 
       if (!userError && userData) {
@@ -491,6 +497,7 @@ export class EnhancedCrossDeviceProfileSync {
           .from('user_profiles')
           .select('*')
           .eq('user_id', this.userId)
+          .eq('tenant_id', getCurrentTenantId())
           .single()
 
         if (extendedProfile) {
@@ -564,11 +571,14 @@ export class EnhancedCrossDeviceProfileSync {
    * Generate unique device ID
    */
   private generateDeviceId(): string {
-    const stored = localStorage.getItem('carexps_enhanced_device_id')
+    const tenantId = getCurrentTenantId()
+    const deviceIdKey = `${tenantId}_enhanced_device_id`
+
+    const stored = localStorage.getItem(deviceIdKey)
     if (stored) return stored
 
     const deviceId = `device_${Date.now()}_${crypto.randomUUID?.() || Math.random().toString(36).substring(2)}`
-    localStorage.setItem('carexps_enhanced_device_id', deviceId)
+    localStorage.setItem(deviceIdKey, deviceId)
     return deviceId
   }
 

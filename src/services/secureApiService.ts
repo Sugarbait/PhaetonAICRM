@@ -8,6 +8,7 @@
 import { supabase, supabaseAdmin } from '@/config/supabase'
 import { secureLogger } from '@/services/secureLogger'
 import { encryptionService } from '@/services/encryption'
+import { getCurrentTenantId } from '@/config/tenantConfig'
 
 const logger = secureLogger.component('SecureAPIService')
 
@@ -246,6 +247,7 @@ class SecureAPIService {
         .from('users')
         .select('*')
         .eq('azure_ad_id', azureAdId)
+        .eq('tenant_id', getCurrentTenantId())
         .single()
 
       if (error) {

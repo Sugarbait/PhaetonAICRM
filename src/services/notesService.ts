@@ -27,6 +27,7 @@
 import { supabase } from '@/config/supabase'
 import { RealtimeChannel } from '@supabase/supabase-js'
 import { userIdTranslationService } from './userIdTranslationService'
+import { getCurrentTenantId } from '@/config/tenantConfig'
 
 // CRITICAL FIX: Disable console logging in production to prevent infinite loops
 const isProduction = !import.meta.env.DEV
@@ -103,7 +104,7 @@ class NotesService {
   private async initializeCrossDeviceSync(): Promise<void> {
     try {
       // Quick test to ensure Supabase is available for cross-device sync
-      const { error } = await supabase.from('notes').select('id').limit(1).maybeSingle()
+      const { error } = await supabase.from('notes').select('id').eq('tenant_id', getCurrentTenantId()).limit(1).maybeSingle()
       if (error) {
         // Only log once per session to reduce console noise
         if (!sessionStorage.getItem('notes-sync-warning-logged')) {
@@ -134,7 +135,7 @@ class NotesService {
 
     try {
       // Quick test with reasonable timeout for better user experience
-      const testPromise = supabase.from('notes').select('id').limit(1).maybeSingle()
+      const testPromise = supabase.from('notes').select('id').eq('tenant_id', getCurrentTenantId()).limit(1).maybeSingle()
       const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('Quick test timeout')), 3000) // Increased from 1.5s to 3s
       )
@@ -441,7 +442,10 @@ class NotesService {
           safeLog('💾 Attempting direct Supabase save...')
           const { data: supabaseNote, error } = await supabase
             .from('notes')
-            .insert(noteData)
+            .insert({
+              ...noteData,
+              tenant_id: getCurrentTenantId()
+            })
             .select()
             .single()
 
@@ -533,7 +537,10 @@ class NotesService {
     try {
       const { data: supabaseNote, error } = await supabase
         .from('notes')
-        .insert(noteData)
+        .insert({
+          ...noteData,
+          tenant_id: getCurrentTenantId()
+        })
         .select()
         .single()
 
@@ -570,7 +577,8 @@ class NotesService {
               created_by: note.created_by,
               created_by_name: note.created_by_name,
               created_by_email: note.created_by_email,
-              metadata: note.metadata
+              metadata: note.metadata,
+              tenant_id: getCurrentTenantId()
             })
             .select()
             .single()
@@ -597,6 +605,7 @@ class NotesService {
               metadata: note.metadata
             })
             .eq('id', note.id)
+            .eq('tenant_id', getCurrentTenantId())
 
           safeLog('Background sync successful: note updated in Supabase')
         }
@@ -764,6 +773,7 @@ class NotesService {
           .from('notes')
           .update(updateData)
           .eq('id', noteId)
+          .eq('tenant_id', getCurrentTenantId())
           .select()
           .single()
 
@@ -820,6 +830,7 @@ class NotesService {
           .from('notes')
           .delete()
           .eq('id', noteId)
+          .eq('tenant_id', getCurrentTenantId())
 
         if (!error) {
           safeLog('Note deleted successfully from Supabase')
@@ -874,6 +885,7 @@ class NotesService {
           const { data, error } = await supabase
             .from('notes')
             .select('*')
+            .eq('tenant_id', getCurrentTenantId())
             .eq('reference_id', referenceId)
             .eq('reference_type', referenceType)
             .order('created_at', { ascending: true })
@@ -967,6 +979,7 @@ class NotesService {
       const fetchPromise = supabase
         .from('notes')
         .select('*')
+        .eq('tenant_id', getCurrentTenantId())
         .eq('reference_id', referenceId)
         .eq('reference_type', referenceType)
         .order('created_at', { ascending: true })
@@ -1036,7 +1049,7 @@ class NotesService {
               event: '*',
               schema: 'public',
               table: 'notes',
-              filter: `reference_id=eq.${referenceId},reference_type=eq.${referenceType}`
+              filter: `tenant_id=eq.${getCurrentTenantId()},reference_id=eq.${referenceId},reference_type=eq.${referenceType}`
             },
             async (payload) => {
               safeLog('📱 Cross-device update received:', payload.eventType, payload.new || payload.old)
@@ -1170,6 +1183,7 @@ class NotesService {
       const { count, error } = await supabase
         .from('notes')
         .select('id', { count: 'exact', head: true })
+        .eq('tenant_id', getCurrentTenantId())
         .eq('reference_id', referenceId)
         .eq('reference_type', referenceType)
 
@@ -1215,7 +1229,8 @@ class NotesService {
                 created_by: note.created_by,
                 created_by_name: note.created_by_name,
                 created_by_email: note.created_by_email,
-                metadata: note.metadata
+                metadata: note.metadata,
+                tenant_id: getCurrentTenantId()
               })
               .select()
               .single()
@@ -1258,6 +1273,7 @@ class NotesService {
           const { data, error } = await supabase
             .from('notes')
             .select('reference_id, id')
+            .eq('tenant_id', getCurrentTenantId())
             .eq('reference_type', referenceType)
             .in('reference_id', referenceIds)
 
@@ -1334,6 +1350,7 @@ class NotesService {
         const { data, error } = await supabase
           .from('notes')
           .select('*')
+          .eq('tenant_id', getCurrentTenantId())
           .eq('reference_id', referenceId)
           .eq('reference_type', referenceType)
           .order('created_at', { ascending: true })
@@ -1439,7 +1456,8 @@ class NotesService {
                 created_by: note.created_by,
                 created_by_name: note.created_by_name,
                 created_by_email: note.created_by_email,
-                metadata: note.metadata
+                metadata: note.metadata,
+                tenant_id: getCurrentTenantId()
               })
 
             if (!error) {
@@ -1505,7 +1523,7 @@ if (typeof window !== 'undefined') {
     // Test Supabase connection
     testConnection: async () => {
       try {
-        const { data, error } = await supabase.from('notes').select('id').limit(1)
+        const { data, error } = await supabase.from('notes').select('id').eq('tenant_id', getCurrentTenantId()).limit(1)
         if (error) {
           console.error('❌ Connection failed:', error.message)
           return false

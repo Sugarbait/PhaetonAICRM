@@ -16,6 +16,7 @@ import { encryptionService } from './encryption'
 import { auditLogger } from './auditLogger'
 import { totpService } from './totpService'
 import { conflictResolver } from './crossDeviceConflictResolver'
+import { getCurrentTenantId } from '@/config/tenantConfig'
 
 export interface SecureCredential {
   type: 'mfa_secret' | 'api_key' | 'backup_codes' | 'access_token' | 'encryption_key'
@@ -291,6 +292,7 @@ class SecureCredentialSyncService {
               last_synced: new Date().toISOString()
             })
             .eq('user_id', userId)
+            .eq('tenant_id', getCurrentTenantId())
 
           if (error) {
             errors.push(`Settings update failed: ${error.message}`)

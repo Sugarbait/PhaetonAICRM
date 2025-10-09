@@ -769,16 +769,16 @@ class RetellService {
         // Store plain text values in localStorage for UI display
         if (apiKey !== undefined) {
           settings.retellApiKey = apiKey
-          console.log(`Fresh RetellService - Set API key in localStorage: ${apiKey.substring(0, 15)}...`)
         }
         if (callAgentId !== undefined) {
           settings.callAgentId = callAgentId
-          console.log(`Fresh RetellService - Set call agent ID: ${callAgentId}`)
         }
         if (smsAgentId !== undefined) {
           settings.smsAgentId = smsAgentId
-          console.log(`Fresh RetellService - Set SMS agent ID: ${smsAgentId}`)
         }
+
+        // Security: Do not log API keys or Agent IDs
+        console.log('Fresh RetellService - Updated credentials in localStorage')
 
         localStorage.setItem(`settings_${currentUser.id}`, JSON.stringify(settings))
 

@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import { useNotesWithOfflineSync } from '@/hooks/useNotesWithOfflineSync'
 import { notesService } from '@/services/notesService'
+import { useConfirmation } from '@/components/common/ConfirmationModal'
 
 interface EnhancedChatNotesProps {
   chatId: string
@@ -40,6 +41,7 @@ export const EnhancedChatNotes: React.FC<EnhancedChatNotesProps> = ({
   const [newNoteContent, setNewNoteContent] = useState('')
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const { confirm, ConfirmationDialog } = useConfirmation()
 
   // Enhanced notes hook with offline support
   const {
@@ -111,9 +113,15 @@ export const EnhancedChatNotes: React.FC<EnhancedChatNotesProps> = ({
 
   // Handle deleting note
   const handleDeleteNote = async (noteId: string) => {
-    if (!window.confirm('Are you sure you want to delete this note? This action cannot be undone.')) {
-      return
-    }
+    const confirmed = await confirm({
+      title: 'Delete Note',
+      message: 'Are you sure you want to delete this note? This action cannot be undone.',
+      type: 'danger',
+      confirmText: 'Delete',
+      cancelText: 'Cancel'
+    })
+
+    if (!confirmed) return
 
     await deleteNote(noteId)
   }
@@ -434,6 +442,9 @@ export const EnhancedChatNotes: React.FC<EnhancedChatNotesProps> = ({
           )}
         </div>
       )}
+
+      {/* Confirmation Modal */}
+      <ConfirmationDialog />
     </div>
   )
 }

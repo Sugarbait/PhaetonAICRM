@@ -17,6 +17,7 @@ import { secureStorage } from './secureStorage'
 import { secureLogger } from './secureLogger'
 import { auditLogger, AuditAction, ResourceType, AuditOutcome } from './auditLogger'
 import { supabase } from '../config/supabase'
+import { getCurrentTenantId } from '@/config/tenantConfig'
 import type { User } from '../types'
 
 const logger = secureLogger.component('AuthRecoveryService')
@@ -140,6 +141,7 @@ class AuthRecoveryService {
         .from('users')
         .select('id')
         .eq('id', context.userId)
+        .eq('tenant_id', getCurrentTenantId())
         .maybeSingle()
 
       if (error) {
@@ -279,6 +281,7 @@ class AuthRecoveryService {
         .from('users')
         .select('*')
         .eq('id', context.userId)
+        .eq('tenant_id', getCurrentTenantId())
         .maybeSingle()
 
       if (userData && !userError) {
@@ -298,6 +301,7 @@ class AuthRecoveryService {
           .from('users')
           .select('*')
           .eq('email', context.userEmail)
+          .eq('tenant_id', getCurrentTenantId())
           .maybeSingle()
 
         if (emailUser && !emailError) {

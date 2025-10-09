@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ARTLEE Authentication Fix</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 900px;
+      margin: 50px auto;
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    }
+    h1 {
+      color: #667eea;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+    .section {
+      margin: 25px 0;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border-left: 4px solid #667eea;
+    }
+    .section h2 {
+      color: #333;
+      margin-top: 0;
+      font-size: 18px;
+    }
+    button {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.3s;
+      margin: 5px;
+    }
+    button:hover {
+      background: #5568d3;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .success {
+      background: #d4edda;
+      border-left-color: #28a745;
+      color: #155724;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 15px 0;
+    }
+    .error {
+      background: #f8d7da;
+      border-left-color: #dc3545;
+      color: #721c24;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 15px 0;
+    }
+    .info {
+      background: #d1ecf1;
+      border-left-color: #17a2b8;
+      color: #0c5460;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 15px 0;
+    }
+    .warning {
+      background: #fff3cd;
+      border-left-color: #ffc107;
+      color: #856404;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 15px 0;
+    }
+    pre {
+      background: #2d3748;
+      color: #e2e8f0;
+      padding: 15px;
+      border-radius: 6px;
+      overflow-x: auto;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .button-group {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 15px;
+    }
+    .status {
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 13px;
+      display: inline-block;
+      margin: 5px 0;
+    }
+    .status.success { background: #d4edda; color: #155724; }
+    .status.error { background: #f8d7da; color: #721c24; }
+    .status.pending { background: #fff3cd; color: #856404; }
+    input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      margin: 8px 0;
+      box-sizing: border-box;
+    }
+    label {
+      font-weight: 600;
+      color: #333;
+      display: block;
+      margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔧 ARTLEE Authentication Fix</h1>
+    <p class="subtitle">Diagnostic and repair tool for ARTLEE CRM authentication issues</p>
+
+    <div class="section">
+      <h2>📋 Current Issue</h2>
+      <div class="info">
+        <strong>Problem:</strong> User exists in database but has mismatched ID with Supabase Auth
+        <br><strong>User Email:</strong> create@artlee.agency
+        <br><strong>Database ID:</strong> d4ca7563-c542-44b4-bb9c-f4d8fb5ab71a
+        <br><strong>Auth ID:</strong> 6fb26981-a8f6-479c-9995-36cd238ca185
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>🔍 Diagnostics</h2>
+      <div id="diagnostics">
+        <div class="info">Click "Run Diagnostics" to check current state</div>
+      </div>
+      <div class="button-group">
+        <button onclick="runDiagnostics()">Run Diagnostics</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>🛠️ Fix Options</h2>
+
+      <div class="warning">
+        <strong>⚠️ Warning:</strong> These operations will modify your database. Choose carefully.
+      </div>
+
+      <h3>Option 1: Update Database User ID (Recommended)</h3>
+      <p>Updates the users table record to use the new Supabase Auth ID. This preserves the Auth account.</p>
+      <div class="button-group">
+        <button onclick="fixOption1()" id="fix1Btn">Update Database User ID</button>
+      </div>
+
+      <h3>Option 2: Delete and Recreate Auth User</h3>
+      <p>Deletes the Supabase Auth user and creates a new one with the correct ID matching the database.</p>
+      <label>Password for new Auth user:</label>
+      <input type="password" id="newPassword" placeholder="Enter password (default: test1000!)" value="test1000!">
+      <div class="button-group">
+        <button onclick="fixOption2()" id="fix2Btn">Delete & Recreate Auth User</button>
+      </div>
+
+      <h3>Option 3: Create Fresh User</h3>
+      <p>Create a completely new user with proper setup (database + auth).</p>
+      <label>Email:</label>
+      <input type="email" id="freshEmail" placeholder="new@artlee.agency">
+      <label>Name:</label>
+      <input type="text" id="freshName" placeholder="New User">
+      <label>Password:</label>
+      <input type="password" id="freshPassword" placeholder="Password">
+      <div class="button-group">
+        <button onclick="fixOption3()" id="fix3Btn">Create Fresh User</button>
+      </div>
+
+      <div id="fixResults"></div>
+    </div>
+
+    <div class="section">
+      <h2>✅ Test Login</h2>
+      <label>Email:</label>
+      <input type="email" id="testEmail" value="create@artlee.agency">
+      <label>Password:</label>
+      <input type="password" id="testPassword" value="test1000!">
+      <div class="button-group">
+        <button onclick="testLogin()">Test Login</button>
+      </div>
+      <div id="loginResults"></div>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://cpkslvmydfdevdftieck.supabase.co';
+    const SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNwa3Nsdm15ZGZkZXZkZnRpZWNrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NjkwMDI5NSwiZXhwIjoyMDYyNDc2Mjk1fQ.5Nwr-DrgL63DwPMH2egxgdjoHGhAxCvIrz2SMTMKqD0';
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+
+    async function runDiagnostics() {
+      const container = document.getElementById('diagnostics');
+      container.innerHTML = '<div class="info">Running diagnostics...</div>';
+
+      try {
+        // Check database user
+        const { data: dbUser, error: dbError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('email', 'create@artlee.agency')
+          .eq('tenant_id', 'artlee')
+          .single();
+
+        // Check auth users (need to list all and filter)
+        const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+        const authUser = authUsers?.users?.find(u => u.email === 'create@artlee.agency');
+
+        let html = '<h3>Diagnostic Results</h3>';
+
+        // Database User Status
+        if (dbError) {
+          html += `<div class="error">❌ Database User: Not found or error<br><code>${dbError.message}</code></div>`;
+        } else if (dbUser) {
+          html += `<div class="success">✅ Database User Found<br>
+            <strong>ID:</strong> ${dbUser.id}<br>
+            <strong>Email:</strong> ${dbUser.email}<br>
+            <strong>Name:</strong> ${dbUser.name}<br>
+            <strong>Role:</strong> ${dbUser.role}<br>
+            <strong>Active:</strong> ${dbUser.is_active}<br>
+            <strong>Tenant:</strong> ${dbUser.tenant_id}
+          </div>`;
+        }
+
+        // Auth User Status
+        if (authError) {
+          html += `<div class="error">❌ Auth User: Error checking<br><code>${authError.message}</code></div>`;
+        } else if (authUser) {
+          html += `<div class="success">✅ Auth User Found<br>
+            <strong>ID:</strong> ${authUser.id}<br>
+            <strong>Email:</strong> ${authUser.email}<br>
+            <strong>Created:</strong> ${authUser.created_at}
+          </div>`;
+        } else {
+          html += `<div class="warning">⚠️ Auth User: Not found</div>`;
+        }
+
+        // ID Mismatch Check
+        if (dbUser && authUser && dbUser.id !== authUser.id) {
+          html += `<div class="error">
+            ❌ <strong>ID MISMATCH DETECTED</strong><br>
+            Database ID: ${dbUser.id}<br>
+            Auth ID: ${authUser.id}<br>
+            <strong>This needs to be fixed!</strong>
+          </div>`;
+        } else if (dbUser && authUser && dbUser.id === authUser.id) {
+          html += `<div class="success">✅ IDs match - authentication should work!</div>`;
+        }
+
+        container.innerHTML = html;
+      } catch (error) {
+        container.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+      }
+    }
+
+    async function fixOption1() {
+      const btn = document.getElementById('fix1Btn');
+      const container = document.getElementById('fixResults');
+
+      if (!confirm('This will update the database user ID to match the Auth ID. Continue?')) {
+        return;
+      }
+
+      btn.disabled = true;
+      container.innerHTML = '<div class="info">Updating database user ID...</div>';
+
+      try {
+        // Get the auth user ID
+        const { data: authUsers } = await supabase.auth.admin.listUsers();
+        const authUser = authUsers?.users?.find(u => u.email === 'create@artlee.agency');
+
+        if (!authUser) {
+          throw new Error('Auth user not found');
+        }
+
+        // Update the database user ID
+        const { data, error } = await supabase
+          .from('users')
+          .update({ id: authUser.id })
+          .eq('email', 'create@artlee.agency')
+          .eq('tenant_id', 'artlee')
+          .select();
+
+        if (error) {
+          throw error;
+        }
+
+        container.innerHTML = `<div class="success">
+          ✅ <strong>Success!</strong><br>
+          Database user ID updated to: ${authUser.id}<br>
+          You can now login with:<br>
+          Email: create@artlee.agency<br>
+          Password: test1000!
+        </div>`;
+      } catch (error) {
+        container.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function fixOption2() {
+      const btn = document.getElementById('fix2Btn');
+      const container = document.getElementById('fixResults');
+      const password = document.getElementById('newPassword').value || 'test1000!';
+
+      if (!confirm('This will delete the existing Auth user and create a new one. Continue?')) {
+        return;
+      }
+
+      btn.disabled = true;
+      container.innerHTML = '<div class="info">Deleting and recreating Auth user...</div>';
+
+      try {
+        // Get the database user ID
+        const { data: dbUser } = await supabase
+          .from('users')
+          .select('id')
+          .eq('email', 'create@artlee.agency')
+          .eq('tenant_id', 'artlee')
+          .single();
+
+        if (!dbUser) {
+          throw new Error('Database user not found');
+        }
+
+        // Get and delete the auth user
+        const { data: authUsers } = await supabase.auth.admin.listUsers();
+        const authUser = authUsers?.users?.find(u => u.email === 'create@artlee.agency');
+
+        if (authUser) {
+          await supabase.auth.admin.deleteUser(authUser.id);
+        }
+
+        // Create new auth user with correct ID
+        const { data: newAuthUser, error: createError } = await supabase.auth.admin.createUser({
+          email: 'create@artlee.agency',
+          password: password,
+          email_confirm: true,
+          user_metadata: {
+            name: 'Create User',
+            tenant_id: 'artlee'
+          }
+        });
+
+        if (createError) {
+          throw createError;
+        }
+
+        // Note: We cannot set a custom ID in Supabase Auth, so we need to use Option 1 instead
+        container.innerHTML = `<div class="warning">
+          ⚠️ <strong>Note:</strong> Supabase Auth does not allow custom IDs.<br>
+          Please use <strong>Option 1</strong> instead to update the database ID to match Auth.<br>
+          New Auth ID created: ${newAuthUser.user.id}
+        </div>`;
+
+        // Automatically run Option 1
+        setTimeout(() => {
+          container.innerHTML += '<div class="info">Automatically updating database ID...</div>';
+          fixOption1();
+        }, 2000);
+
+      } catch (error) {
+        container.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function fixOption3() {
+      const btn = document.getElementById('fix3Btn');
+      const container = document.getElementById('fixResults');
+      const email = document.getElementById('freshEmail').value;
+      const name = document.getElementById('freshName').value;
+      const password = document.getElementById('freshPassword').value;
+
+      if (!email || !name || !password) {
+        container.innerHTML = '<div class="error">Please fill in all fields</div>';
+        return;
+      }
+
+      btn.disabled = true;
+      container.innerHTML = '<div class="info">Creating new user...</div>';
+
+      try {
+        // Create auth user first
+        const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+          email: email,
+          password: password,
+          email_confirm: true,
+          user_metadata: {
+            name: name,
+            tenant_id: 'artlee'
+          }
+        });
+
+        if (authError) {
+          throw authError;
+        }
+
+        // Create database user with same ID
+        const { data: dbUser, error: dbError } = await supabase
+          .from('users')
+          .insert({
+            id: authUser.user.id,
+            email: email,
+            name: name,
+            role: 'user',
+            tenant_id: 'artlee',
+            is_active: true,
+            mfa_enabled: false,
+            last_login: null
+          })
+          .select()
+          .single();
+
+        if (dbError) {
+          // Rollback auth user
+          await supabase.auth.admin.deleteUser(authUser.user.id);
+          throw dbError;
+        }
+
+        container.innerHTML = `<div class="success">
+          ✅ <strong>Success!</strong><br>
+          New user created:<br>
+          <strong>Email:</strong> ${email}<br>
+          <strong>ID:</strong> ${authUser.user.id}<br>
+          <strong>Tenant:</strong> artlee<br>
+          You can now login with these credentials!
+        </div>`;
+      } catch (error) {
+        container.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function testLogin() {
+      const container = document.getElementById('loginResults');
+      const email = document.getElementById('testEmail').value;
+      const password = document.getElementById('testPassword').value;
+
+      container.innerHTML = '<div class="info">Testing login...</div>';
+
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email,
+          password: password
+        });
+
+        if (error) {
+          throw error;
+        }
+
+        // Check database user
+        const { data: dbUser, error: dbError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('email', email)
+          .eq('tenant_id', 'artlee')
+          .single();
+
+        let html = `<div class="success">
+          ✅ <strong>Login Successful!</strong><br>
+          <strong>Auth User ID:</strong> ${data.user.id}<br>
+          <strong>Email:</strong> ${data.user.email}
+        </div>`;
+
+        if (dbUser) {
+          html += `<div class="success">
+            ✅ <strong>Database User Found</strong><br>
+            <strong>Database User ID:</strong> ${dbUser.id}<br>
+            <strong>Name:</strong> ${dbUser.name}<br>
+            <strong>Role:</strong> ${dbUser.role}<br>
+            <strong>Active:</strong> ${dbUser.is_active}
+          </div>`;
+
+          if (data.user.id === dbUser.id) {
+            html += `<div class="success">✅ IDs MATCH - Authentication working correctly!</div>`;
+          } else {
+            html += `<div class="error">❌ ID MISMATCH - Auth: ${data.user.id}, DB: ${dbUser.id}</div>`;
+          }
+        } else {
+          html += `<div class="error">❌ Database user not found</div>`;
+        }
+
+        container.innerHTML = html;
+
+        // Sign out
+        await supabase.auth.signOut();
+      } catch (error) {
+        container.innerHTML = `<div class="error">❌ Login Failed: ${error.message}</div>`;
+      }
+    }
+
+    // Auto-run diagnostics on load
+    window.addEventListener('load', () => {
+      runDiagnostics();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clear systemUsers Cache</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        button {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #c82333;
+        }
+        button.success {
+            background: #28a745;
+        }
+        button.success:hover {
+            background: #218838;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            display: none;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 Clear systemUsers Cache</h1>
+        <p>This will remove the <code>systemUsers</code> cache from localStorage.</p>
+        <p><strong>This fixes the issue where first user message doesn't show!</strong></p>
+
+        <button onclick="clearSystemUsersCache()">🗑️ Clear systemUsers Cache</button>
+        <button class="success" onclick="window.location.href='http://localhost:3001'">🔄 Go to Login Page</button>
+
+        <div id="status" class="status"></div>
+    </div>
+
+    <script>
+        function clearSystemUsersCache() {
+            const statusDiv = document.getElementById('status')
+
+            try {
+                // Check if systemUsers exists
+                const systemUsers = localStorage.getItem('systemUsers')
+
+                if (systemUsers) {
+                    console.log('🧹 Found systemUsers cache:', systemUsers.substring(0, 100) + '...')
+
+                    // Parse to see how many users
+                    try {
+                        const users = JSON.parse(systemUsers)
+                        console.log(`Found ${users.length} cached users:`)
+                        users.forEach(u => console.log(`  - ${u.email}`))
+                    } catch (e) {
+                        console.log('Could not parse systemUsers')
+                    }
+
+                    // Remove it
+                    localStorage.removeItem('systemUsers')
+                    console.log('✅ systemUsers cache cleared')
+
+                    statusDiv.className = 'status success'
+                    statusDiv.innerHTML = `
+                        <strong>✅ systemUsers Cache Cleared!</strong><br><br>
+                        <strong>Next steps:</strong><br>
+                        1. Click "Go to Login Page" button<br>
+                        2. You should now see the blue "Be the first to register" message<br>
+                        3. Register your first user (will be Super User)<br>
+                    `
+                } else {
+                    statusDiv.className = 'status info'
+                    statusDiv.innerHTML = `
+                        <strong>ℹ️ No systemUsers cache found</strong><br>
+                        The cache was already empty or doesn't exist.
+                    `
+                    console.log('ℹ️ No systemUsers cache found')
+                }
+
+            } catch (error) {
+                statusDiv.className = 'status info'
+                statusDiv.innerHTML = `
+                    <strong>⚠️ Error:</strong> ${error.message}
+                `
+                console.error('❌ Error clearing systemUsers cache:', error)
+            }
+        }
+
+        // Show current status on page load
+        window.addEventListener('load', () => {
+            const systemUsers = localStorage.getItem('systemUsers')
+            if (systemUsers) {
+                try {
+                    const users = JSON.parse(systemUsers)
+                    console.log(`📊 Current systemUsers cache contains ${users.length} users`)
+                } catch (e) {
+                    console.log('📊 systemUsers cache exists but cannot be parsed')
+                }
+            } else {
+                console.log('📊 No systemUsers cache found')
+            }
+        })
+    </script>
+</body>
+</html>

@@ -18,6 +18,7 @@ import { auditLogger } from './auditLogger'
 import { encryptionService } from './encryption'
 import { userProfileService } from './userProfileService'
 import { userSettingsService } from './userSettingsService'
+import { getCurrentTenantId } from '@/config/tenantConfig'
 
 export interface ProfileData {
   id: string
@@ -309,6 +310,7 @@ class SecureProfileEditingService {
             .from('user_profiles')
             .select('*')
             .eq('user_id', userId)
+            .eq('tenant_id', getCurrentTenantId())
             .single()
 
           if (!error && extendedProfile) {
@@ -466,6 +468,7 @@ class SecureProfileEditingService {
         .from('user_profiles')
         .select('updated_at')
         .eq('user_id', userId)
+        .eq('tenant_id', getCurrentTenantId())
         .single()
 
       if (!error && recentProfile) {
@@ -533,6 +536,7 @@ class SecureProfileEditingService {
           .upsert({
             user_id: profile.id,
             ...encryptedProfile,
+            tenant_id: getCurrentTenantId(),
             updated_at: new Date().toISOString()
           }, { onConflict: 'user_id' })
 

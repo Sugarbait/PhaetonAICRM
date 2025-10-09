@@ -1,4 +1,5 @@
 import { supabase } from '@/config/supabase'
+import { getCurrentTenantId } from '@/config/tenantConfig'
 import { Database, ServiceResponse, DecryptedCallNote } from '@/types/supabase'
 import { encryptPHI, decryptPHI } from '@/utils/encryption'
 
@@ -92,7 +93,11 @@ export class CallNotesService {
     }
 
     try {
-      const { data, error } = await supabase.from('call_notes').select('count').limit(1)
+      const { data, error } = await supabase
+        .from('call_notes')
+        .select('count')
+        .eq('tenant_id', getCurrentTenantId())
+        .limit(1)
       this.isSupabaseAvailable = !error
       return this.isSupabaseAvailable
     } catch (error) {
@@ -205,7 +210,8 @@ export class CallNotesService {
             metadata: {
               duration_ms: Date.now() - startTime,
               success: true
-            }
+            },
+            tenant_id: getCurrentTenantId()
           })
         } catch (auditError) {
           console.warn('Audit logging failed:', auditError)
@@ -226,7 +232,8 @@ export class CallNotesService {
               duration_ms: Date.now() - startTime,
               success: false,
               error: error instanceof Error ? error.message : 'Unknown error'
-            }
+            },
+            tenant_id: getCurrentTenantId()
           })
         } catch (auditError) {
           console.warn('Audit logging failed:', auditError)
@@ -254,6 +261,7 @@ export class CallNotesService {
           .select('*')
           .eq('call_id', callId)
           .eq('user_id', userId)
+          .eq('tenant_id', getCurrentTenantId())
           .order('updated_at', { ascending: false })
 
         if (error) throw error
@@ -344,6 +352,7 @@ export class CallNotesService {
           .select('id, encrypted_content')
           .eq('call_id', callId)
           .eq('user_id', userId)
+          .eq('tenant_id', getCurrentTenantId())
           .single()
 
         let noteData: CallNoteRow
@@ -367,6 +376,7 @@ export class CallNotesService {
                 })
                 .eq('call_id', callId)
                 .eq('user_id', userId)
+                .eq('tenant_id', getCurrentTenantId())
                 .select('*')
                 .single()
             },
@@ -391,7 +401,8 @@ export class CallNotesService {
                   encrypted_content: encryptedContent,
                   is_pinned: options.isPinned ?? false,
                   tags: options.tags ?? [],
-                  metadata: options.metadata ?? {}
+                  metadata: options.metadata ?? {},
+                  tenant_id: getCurrentTenantId()
                 })
                 .select('*')
                 .single()
@@ -490,6 +501,7 @@ export class CallNotesService {
           .select('id')
           .eq('call_id', callId)
           .eq('user_id', userId)
+          .eq('tenant_id', getCurrentTenantId())
           .single()
 
         if (!existingNote) {
@@ -505,6 +517,7 @@ export class CallNotesService {
               .delete()
               .eq('call_id', callId)
               .eq('user_id', userId)
+              .eq('tenant_id', getCurrentTenantId())
           },
           existingNote.id
         )
@@ -554,6 +567,7 @@ export class CallNotesService {
           .select('*')
           .eq('call_id', callId)
           .eq('user_id', userId)
+          .eq('tenant_id', getCurrentTenantId())
           .single()
 
         if (!existingNote) {
@@ -574,6 +588,7 @@ export class CallNotesService {
               })
               .eq('call_id', callId)
               .eq('user_id', userId)
+              .eq('tenant_id', getCurrentTenantId())
               .select('*')
               .single()
           },
@@ -755,17 +770,20 @@ export class CallNotesService {
           supabase
             .from('call_notes')
             .select('id', { count: 'exact', head: true })
-            .eq('user_id', userId),
+            .eq('user_id', userId)
+            .eq('tenant_id', getCurrentTenantId()),
           supabase
             .from('call_notes')
             .select('id', { count: 'exact', head: true })
             .eq('user_id', userId)
-            .eq('is_pinned', true),
+            .eq('is_pinned', true)
+            .eq('tenant_id', getCurrentTenantId()),
           supabase
             .from('call_notes')
             .select('id', { count: 'exact', head: true })
             .eq('user_id', userId)
             .gte('created_at', sevenDaysAgo.toISOString())
+            .eq('tenant_id', getCurrentTenantId())
         ])
 
         const stats = {

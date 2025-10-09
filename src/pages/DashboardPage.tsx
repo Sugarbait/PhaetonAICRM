@@ -65,6 +65,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user }) => {
   const [error, setError] = useState('')
   const [isExporting, setIsExporting] = useState(false)
 
+  // Track shown errors to prevent duplicates
+  const shownErrors = React.useRef<Set<string>>(new Set())
+
   // SMS Segment caching state (exact copy from SMS page)
   const [fullDataSegmentCache, setFullDataSegmentCache] = useState<Map<string, number>>(new Map())
   const [segmentCache, setSegmentCache] = useState<Map<string, number>>(new Map())
@@ -230,6 +233,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user }) => {
     setFullDataSegmentCache(cachedSegments)
     console.log(`📁 Dashboard loaded ${cachedSegments.size} cached segments from localStorage`)
   }, [])
+
+  // Load credentials and fetch initial data on mount
+  useEffect(() => {
+    console.log('🚀 Dashboard: Initial mount - loading credentials and data')
+    fetchDashboardData()
+  }, []) // Empty dependency array = run once on mount
 
   // Save cache when it changes
   useEffect(() => {
@@ -833,7 +842,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user }) => {
 
       // Fetch real calls from Retell AI
       console.log('📞 PRODUCTION MODE: Fetching calls from Retell AI...')
-      console.log('📞 Using API Key:', apiKey.substring(0, 15) + '...')
+      // Security: Do not log API key - even partial
       const allCalls = await retellService.getAllCalls()
       console.log(`📞 PRODUCTION MODE: Total calls in system: ${allCalls.length}`)
       console.log('📞 Sample call data:', allCalls.length > 0 ? allCalls[0] : 'No calls')
@@ -1001,7 +1010,13 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user }) => {
 
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error)
-      setError(error instanceof Error ? error.message : 'Failed to load dashboard data')
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load dashboard data'
+
+      // Only show the error if we haven't shown it before
+      if (!shownErrors.current.has(errorMessage)) {
+        setError(errorMessage)
+        shownErrors.current.add(errorMessage)
+      }
       setRetellStatus('error')
     } finally {
       setIsLoading(false)
@@ -1118,7 +1133,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user }) => {
           <AlertCircleIcon className="w-5 h-5 text-red-600 flex-shrink-0" />
           <span className="text-red-700">{error}</span>
           <button
-            onClick={() => setError('')}
+            onClick={() => {
+              shownErrors.current.delete(error)
+              setError('')
+            }}
             className="ml-auto text-red-600 hover:text-red-800 text-xl"
           >
             ×

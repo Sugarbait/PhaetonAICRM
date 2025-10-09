@@ -38,6 +38,7 @@ import { SiteHelpChatbot } from '@/components/common/SiteHelpChatbot'
 import { toastNotificationService, ToastNotificationPreferences } from '@/services/toastNotificationService'
 import { logoService, CompanyLogos } from '@/services/logoService'
 import { EmailNotificationSettings } from '@/components/settings/EmailNotificationSettings'
+import { generalToast } from '@/services/generalToastService'
 // Removed old TOTP hook - using fresh MFA service directly
 
 interface User {
@@ -99,11 +100,11 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
   const tabs = [
     { id: 'profile', name: 'Profile', icon: UserIcon },
     { id: 'security', name: 'Security', icon: ShieldIcon },
-    { id: 'api', name: 'API Configuration', icon: KeyIcon },
     { id: 'appearance', name: 'Appearance', icon: PaletteIcon },
     { id: 'notifications', name: 'Notifications', icon: BellIcon },
-    { id: 'audit', name: 'Audit Logs', icon: FileTextIcon },
     ...(user?.role === 'super_user' ? [
+      { id: 'api', name: 'API Configuration', icon: KeyIcon },
+      { id: 'audit', name: 'Audit Logs', icon: FileTextIcon },
       { id: 'users', name: 'User Management', icon: UsersIcon },
       { id: 'branding', name: 'Company Branding', icon: PaletteIcon },
     ] : [])
@@ -579,16 +580,16 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
       URL.revokeObjectURL(url)
     } catch (error) {
       console.error('Failed to download audit logs:', error)
-      alert('Failed to download audit logs. Please try again.')
+      generalToast.error('Failed to download audit logs. Please try again.', 'Download Failed')
     }
   }
 
-  // Load audit logs when audit tab is accessed
+  // Load audit logs when audit tab is accessed (Super Users only)
   useEffect(() => {
-    if (activeTab === 'audit') {
+    if (activeTab === 'audit' && user?.role === 'super_user') {
       loadAuditLogs()
     }
-  }, [activeTab])
+  }, [activeTab, user?.role])
 
   // Apply theme when settings are initially loaded (once)
   // Theme is handled by ThemeManager initialization and navigation logic in App.tsx
@@ -648,12 +649,12 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
     const file = event.target.files?.[0]
     if (file) {
       if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        alert('File size must be less than 5MB')
+        generalToast.warning('File size must be less than 5MB', 'File Too Large')
         return
       }
 
       if (!file.type.startsWith('image/')) {
-        alert('Please select an image file')
+        generalToast.warning('Please select an image file', 'Invalid File Type')
         return
       }
 
@@ -718,7 +719,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
 
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       console.error('Avatar upload error details:', errorMessage)
-      alert(`Failed to upload avatar: ${errorMessage}`)
+      generalToast.error(`Failed to upload avatar: ${errorMessage}`, 'Upload Failed')
     } finally {
       setIsLoading(false)
     }
@@ -752,7 +753,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
     } catch (error) {
       console.error('Failed to remove avatar:', error)
       setSaveStatus('idle')
-      alert(`Failed to remove avatar: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      generalToast.error(`Failed to remove avatar: ${error instanceof Error ? error.message : 'Unknown error'}`, 'Removal Failed')
     } finally {
       setIsLoading(false)
     }
@@ -760,7 +761,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
 
   const saveFullName = async () => {
     if (!fullName.trim()) {
-      alert('Please enter a valid name')
+      generalToast.warning('Please enter a valid name', 'Invalid Name')
       return
     }
 
@@ -856,7 +857,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
 
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       console.error('Name save error details:', errorMessage)
-      alert(`Failed to save name: ${errorMessage}`)
+      generalToast.error(`Failed to save name: ${errorMessage}`, 'Save Failed')
     } finally {
       setIsSavingName(false)
     }
@@ -900,38 +901,59 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
         setCompanyLogos(updatedLogos)
         setLogoUploadStatus('success')
 
-        // Trigger a page reload to update all logo references
-        setTimeout(() => {
-          window.location.reload()
-        }, 1000)
+        // Dispatch custom event to update logo across all components without page reload
+        window.dispatchEvent(new Event('logoUpdated'))
+
+        generalToast.success('Logo uploaded successfully', 'Upload Complete')
       } else {
         throw new Error('Failed to save logo configuration')
       }
     } catch (error) {
       console.error('Logo upload failed:', error)
       setLogoUploadStatus('error')
-      alert(`Failed to upload logo: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      generalToast.error(`Failed to upload logo: ${error instanceof Error ? error.message : 'Unknown error'}`, 'Upload Failed')
     } finally {
       setTimeout(() => setLogoUploadStatus('idle'), 3000)
     }
   }
 
   const handleLogoDelete = async (type: 'header' | 'favicon') => {
+    console.log(`🗑️ SettingsPage: Delete ${type} logo button clicked`)
+
     try {
+      console.log(`📡 SettingsPage: Calling logoService.deleteLogo('${type}')`)
       const deleted = await logoService.deleteLogo(type)
+      console.log(`📊 SettingsPage: Delete result:`, deleted)
 
       if (deleted) {
-        const updatedLogos = await logoService.getLogos()
-        setCompanyLogos(updatedLogos)
+        console.log(`🔄 SettingsPage: Clearing cache and fetching fresh logos`)
 
-        // Trigger a page reload to update all logo references
-        setTimeout(() => {
-          window.location.reload()
-        }, 1000)
+        // Force cache clear before fetching
+        logoService.clearCache()
+
+        // Get fresh logos from Supabase
+        const updatedLogos = await logoService.getLogos()
+        console.log(`📦 SettingsPage: Updated logos received:`, {
+          headerLogo: updatedLogos.headerLogo ? `${updatedLogos.headerLogo.substring(0, 50)}...` : 'EMPTY',
+          favicon: updatedLogos.favicon ? `${updatedLogos.favicon.substring(0, 50)}...` : 'EMPTY'
+        })
+
+        // Update state
+        setCompanyLogos(updatedLogos)
+        console.log(`✅ SettingsPage: State updated with new logos`)
+
+        // Dispatch custom event to update logo across all components without page reload
+        window.dispatchEvent(new Event('logoUpdated'))
+        console.log(`📢 SettingsPage: logoUpdated event dispatched`)
+
+        generalToast.success(`${type === 'header' ? 'Header logo' : 'Favicon'} removed successfully`, 'Removal Complete')
+      } else {
+        console.error(`❌ SettingsPage: Delete failed - service returned false`)
+        generalToast.error('Failed to delete logo', 'Deletion Failed')
       }
     } catch (error) {
-      console.error('Failed to delete logo:', error)
-      alert('Failed to delete logo')
+      console.error('❌ SettingsPage: Delete error:', error)
+      generalToast.error(`Failed to delete logo: ${error instanceof Error ? error.message : 'Unknown error'}`, 'Deletion Failed')
     }
   }
 
@@ -1029,11 +1051,22 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
             <EnhancedProfileSettings user={user} />
           )}
 
-          {/* API Configuration */}
-          {activeTab === 'api' && (
+          {/* API Configuration - Super User Only */}
+          {activeTab === 'api' && user?.role === 'super_user' && (
             <ApiKeyErrorBoundary>
               <EnhancedApiKeyManager user={user} />
             </ApiKeyErrorBoundary>
+          )}
+          {activeTab === 'api' && user?.role !== 'super_user' && (
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg p-6">
+              <div className="flex items-center gap-3 mb-2">
+                <AlertTriangleIcon className="w-6 h-6 text-red-600 dark:text-red-400" />
+                <h3 className="text-lg font-semibold text-red-900 dark:text-red-100">Access Denied</h3>
+              </div>
+              <p className="text-red-800 dark:text-red-200">
+                Only Super Users can access API Configuration. Please contact your system administrator.
+              </p>
+            </div>
           )}
 
           {/* Security Settings */}
@@ -1332,7 +1365,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
                 <div className="border-b border-gray-200 dark:border-gray-700 pb-4 sm:pb-6">
                   <h3 className="text-sm sm:text-base font-medium text-gray-900 dark:text-gray-100 mb-4">Header Logo</h3>
                   <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                    {companyLogos.headerLogo && (
+                    {companyLogos.headerLogo && companyLogos.headerLogo.trim() !== '' && (
                       <img
                         src={companyLogos.headerLogo}
                         alt="Header Logo"
@@ -1352,7 +1385,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
                         />
                         Upload Logo
                       </label>
-                      {companyLogos.headerLogo && (
+                      {companyLogos.headerLogo && companyLogos.headerLogo.trim() !== '' && (
                         <button
                           onClick={() => handleLogoDelete('header')}
                           className="w-full sm:w-auto px-4 py-3 bg-red-600 text-white rounded-md hover:bg-red-700 min-h-[44px] flex items-center justify-center text-sm"
@@ -1369,7 +1402,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
                 <div className="pb-4 sm:pb-6">
                   <h3 className="text-sm sm:text-base font-medium text-gray-900 dark:text-gray-100 mb-4">Favicon</h3>
                   <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                    {companyLogos.favicon && (
+                    {companyLogos.favicon && companyLogos.favicon.trim() !== '' && companyLogos.favicon !== '/favicon.png' && (
                       <img
                         src={companyLogos.favicon}
                         alt="Favicon"
@@ -1389,7 +1422,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
                         />
                         Upload Favicon
                       </label>
-                      {companyLogos.favicon && (
+                      {companyLogos.favicon && companyLogos.favicon.trim() !== '' && companyLogos.favicon !== '/favicon.png' && (
                         <button
                           onClick={() => handleLogoDelete('favicon')}
                           className="w-full sm:w-auto px-4 py-3 bg-red-600 text-white rounded-md hover:bg-red-700 min-h-[44px] flex items-center justify-center text-sm"
@@ -1412,7 +1445,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
                     'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'
                   }`}>
                     {logoUploadStatus === 'uploading' && 'Uploading logo...'}
-                    {logoUploadStatus === 'success' && 'Logo uploaded successfully! Page will reload shortly.'}
+                    {logoUploadStatus === 'success' && 'Logo uploaded successfully!'}
                     {logoUploadStatus === 'error' && 'Failed to upload logo. Please try again.'}
                   </div>
                 )}
@@ -1426,7 +1459,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
                     <p>• Only super users can upload or modify company logos</p>
                     <p>• Logos are visible to ALL users across ALL profiles</p>
                     <p>• Changes are synchronized across all devices instantly</p>
-                    <p>• Page reload required to see updated logos</p>
+                    <p>• Logos update automatically without page reload</p>
                     <p>• Footer logos are permanent and cannot be changed</p>
                     <p>• Supported formats: PNG, JPG, SVG (Max: 5MB)</p>
                   </div>
@@ -1435,8 +1468,8 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
             </div>
           )}
 
-          {/* Audit Logs */}
-          {activeTab === 'audit' && (
+          {/* Audit Logs - Super User Only */}
+          {activeTab === 'audit' && user?.role === 'super_user' && (
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
                 <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100">
@@ -1549,6 +1582,17 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
                   </p>
                 </div>
               )}
+            </div>
+          )}
+          {activeTab === 'audit' && user?.role !== 'super_user' && (
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg p-6">
+              <div className="flex items-center gap-3 mb-2">
+                <AlertTriangleIcon className="w-6 h-6 text-red-600 dark:text-red-400" />
+                <h3 className="text-lg font-semibold text-red-900 dark:text-red-100">Access Denied</h3>
+              </div>
+              <p className="text-red-800 dark:text-red-200">
+                Only Super Users can access Audit Logs. Please contact your system administrator.
+              </p>
             </div>
           )}
 

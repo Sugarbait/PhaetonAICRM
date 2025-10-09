@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react'
 import { auditLogger, AuditAction, ResourceType, AuditOutcome } from '@/services/auditLogger'
+import { getCurrentTenantId } from '@/config/tenantConfig'
 
 interface AuditLoggerProps {
   user: any
@@ -19,7 +20,7 @@ export const AuditLogger: React.FC<AuditLoggerProps> = ({ user }) => {
           AuditOutcome.SUCCESS,
           {
             page_path: path,
-            session_id: localStorage.getItem('carexps-auth') || 'demo-session'
+            session_id: localStorage.getItem(`${getCurrentTenantId()}-auth`) || 'demo-session'
           }
         )
       } catch (error) {
@@ -42,7 +43,7 @@ export const AuditLogger: React.FC<AuditLoggerProps> = ({ user }) => {
           AuditOutcome.SUCCESS,
           {
             ...details,
-            session_id: localStorage.getItem('carexps-auth') || 'demo-session'
+            session_id: localStorage.getItem(`${getCurrentTenantId()}-auth`) || 'demo-session'
           }
         )
       } catch (error) {

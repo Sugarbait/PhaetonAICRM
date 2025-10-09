@@ -10,6 +10,7 @@ import { Database, UserSettings, ServiceResponse, RealtimeChannel, UserDevice, D
 import { encryptionService } from './encryption'
 import { auditLogger } from './auditLogger'
 import { RealtimeChannel as SupabaseRealtimeChannel } from '@supabase/supabase-js'
+import { getCurrentTenantId } from '@/config/tenantConfig'
 
 type DatabaseUserSettings = Database['public']['Tables']['user_settings']['Row']
 
@@ -167,11 +168,15 @@ class UserSettingsServiceClass {
    * Generate unique device ID
    */
   private generateDeviceId(): string {
-    const stored = localStorage.getItem('carexps_device_id')
+    const { getCurrentTenantId } = require('@/config/tenantConfig')
+    const tenantId = getCurrentTenantId()
+    const deviceIdKey = `${tenantId}_device_id`
+
+    const stored = localStorage.getItem(deviceIdKey)
     if (stored) return stored
 
     const deviceId = `device_${Date.now()}_${crypto.randomUUID?.() || Math.random().toString(36).substring(2)}`
-    localStorage.setItem('carexps_device_id', deviceId)
+    localStorage.setItem(deviceIdKey, deviceId)
     return deviceId
   }
 
@@ -675,6 +680,7 @@ class UserSettingsServiceClass {
           const { data: settings, error } = await supabase
             .from('user_settings')
             .select('*')
+            .eq('tenant_id', getCurrentTenantId())
             .eq('user_id', userId)
             .single()
 
@@ -767,7 +773,10 @@ class UserSettingsServiceClass {
 
           const { error } = await supabase
             .from('user_settings')
-            .upsert(supabaseData, { onConflict: 'user_id' })
+            .upsert({
+              ...supabaseData,
+              tenant_id: getCurrentTenantId()
+            }, { onConflict: 'user_id' })
 
           if (error) {
             console.warn('Failed to save to cloud:', error.code, error.message)
@@ -878,6 +887,7 @@ class UserSettingsServiceClass {
       const { data: remoteSettings, error } = await supabase
         .from('user_settings')
         .select('updated_at, last_synced')
+        .eq('tenant_id', getCurrentTenantId())
         .eq('user_id', userId)
         .single()
 
@@ -1177,6 +1187,7 @@ class UserSettingsServiceClass {
       const { data: settings, error } = await supabase
         .from('user_settings')
         .select('*')
+        .eq('tenant_id', getCurrentTenantId())
         .eq('user_id', userId)
         .single()
 

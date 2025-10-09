@@ -2,6 +2,7 @@ import { supabase } from '@/config/supabase'
 import { SupabaseService } from './supabaseService'
 import { Database, ServiceResponse, PaginatedResponse } from '@/types/supabase'
 import { createAuditEntry, verifyAuditEntry } from '@/utils/encryption'
+import { getCurrentTenantId } from '@/config/tenantConfig'
 
 type Tables = Database['public']['Tables']
 type AuditLogRow = Tables['audit_logs']['Row']
@@ -86,6 +87,7 @@ export class AuditService extends SupabaseService {
         ip_address: await this.getClientIP(),
         user_agent: navigator.userAgent,
         session_id: sessionId,
+        tenant_id: getCurrentTenantId(),
         metadata: {
           ...entry.metadata,
           timestamp: new Date().toISOString(),
@@ -169,6 +171,7 @@ export class AuditService extends SupabaseService {
       let queryBuilder = supabase
         .from('audit_logs')
         .select('*', { count: 'exact' })
+        .eq('tenant_id', getCurrentTenantId())
         .order('timestamp', { ascending: false })
 
       // Apply filters
@@ -307,6 +310,7 @@ export class AuditService extends SupabaseService {
       const { data, error } = await supabase
         .from('audit_logs')
         .select('*')
+        .eq('tenant_id', getCurrentTenantId())
         .eq('table_name', tableName)
         .eq('record_id', recordId)
         .order('timestamp', { ascending: false })
@@ -416,6 +420,7 @@ export class AuditService extends SupabaseService {
       const { data: auditLog, error } = await supabase
         .from('audit_logs')
         .select('*')
+        .eq('tenant_id', getCurrentTenantId())
         .eq('id', auditLogId)
         .single()
 
@@ -492,10 +497,12 @@ export class AuditService extends SupabaseService {
       const { count: totalLogs } = await supabase
         .from('audit_logs')
         .select('*', { count: 'exact', head: true })
+        .eq('tenant_id', getCurrentTenantId())
 
       const { count: verifiedLogs } = await supabase
         .from('audit_logs')
         .select('*', { count: 'exact', head: true })
+        .eq('tenant_id', getCurrentTenantId())
         .not('metadata->audit_version', 'is', null)
 
       const auditLogCompleteness = totalLogs ? (verifiedLogs || 0) / totalLogs * 100 : 100
@@ -519,6 +526,7 @@ export class AuditService extends SupabaseService {
       const { count: oldRecords } = await supabase
         .from('audit_logs')
         .select('*', { count: 'exact', head: true })
+        .eq('tenant_id', getCurrentTenantId())
         .lt('timestamp', retentionDate.toISOString())
 
       const dataRetentionCompliance = oldRecords === 0 ? 100 : 90 // Simplified calculation
@@ -563,6 +571,7 @@ export class AuditService extends SupabaseService {
             encrypted_trail: encryptedEntry
           }
         })
+        .eq('tenant_id', getCurrentTenantId())
         .eq('id', auditLogId)
     } catch (error) {
       console.error('Failed to store encrypted audit trail:', error)
@@ -574,6 +583,7 @@ export class AuditService extends SupabaseService {
       const { data } = await supabase
         .from('audit_logs')
         .select('metadata')
+        .eq('tenant_id', getCurrentTenantId())
         .eq('id', auditLogId)
         .single()
 
@@ -622,6 +632,7 @@ export class AuditService extends SupabaseService {
       const { data: logs, error } = await supabase
         .from('audit_logs')
         .select('*')
+        .eq('tenant_id', getCurrentTenantId())
         .gte('timestamp', dateFrom.toISOString())
         .lte('timestamp', dateTo.toISOString())
         .order('timestamp', { ascending: true })

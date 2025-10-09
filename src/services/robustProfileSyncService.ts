@@ -1,6 +1,7 @@
 import { supabase, supabaseConfig } from '@/config/supabase'
 import { auditLogger } from './auditLogger'
 import { ServiceResponse } from '@/types/supabase'
+import { getCurrentTenantId } from '@/config/tenantConfig'
 
 export interface ProfileData {
   id: string
@@ -289,7 +290,10 @@ export class RobustProfileSyncService {
 
         const { error: profileError } = await supabase
           .from('user_profiles')
-          .upsert(cleanFields, { onConflict: 'user_id' })
+          .upsert({
+            ...cleanFields,
+            tenant_id: getCurrentTenantId()
+          }, { onConflict: 'user_id' })
 
         if (profileError) {
           lastError = `User profiles table error: ${profileError.message}`
@@ -338,6 +342,7 @@ export class RobustProfileSyncService {
         .from('users')
         .select('*')
         .eq('email', email)
+        .eq('tenant_id', getCurrentTenantId())
         .single()
 
       if (userError) {
@@ -354,6 +359,7 @@ export class RobustProfileSyncService {
           .from('user_profiles')
           .select('*')
           .eq('user_id', userData.id)
+          .eq('tenant_id', getCurrentTenantId())
           .single()
 
         if (!profileError && profileData) {
@@ -402,6 +408,7 @@ export class RobustProfileSyncService {
         .from('users')
         .select('*')
         .eq('id', userId)
+        .eq('tenant_id', getCurrentTenantId())
         .single()
 
       if (userError) {
@@ -418,6 +425,7 @@ export class RobustProfileSyncService {
           .from('user_profiles')
           .select('*')
           .eq('user_id', userId)
+          .eq('tenant_id', getCurrentTenantId())
           .single()
 
         if (!profileError && profileData) {

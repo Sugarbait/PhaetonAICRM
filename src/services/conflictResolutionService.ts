@@ -13,6 +13,7 @@
  */
 
 import { supabase } from '@/config/supabase'
+import { getCurrentTenantId } from '@/config/tenantConfig'
 import { secureLogger } from '@/services/secureLogger'
 import { secureStorage } from '@/services/secureStorage'
 import { auditLogger } from '@/services/auditLogger'
@@ -642,7 +643,8 @@ class ConflictResolutionService {
             resolution
           })),
           ip_address: null,
-          user_agent: navigator.userAgent
+          user_agent: navigator.userAgent,
+          tenant_id: getCurrentTenantId()
         })
 
       if (error) {

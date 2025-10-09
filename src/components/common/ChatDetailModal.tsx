@@ -22,6 +22,7 @@ import { Chat, chatService } from '@/services/chatService'
 import { ChatNotes } from './ChatNotes'
 import { twilioCostService, twilioApiService, currencyService } from '@/services'
 import { patientIdService } from '@/services/patientIdService'
+import { generalToast } from '@/services/generalToastService'
 import jsPDF from 'jspdf'
 
 interface ChatDetailModalProps {
@@ -330,7 +331,7 @@ export const ChatDetailModal: React.FC<ChatDetailModalProps> = ({ chat, isOpen, 
 
     } catch (error) {
       console.error('Error generating PDF:', error)
-      alert('Failed to generate PDF. Please try again.')
+      generalToast.error('Failed to generate PDF. Please try again.', 'PDF Generation Failed')
     }
   }
 

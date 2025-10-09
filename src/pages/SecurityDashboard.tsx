@@ -24,6 +24,7 @@ import { useIncidentMonitoring } from '@/hooks/useIncidentMonitoring'
 import { automatedLockoutService } from '@/services/automatedLockoutService'
 import { notificationService } from '@/services/notificationService'
 import { securityIntegrationService } from '@/services/securityIntegrationService'
+import { generalToast } from '@/services/generalToastService'
 import {
   SecurityIncident,
   IncidentType,
@@ -169,10 +170,14 @@ const SecurityDashboard: React.FC<SecurityDashboardProps> = ({ className = '' })
   const handleTestNotifications = async () => {
     try {
       const result = await actions.testNotifications()
-      alert(result ? 'Test notification sent successfully' : 'Test notification failed')
+      if (result) {
+        generalToast.success('Test notification sent successfully', 'Notification Sent')
+      } else {
+        generalToast.error('Test notification failed', 'Notification Failed')
+      }
     } catch (error) {
       console.error('Failed to test notifications:', error)
-      alert('Test notification failed')
+      generalToast.error('Test notification failed', 'Notification Failed')
     }
   }
 
@@ -180,10 +185,10 @@ const SecurityDashboard: React.FC<SecurityDashboardProps> = ({ className = '' })
   const handleCreateTestIncident = async () => {
     try {
       await actions.triggerTestIncident(IncidentType.SUSPICIOUS_LOGIN_LOCATION, IncidentSeverity.MEDIUM)
-      alert('Test incident created successfully')
+      generalToast.success('Test incident created successfully', 'Test Incident Created')
     } catch (error) {
       console.error('Failed to create test incident:', error)
-      alert('Failed to create test incident')
+      generalToast.error('Failed to create test incident', 'Creation Failed')
     }
   }
 
@@ -220,7 +225,7 @@ const SecurityDashboard: React.FC<SecurityDashboardProps> = ({ className = '' })
 
     } catch (error) {
       console.error('Failed to export incidents:', error)
-      alert('Failed to export incidents')
+      generalToast.error('Failed to export incidents', 'Export Failed')
     }
   }
 

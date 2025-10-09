@@ -8,6 +8,7 @@ import React, { useState } from 'react'
 import { UserPlusIcon, EyeIcon, EyeOffIcon, AlertCircle, CheckCircle, Check, X } from 'lucide-react'
 import { userManagementService } from '@/services/userManagementService'
 import { auditLogger, AuditAction, ResourceType, AuditOutcome } from '@/services/auditLogger'
+import { generalToast } from '@/services/generalToastService'
 
 interface UserRegistrationProps {
   onCancel: () => void
@@ -111,8 +112,16 @@ export const UserRegistration: React.FC<UserRegistrationProps> = ({ onCancel, on
 
         setWasFirstUser(isFirstUser)
         setSuccess(true)
+        generalToast.success(
+          isFirstUser
+            ? 'Your account has been created with Super User privileges!'
+            : 'Registration submitted successfully. Awaiting Super User approval.',
+          'Registration Complete'
+        )
       } else {
-        setError(result.message || 'Registration failed. Please try again.')
+        const errorMsg = result.message || 'Registration failed. Please try again.'
+        setError(errorMsg)
+        generalToast.error(errorMsg, 'Registration Failed')
 
         // Log failed registration
         await auditLogger.logPHIAccess(
@@ -129,7 +138,9 @@ export const UserRegistration: React.FC<UserRegistrationProps> = ({ onCancel, on
       }
     } catch (error) {
       console.error('Registration error:', error)
-      setError('An unexpected error occurred. Please try again.')
+      const errorMsg = 'An unexpected error occurred. Please try again.'
+      setError(errorMsg)
+      generalToast.error(errorMsg, 'Registration Error')
     } finally {
       setIsSubmitting(false)
     }
@@ -181,177 +192,180 @@ export const UserRegistration: React.FC<UserRegistrationProps> = ({ onCancel, on
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 max-w-md w-full">
-      <div className="text-center mb-6">
-        <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-full mb-3">
-          <UserPlusIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 max-w-4xl w-full">
+      <div className="text-center mb-4">
+        <div className="inline-flex items-center justify-center w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-full mb-2">
+          <UserPlusIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
         </div>
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Create New Profile</h2>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Create New Profile</h2>
+        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
           Submit your information for Super User approval
         </p>
       </div>
 
       {error && (
-        <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg flex items-center">
-          <AlertCircle className="w-5 h-5 text-red-500 dark:text-red-400 mr-2 flex-shrink-0" />
-          <span className="text-sm text-red-700 dark:text-red-300">{error}</span>
+        <div className="mb-3 p-2 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg flex items-center">
+          <AlertCircle className="w-4 h-4 text-red-500 dark:text-red-400 mr-2 flex-shrink-0" />
+          <span className="text-xs text-red-700 dark:text-red-300">{error}</span>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Full Name *
-          </label>
-          <input
-            type="text"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            placeholder="John Doe"
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Email Address *
-          </label>
-          <input
-            type="email"
-            value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            placeholder="john.doe@example.com"
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Password *
-          </label>
-          <div className="relative">
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Full Name *
+            </label>
             <input
-              type={showPassword ? 'text' : 'password'}
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              placeholder="Minimum 8 characters"
-              className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+              type="text"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              placeholder="John Doe"
+              className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
               required
             />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2"
-            >
-              {showPassword ? (
-                <EyeOffIcon className="w-5 h-5 text-gray-400" />
-              ) : (
-                <EyeIcon className="w-5 h-5 text-gray-400" />
-              )}
-            </button>
           </div>
-        </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Confirm Password *
-          </label>
-          <div className="relative">
+          <div>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Email Address *
+            </label>
             <input
-              type={showConfirmPassword ? 'text' : 'password'}
-              value={formData.confirmPassword}
-              onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-              placeholder="Re-enter your password"
-              className={`w-full px-3 py-2 pr-10 border rounded-lg focus:outline-none focus:ring-2 dark:bg-gray-700 dark:text-white ${
-                formData.confirmPassword && formData.password
-                  ? formData.password === formData.confirmPassword
-                    ? 'border-green-500 dark:border-green-500 focus:ring-green-500'
-                    : 'border-red-500 dark:border-red-500 focus:ring-red-500'
-                  : 'border-gray-300 dark:border-gray-600 focus:ring-blue-500'
-              }`}
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              placeholder="john.doe@example.com"
+              className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
               required
             />
-            <button
-              type="button"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2"
-            >
-              {showConfirmPassword ? (
-                <EyeOffIcon className="w-5 h-5 text-gray-400" />
-              ) : (
-                <EyeIcon className="w-5 h-5 text-gray-400" />
-              )}
-            </button>
           </div>
-          {formData.confirmPassword && formData.password && (
-            <div className={`mt-2 flex items-center text-sm ${
-              formData.password === formData.confirmPassword
-                ? 'text-green-600 dark:text-green-400'
-                : 'text-red-600 dark:text-red-400'
-            }`}>
-              {formData.password === formData.confirmPassword ? (
-                <>
-                  <Check className="w-4 h-4 mr-1" />
-                  <span>Passwords match</span>
-                </>
-              ) : (
-                <>
-                  <X className="w-4 h-4 mr-1" />
-                  <span>Passwords do not match</span>
-                </>
-              )}
+
+          <div>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Password *
+            </label>
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                placeholder="Minimum 8 characters"
+                className="w-full px-3 py-2 pr-10 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2"
+              >
+                {showPassword ? (
+                  <EyeOffIcon className="w-4 h-4 text-gray-400" />
+                ) : (
+                  <EyeIcon className="w-4 h-4 text-gray-400" />
+                )}
+              </button>
             </div>
-          )}
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Confirm Password *
+            </label>
+            <div className="relative">
+              <input
+                type={showConfirmPassword ? 'text' : 'password'}
+                value={formData.confirmPassword}
+                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                placeholder="Re-enter your password"
+                className={`w-full px-3 py-2 pr-10 text-sm border rounded-lg focus:outline-none focus:ring-2 dark:bg-gray-700 dark:text-white ${
+                  formData.confirmPassword && formData.password
+                    ? formData.password === formData.confirmPassword
+                      ? 'border-green-500 dark:border-green-500 focus:ring-green-500'
+                      : 'border-red-500 dark:border-red-500 focus:ring-red-500'
+                    : 'border-gray-300 dark:border-gray-600 focus:ring-blue-500'
+                }`}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2"
+              >
+                {showConfirmPassword ? (
+                  <EyeOffIcon className="w-4 h-4 text-gray-400" />
+                ) : (
+                  <EyeIcon className="w-4 h-4 text-gray-400" />
+                )}
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Department (Optional)
+            </label>
+            <input
+              type="text"
+              value={formData.department}
+              onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+              placeholder="e.g., Nursing, Radiology"
+              className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Phone Number (Optional)
+            </label>
+            <input
+              type="tel"
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              placeholder="(555) 123-4567"
+              className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+            />
+          </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Department (Optional)
-          </label>
-          <input
-            type="text"
-            value={formData.department}
-            onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-            placeholder="e.g., Nursing, Radiology"
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-          />
-        </div>
+        {formData.confirmPassword && formData.password && (
+          <div className={`flex items-center text-xs ${
+            formData.password === formData.confirmPassword
+              ? 'text-green-600 dark:text-green-400'
+              : 'text-red-600 dark:text-red-400'
+          }`}>
+            {formData.password === formData.confirmPassword ? (
+              <>
+                <Check className="w-3 h-3 mr-1" />
+                <span>Passwords match</span>
+              </>
+            ) : (
+              <>
+                <X className="w-3 h-3 mr-1" />
+                <span>Passwords do not match</span>
+              </>
+            )}
+          </div>
+        )}
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Phone Number (Optional)
-          </label>
-          <input
-            type="tel"
-            value={formData.phone}
-            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-            placeholder="(555) 123-4567"
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-          />
-        </div>
-
-        <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg p-3">
+        <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg p-2">
           <p className="text-xs text-blue-800 dark:text-blue-300">
             <strong>Note:</strong> If you are the first user registering, you will automatically receive Super User privileges.
             Otherwise, your account will be created with "User" role and require approval from a Super User administrator.
           </p>
         </div>
 
-        <div className="flex space-x-3">
+        <div className="flex space-x-2 pt-1">
           <button
             type="button"
             onClick={onCancel}
-            className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            className="flex-1 px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={isSubmitting}
-            className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="flex-1 bg-blue-600 text-white px-4 py-2 text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {isSubmitting ? 'Creating Account...' : 'Create Account'}
           </button>

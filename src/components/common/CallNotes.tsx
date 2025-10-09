@@ -13,6 +13,7 @@ import {
   ClockIcon
 } from 'lucide-react'
 import { notesService, type Note } from '@/services/notesService'
+import { useConfirmation } from '@/components/common/ConfirmationModal'
 
 interface CallNotesProps {
   callId: string
@@ -56,6 +57,7 @@ export const CallNotes: React.FC<CallNotesProps> = ({ callId, isReadonly = false
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const inlineTextareaRef = useRef<HTMLTextAreaElement>(null)
+  const { confirm, ConfirmationDialog } = useConfirmation()
 
   // Load notes with cross-device sync priority
   const loadNotes = useCallback(async () => {
@@ -231,9 +233,15 @@ export const CallNotes: React.FC<CallNotesProps> = ({ callId, isReadonly = false
 
   // Delete note with optimistic updates
   const handleDeleteNote = async (noteId: string) => {
-    if (!window.confirm('Are you sure you want to delete this note? This action cannot be undone.')) {
-      return
-    }
+    const confirmed = await confirm({
+      title: 'Delete Note',
+      message: 'Are you sure you want to delete this note? This action cannot be undone.',
+      type: 'danger',
+      confirmText: 'Delete',
+      cancelText: 'Cancel'
+    })
+
+    if (!confirmed) return
 
     const noteToDelete = notes.find(note => note.id === noteId)
     if (!noteToDelete) return
@@ -628,6 +636,9 @@ export const CallNotes: React.FC<CallNotesProps> = ({ callId, isReadonly = false
           )}
         </div>
       )}
+
+      {/* Confirmation Modal */}
+      <ConfirmationDialog />
     </div>
   )
 }

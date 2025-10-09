@@ -72,11 +72,8 @@ export function getBulletproofCredentials(): RetellCredentials {
     throw new Error('Hardcoded credentials are invalid - this should never happen')
   }
 
-  console.log('🔐 Bulletproof credentials loaded successfully:', {
-    apiKeyPrefix: credentials.apiKey.substring(0, 15) + '...',
-    callAgentId: credentials.callAgentId,
-    smsAgentId: credentials.smsAgentId
-  })
+  console.log('🔐 Bulletproof credentials loaded successfully')
+  // Security: Do not log API keys or Agent IDs
 
   return credentials
 }

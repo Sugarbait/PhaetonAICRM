@@ -4,6 +4,7 @@
 
 import { useState, useEffect } from 'react'
 import { logoService, CompanyLogos } from '@/services/logoService'
+import { getCurrentTenantId } from '@/config/tenantConfig'
 
 export const useCompanyLogos = () => {
   const [logos, setLogos] = useState<CompanyLogos>({
@@ -29,9 +30,10 @@ export const useCompanyLogos = () => {
 
     loadLogos()
 
-    // Listen for storage changes to sync across tabs
+    // Listen for storage changes to sync across tabs (tenant-specific)
+    const tenantId = getCurrentTenantId()
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'company_logos' && e.newValue) {
+      if (e.key === `${tenantId}_company_logos` && e.newValue) {
         try {
           const updatedLogos = JSON.parse(e.newValue)
           setLogos(updatedLogos)
@@ -41,10 +43,17 @@ export const useCompanyLogos = () => {
       }
     }
 
+    // Listen for custom logo update event (same tab)
+    const handleLogoUpdate = () => {
+      loadLogos()
+    }
+
     window.addEventListener('storage', handleStorageChange)
+    window.addEventListener('logoUpdated', handleLogoUpdate)
 
     return () => {
       window.removeEventListener('storage', handleStorageChange)
+      window.removeEventListener('logoUpdated', handleLogoUpdate)
     }
   }, [])
 

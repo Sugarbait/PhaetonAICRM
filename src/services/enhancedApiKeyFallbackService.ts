@@ -18,6 +18,7 @@ import { encryptionService } from './encryption'
 import { auditLogger } from './auditLogger'
 import { schemaValidationUtility } from '@/utils/schemaValidationUtility'
 import { ServiceResponse } from '@/types/supabase'
+import { getCurrentTenantId } from '@/config/tenantConfig'
 
 interface RetellApiKeys {
   retell_api_key?: string
@@ -248,6 +249,7 @@ export class EnhancedApiKeyFallbackService {
         .from('user_profiles')
         .upsert({
           user_id: userId,
+          tenant_id: getCurrentTenantId(),
           encrypted_retell_api_key: encryptedApiKey,
           encrypted_call_agent_id: encryptedCallAgent,
           encrypted_sms_agent_id: encryptedSmsAgent,
@@ -293,6 +295,7 @@ export class EnhancedApiKeyFallbackService {
           .from('user_profiles')
           .upsert({
             user_id: userId,
+            tenant_id: getCurrentTenantId(),
             encrypted_retell_api_key: encryptedApiKey,
             ...(schema.hasEncryptedAgentConfig && {
               encrypted_agent_config: {
@@ -324,6 +327,7 @@ export class EnhancedApiKeyFallbackService {
         .from('user_settings')
         .upsert({
           user_id: userId,
+          tenant_id: getCurrentTenantId(),
           retell_config: fallbackConfig,
           updated_at: new Date().toISOString()
         })
@@ -357,6 +361,7 @@ export class EnhancedApiKeyFallbackService {
         .from('user_settings')
         .upsert({
           user_id: userId,
+          tenant_id: getCurrentTenantId(),
           retell_config: {
             api_key: config.api_key,
             call_agent_id: config.call_agent_id,
@@ -501,6 +506,7 @@ export class EnhancedApiKeyFallbackService {
           retell_integration_status
         `)
         .eq('user_id', userId)
+        .eq('tenant_id', getCurrentTenantId())
         .single()
 
       if (error) throw error
@@ -548,6 +554,7 @@ export class EnhancedApiKeyFallbackService {
             ${schema.hasStatusTracking ? 'retell_integration_status' : ''}
           `)
           .eq('user_id', userId)
+          .eq('tenant_id', getCurrentTenantId())
           .single()
 
         if (!profileError && profileData) {
@@ -573,6 +580,7 @@ export class EnhancedApiKeyFallbackService {
         .from('user_settings')
         .select('retell_config')
         .eq('user_id', userId)
+        .eq('tenant_id', getCurrentTenantId())
         .single()
 
       if (!settingsError && settingsData?.retell_config) {
@@ -605,6 +613,7 @@ export class EnhancedApiKeyFallbackService {
         .from('user_settings')
         .select('retell_config')
         .eq('user_id', userId)
+        .eq('tenant_id', getCurrentTenantId())
         .single()
 
       if (error) throw error
@@ -769,8 +778,8 @@ export class EnhancedApiKeyFallbackService {
 
       // Cleanup test data
       await Promise.allSettled([
-        supabase.from('user_profiles').delete().eq('user_id', userId),
-        supabase.from('user_settings').delete().eq('user_id', userId)
+        supabase.from('user_profiles').delete().eq('user_id', userId).eq('tenant_id', getCurrentTenantId()),
+        supabase.from('user_settings').delete().eq('user_id', userId).eq('tenant_id', getCurrentTenantId())
       ])
 
       localStorage.removeItem(`retell_config_${userId}`)

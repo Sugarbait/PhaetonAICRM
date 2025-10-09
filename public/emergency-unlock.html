@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Emergency Account Unlock - ARTLEE CRM</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+    .container {
+      background: white;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+    h1 {
+      color: #2d3748;
+      margin-bottom: 10px;
+    }
+    .warning {
+      background: #fff3cd;
+      border: 2px solid #ffc107;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 20px 0;
+    }
+    .warning strong {
+      color: #856404;
+    }
+    .success {
+      background: #d4edda;
+      border: 2px solid #28a745;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 20px 0;
+      display: none;
+    }
+    .success strong {
+      color: #155724;
+    }
+    .error {
+      background: #f8d7da;
+      border: 2px solid #dc3545;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 20px 0;
+      display: none;
+    }
+    .error strong {
+      color: #721c24;
+    }
+    .input-group {
+      margin: 20px 0;
+    }
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #4a5568;
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #cbd5e0;
+      border-radius: 6px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 14px 28px;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 10px;
+      transition: transform 0.2s;
+    }
+    button:hover {
+      transform: translateY(-2px);
+    }
+    button:active {
+      transform: translateY(0);
+    }
+    .info {
+      background: #e7f3ff;
+      border-left: 4px solid #2196F3;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 4px;
+    }
+    .info strong {
+      color: #0c5460;
+    }
+    pre {
+      background: #f7fafc;
+      padding: 15px;
+      border-radius: 6px;
+      overflow-x: auto;
+      border: 1px solid #e2e8f0;
+    }
+    code {
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      color: #e83e8c;
+    }
+    .step {
+      margin: 15px 0;
+      padding-left: 30px;
+      position: relative;
+    }
+    .step::before {
+      content: "➤";
+      position: absolute;
+      left: 0;
+      color: #667eea;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔓 Emergency Account Unlock</h1>
+    <p style="color: #718096; margin-bottom: 30px;">ARTLEE CRM - Clear account lockout and reset failed login attempts</p>
+
+    <div class="warning">
+      <strong>⚠️ IMPORTANT:</strong> This tool will clear your account lockout and reset all failed login attempts. Use this only if you're locked out and need immediate access.
+    </div>
+
+    <div class="input-group">
+      <label for="email">Your Email Address:</label>
+      <input type="email" id="email" placeholder="e.g., test@test.com" autocomplete="email">
+    </div>
+
+    <button onclick="unlockAccount()">🔓 Unlock My Account</button>
+
+    <div id="success" class="success">
+      <strong>✅ Success!</strong> <span id="successMessage"></span>
+    </div>
+
+    <div id="error" class="error">
+      <strong>❌ Error:</strong> <span id="errorMessage"></span>
+    </div>
+
+    <div class="info">
+      <strong>📋 What this does:</strong>
+      <div class="step">Clears all lockout timers from localStorage</div>
+      <div class="step">Resets failed login attempt counters</div>
+      <div class="step">Removes login statistics for your account</div>
+      <div class="step">Allows you to login immediately</div>
+    </div>
+
+    <div class="info" style="margin-top: 30px;">
+      <strong>🔧 Troubleshooting:</strong><br><br>
+      If unlock doesn't work, open browser console (F12) and run:
+      <pre><code>// Clear all authentication data
+localStorage.clear()
+sessionStorage.clear()
+
+// Reload the page
+window.location.reload()</code></pre>
+    </div>
+  </div>
+
+  <script>
+    function unlockAccount() {
+      const email = document.getElementById('email').value.trim().toLowerCase()
+      const successDiv = document.getElementById('success')
+      const errorDiv = document.getElementById('error')
+      const successMessage = document.getElementById('successMessage')
+      const errorMessage = document.getElementById('errorMessage')
+
+      // Hide previous messages
+      successDiv.style.display = 'none'
+      errorDiv.style.display = 'none'
+
+      if (!email) {
+        errorDiv.style.display = 'block'
+        errorMessage.textContent = 'Please enter your email address'
+        return
+      }
+
+      try {
+        console.log('🔓 Emergency unlock started for:', email)
+
+        // Get current tenant ID (ARTLEE)
+        const tenantId = 'artlee'
+
+        // Clear all lockout-related keys
+        let clearedCount = 0
+
+        // 1. Clear failed_login_attempts
+        const failedAttemptsKey = 'failed_login_attempts'
+        const existingAttempts = localStorage.getItem(failedAttemptsKey)
+        if (existingAttempts) {
+          try {
+            const attempts = JSON.parse(existingAttempts)
+            const filtered = attempts.filter(a => a.email !== email)
+            localStorage.setItem(failedAttemptsKey, JSON.stringify(filtered))
+            console.log('✅ Cleared failed_login_attempts for:', email)
+            clearedCount++
+          } catch (e) {
+            console.log('⚠️ Could not parse failed_login_attempts')
+          }
+        }
+
+        // 2. Find and clear loginStats for this user
+        // Search all localStorage keys for loginStats_*
+        const allKeys = Object.keys(localStorage)
+        const loginStatsKeys = allKeys.filter(key => key.startsWith('loginStats_'))
+
+        for (const key of loginStatsKeys) {
+          try {
+            // Check if we can find user by ID
+            const userId = key.replace('loginStats_', '')
+
+            // Clear the loginStats regardless
+            const cleanStats = {
+              loginAttempts: 0,
+              lastLogin: undefined,
+              lockoutUntil: undefined
+            }
+            localStorage.setItem(key, JSON.stringify(cleanStats))
+            console.log('✅ Cleared loginStats:', key)
+            clearedCount++
+          } catch (e) {
+            console.log('⚠️ Could not clear:', key)
+          }
+        }
+
+        // 3. Search for user in systemUsers and get ID
+        const systemUsersKey = 'systemUsers'
+        const systemUsers = localStorage.getItem(systemUsersKey)
+        if (systemUsers) {
+          try {
+            const users = JSON.parse(systemUsers)
+            const user = users.find(u => u.email && u.email.toLowerCase() === email)
+
+            if (user) {
+              console.log('✅ Found user in systemUsers:', user.id)
+
+              // Clear loginStats for this specific user
+              const loginStatsKey = `loginStats_${user.id}`
+              const cleanStats = {
+                loginAttempts: 0,
+                lastLogin: undefined,
+                lockoutUntil: undefined
+              }
+              localStorage.setItem(loginStatsKey, JSON.stringify(cleanStats))
+              console.log('✅ Reset loginStats for user:', user.id)
+              clearedCount++
+
+              // Update user in systemUsers to clear lockout
+              user.isLocked = false
+              user.loginAttempts = 0
+              localStorage.setItem(systemUsersKey, JSON.stringify(users))
+              console.log('✅ Updated systemUsers to clear lockout')
+              clearedCount++
+            }
+          } catch (e) {
+            console.log('⚠️ Could not parse systemUsers')
+          }
+        }
+
+        // 4. Check settings for user ID
+        const settingsKeys = allKeys.filter(key => key.startsWith('settings_'))
+        for (const key of settingsKeys) {
+          try {
+            const settings = JSON.parse(localStorage.getItem(key) || '{}')
+            if (settings.email && settings.email.toLowerCase() === email) {
+              const userId = key.replace('settings_', '')
+              console.log('✅ Found user ID in settings:', userId)
+
+              // Clear loginStats for this user
+              const loginStatsKey = `loginStats_${userId}`
+              const cleanStats = {
+                loginAttempts: 0,
+                lastLogin: undefined,
+                lockoutUntil: undefined
+              }
+              localStorage.setItem(loginStatsKey, JSON.stringify(cleanStats))
+              console.log('✅ Cleared loginStats via settings lookup')
+              clearedCount++
+            }
+          } catch (e) {
+            console.log('⚠️ Could not check settings:', key)
+          }
+        }
+
+        // Success message
+        if (clearedCount > 0) {
+          successDiv.style.display = 'block'
+          successMessage.textContent = `Account unlocked! Cleared ${clearedCount} lockout records. You can now login to ARTLEE CRM.`
+          console.log(`🎉 Emergency unlock complete! Cleared ${clearedCount} records`)
+
+          // Wait 2 seconds then redirect to login
+          setTimeout(() => {
+            window.location.href = '/'
+          }, 2000)
+        } else {
+          errorDiv.style.display = 'block'
+          errorMessage.textContent = 'No lockout records found for this email. Your account may already be unlocked.'
+          console.log('⚠️ No lockout data found for:', email)
+        }
+
+      } catch (error) {
+        console.error('❌ Emergency unlock failed:', error)
+        errorDiv.style.display = 'block'
+        errorMessage.textContent = `Unlock failed: ${error.message}`
+      }
+    }
+
+    // Auto-focus email input
+    document.getElementById('email').focus()
+
+    // Allow Enter key to submit
+    document.getElementById('email').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        unlockAccount()
+      }
+    })
+  </script>
+</body>
+</html>

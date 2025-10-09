@@ -11,6 +11,7 @@ import { SupabaseProvider } from './contexts/SupabaseContext'
 import './test/smsCostCalculationTest'
 // MFA cross-device security test removed (now using TOTP)
 import { ThemeManager } from './utils/themeManager'
+import { initializeFavicon } from './utils/faviconManager'
 // Import role correction utility
 import { correctAndStoreUserRole, checkAndFixStoredUser } from './utils/correctSuperUserRoles'
 // Import user role persistence fixer
@@ -37,6 +38,7 @@ import { AuditLogger } from './components/security/AuditLogger'
 import { useSessionTimeout } from './hooks/useSessionTimeout'
 import { SessionTimeoutWarning } from './components/common/SessionTimeoutWarning'
 import { ToastManager } from './components/common/ToastManager'
+import { GeneralToast } from './components/common/GeneralToast'
 import { SecurityAlerts } from './components/security/SecurityAlerts'
 import { retellMonitoringService } from './services/retellMonitoringService'
 
@@ -366,6 +368,9 @@ const AppContent: React.FC<{
 
       {/* Toast Notifications */}
       <ToastManager userId={user?.id} />
+
+      {/* General Toast Notifications */}
+      <GeneralToast />
     </div>
   )
 }
@@ -451,10 +456,13 @@ const App: React.FC = () => {
         // Initialize theme manager
         ThemeManager.initialize()
 
+        // Initialize cross-device favicon system
+        initializeFavicon()
+
         // Initialize cross-device settings synchronization
         UserSettingsService.initialize()
 
-        console.log('Basic security systems and cross-device sync initialized successfully')
+        console.log('Basic security systems, favicon, and cross-device sync initialized successfully')
       } catch (error) {
         console.error('Failed to initialize security systems:', error)
       }

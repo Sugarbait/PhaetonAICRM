@@ -215,8 +215,8 @@ export class ChatService {
 
         console.log('🔄 [ChatService] Credentials copied from retellService:', {
           hasApiKey: !!this.apiKey,
-          apiKeyPrefix: this.apiKey.substring(0, 15) + '...',
-          smsAgentId: this.smsAgentId
+          apiKeyLength: this.apiKey.length
+          // Security: Do not log API keys or Agent IDs
         })
 
         // Verify chatService loaded credentials successfully
@@ -224,8 +224,9 @@ export class ChatService {
           console.log('✅ [ChatService] Successfully synchronized with retellService:', {
             hasApiKey: !!this.apiKey,
             apiKeyLength: this.apiKey.length,
-            smsAgentId: this.smsAgentId,
+            hasSmsAgentId: !!this.smsAgentId,
             isDemoMode: this.isDemoMode
+            // Security: Do not log API keys or Agent IDs
           })
         } else {
           console.warn('⚠️ [ChatService] Synchronization completed but no credentials found')
@@ -324,8 +325,9 @@ export class ChatService {
       console.log('Chat Service: Credentials loaded:', {
         hasApiKey: !!this.apiKey,
         apiKeyLength: this.apiKey.length,
-        smsAgentId: this.smsAgentId,
+        hasSmsAgentId: !!this.smsAgentId,
         isDemoMode: !this.apiKey
+        // Security: Do not log API keys or Agent IDs
       })
 
       // Disable demo mode - always try real API

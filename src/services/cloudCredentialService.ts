@@ -7,6 +7,7 @@
 
 import { getBulletproofCredentials, validateCredentials, type RetellCredentials } from '@/config/retellCredentials'
 import { supabase } from '@/config/supabase'
+import { getCurrentTenantId } from '@/config/tenantConfig'
 
 interface CloudCredentialRecord {
   id?: string
@@ -14,6 +15,7 @@ interface CloudCredentialRecord {
   api_key: string
   call_agent_id: string
   sms_agent_id: string
+  tenant_id: string
   created_at?: string
   updated_at?: string
   user_id?: string
@@ -99,11 +101,14 @@ export class CloudCredentialService {
         throw new Error('Invalid credentials provided')
       }
 
+      const tenantId = getCurrentTenantId()
+
       const credentialRecord: CloudCredentialRecord = {
         credential_type: 'system_defaults',
         api_key: credentials.apiKey,
         call_agent_id: credentials.callAgentId,
         sms_agent_id: credentials.smsAgentId,
+        tenant_id: tenantId,
         is_active: true,
         metadata: {
           source: 'hardcoded_bulletproof',
@@ -117,6 +122,7 @@ export class CloudCredentialService {
         .from('system_credentials')
         .select('id')
         .eq('credential_type', 'system_defaults')
+        .eq('tenant_id', tenantId)
         .eq('is_active', true)
         .single()
 
@@ -152,10 +158,12 @@ export class CloudCredentialService {
    */
   public async getSystemDefaults(): Promise<RetellCredentials | null> {
     try {
-      const { data, error } = await supabase
+      const tenantId = getCurrentTenantId()
+      const { data, error} = await supabase
         .from('system_credentials')
         .select('*')
         .eq('credential_type', 'system_defaults')
+        .eq('tenant_id', tenantId)
         .eq('is_active', true)
         .single()
 
@@ -199,11 +207,14 @@ export class CloudCredentialService {
       // For Phaeton AI CRM, allow storing blank credentials (for cross-device clearing)
       // Skip validation to allow users to clear credentials across all devices
 
+      const tenantId = getCurrentTenantId()
+
       const credentialRecord: CloudCredentialRecord = {
         credential_type: 'user_override',
         api_key: credentials.apiKey || '',
         call_agent_id: credentials.callAgentId || '',
         sms_agent_id: credentials.smsAgentId || '',
+        tenant_id: tenantId,
         user_id: userId,
         is_active: true,
         metadata: {
@@ -236,10 +247,12 @@ export class CloudCredentialService {
    */
   public async getUserCredentials(userId: string): Promise<RetellCredentials | null> {
     try {
+      const tenantId = getCurrentTenantId()
       const { data, error } = await supabase
         .from('system_credentials')
         .select('*')
         .eq('credential_type', 'user_override')
+        .eq('tenant_id', tenantId)
         .eq('user_id', userId)
         .eq('is_active', true)
         .single()
@@ -358,6 +371,8 @@ export class CloudCredentialService {
    */
   public async cleanupOldCredentials(): Promise<void> {
     try {
+      const tenantId = getCurrentTenantId()
+
       // Mark old system defaults as inactive (keep only the latest)
       const { error } = await supabase
         .rpc('cleanup_old_system_credentials')
@@ -371,6 +386,7 @@ export class CloudCredentialService {
         await supabase
           .from('system_credentials')
           .update({ is_active: false })
+          .eq('tenant_id', tenantId)
           .lt('created_at', thirtyDaysAgo)
           .neq('credential_type', 'system_defaults')
       }

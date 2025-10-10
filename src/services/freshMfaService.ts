@@ -181,22 +181,30 @@ class FreshMfaService {
       })
 
       // Verify the code with increased window tolerance
-      // SECURITY FIX: Reduced window from 2 to 1 (±30 seconds instead of ±60)
-      // Window 1 = ±30 seconds tolerance (previous, current, next time step)
-      // Standard TOTP security practice - balances usability and security
+      // For initial setup: Use window 2 (±60 seconds) to help with time sync issues
+      // For login: Window 1 is used (±30 seconds) for better security
+      // Window 2 = ±60 seconds tolerance (helps during setup when clocks may not be perfectly synced)
       const isValid = totp.validate({
         token: sanitizedCode,
-        window: 1 // Reduced from 2 to 1 for better security
+        window: 2 // Use window 2 for initial setup to help with time synchronization
       })
+
+      // Enhanced debugging with more timestamp details
+      const now = Date.now()
+      const unixTime = Math.floor(now / 1000)
+      const timeStep = Math.floor(unixTime / 30)
+      const currentCode = totp.generate()
 
       console.log('🔍 TOTP Verification Details:', {
         originalToken: totpCode,
         sanitizedToken: sanitizedCode,
-        timestamp: Math.floor(Date.now() / 1000),
-        timeStep: Math.floor(Date.now() / 1000 / 30),
-        window: 1,
+        timestamp: unixTime,
+        timeStep: timeStep,
+        window: 2,
+        currentExpectedCode: currentCode,
         result: isValid !== null ? 'VALID' : 'INVALID',
-        delta: isValid
+        delta: isValid,
+        localTime: new Date().toISOString()
       })
 
       if (isValid !== null) {

@@ -1070,27 +1070,34 @@ HOSTINGER_EMAIL_PASSWORD length: 16
 - Service initialization and connection logic
 - Integration patterns and data transformation
 
-### **API Credential Loading System (SMS Page) - LOCKED DOWN:**
-**The SMS page API credential loading system is production-ready and MUST NOT BE MODIFIED:**
+### **API Credential Loading System (SMS Page) - LOCKED DOWN WITH TENANT ISOLATION:**
+**✅ FIXED (2025-10-10): The SMS page API credential loading now includes tenant isolation to prevent cross-CRM credential leakage.**
 
-**Protected Pattern:**
+**Protected Pattern (TENANT-AWARE):**
 - SMS page uses Dashboard pattern: `retellService.loadCredentialsAsync()` → `chatService.syncWithRetellService()`
-- ChatService uses bulletproof credential scanning (searches ALL user settings, not just current user)
-- This resolves user ID mismatches and ensures API credentials persist during navigation
+- chatService uses tenant-aware credential loading via cloudCredentialService
+- Only loads credentials with `tenant_id='phaeton_ai'` from Supabase cloud storage
+- Prevents loading Agent IDs from other CRMs (ARTLEE, MedEx, CareXPS)
 
 **Critical Files - DO NOT MODIFY:**
 - `src/pages/SMSPage.tsx` - **ENTIRE FILE LOCKED**
 - `src/pages/CallsPage.tsx` - **ENTIRE FILE LOCKED**
 - `src/pages/DashboardPage.tsx` - **ENTIRE FILE LOCKED**
-- `src/services/chatService.ts` - Lines 270-314 (bulletproof credential loading logic)
+- `src/services/chatService.ts` - Lines 282-357 (tenant-aware credential loading)
+- `src/services/cloudCredentialService.ts` - Lines 1-410 (tenant filtering for all queries)
 - `src/services/retellService.ts` - **ALL CREDENTIAL METHODS LOCKED**
 
-**Working Solution:**
-1. Both `retellService` and `chatService` scan ALL localStorage `settings_*` keys
-2. They use the first valid API key found, regardless of user ID
-3. This ensures the SMS page works even with mismatched user IDs in localStorage
+**Tenant-Aware Loading Priority (FIXED 2025-10-10):**
+1. **PRIORITY 1**: Current user's localStorage (immediate availability)
+2. **PRIORITY 2**: cloudCredentialService with tenant filter (CRITICAL - only loads `tenant_id='phaeton_ai'`)
+3. **REMOVED**: Problematic ALL-settings localStorage scan (caused cross-CRM leakage)
 
-**This system is confirmed working in production and MUST remain unchanged**
+**What Was Fixed:**
+- **OLD BEHAVIOR** (BROKEN): chatService scanned ALL localStorage `settings_*` keys → loaded credentials from any CRM
+- **NEW BEHAVIOR** (FIXED): chatService uses cloudCredentialService → only loads Phaeton AI credentials
+- **COMMIT**: 42f8708 - "🔐 CRITICAL FIX: Add tenant isolation to chatService credential loading"
+
+**This system now respects tenant boundaries and MUST remain unchanged**
 
 **🔒 AUTHENTICATION SYSTEM IS PERMANENTLY LOCKED AND PROTECTED - NO MODIFICATIONS ALLOWED**
 

@@ -307,11 +307,17 @@ class RetellService {
   }
 
   /**
-   * Scan all user settings files for API keys
+   * Scan all user settings files for API keys (with tenant validation)
+   * CRITICAL: Validates tenant_id to prevent cross-tenant credential loading
    */
-  private scanAllUserSettings(): {apiKey: string, callAgentId: string, smsAgentId: string} {
+  private async scanAllUserSettings(): Promise<{apiKey: string, callAgentId: string, smsAgentId: string}> {
     try {
-      console.log('🔍 RetellService - Scanning all user settings for credentials...')
+      console.log('🔍 [RetellService TENANT-AWARE] Scanning all user settings for credentials...')
+
+      // Get current tenant ID for validation
+      const { getCurrentTenantId } = await import('../config/tenantConfig')
+      const currentTenantId = getCurrentTenantId()
+
       const allKeys = Object.keys(localStorage)
       const settingsKeys = allKeys.filter(key => key.startsWith('settings_') && key !== 'settings_undefined')
 
@@ -319,7 +325,16 @@ class RetellService {
         try {
           const settings = JSON.parse(localStorage.getItem(key) || '{}')
           if (settings.retellApiKey) {
-            console.log('🎯 RetellService - Found credentials in', key)
+            // CRITICAL: Verify credentials belong to current tenant before using them
+            const storedTenantId = settings.tenant_id
+
+            // Skip credentials if they belong to a different tenant
+            if (storedTenantId && storedTenantId !== currentTenantId) {
+              console.warn(`⚠️ [RetellService TENANT-AWARE] Skipping credentials from ${key} - belongs to tenant: ${storedTenantId} (current: ${currentTenantId})`)
+              continue // Skip to next settings file
+            }
+
+            console.log(`🎯 [RetellService TENANT-AWARE] Found credentials in ${key} (tenant validated:`, storedTenantId || 'no tenant_id', ')')
             return {
               apiKey: settings.retellApiKey,
               callAgentId: settings.callAgentId || '',
@@ -330,6 +345,8 @@ class RetellService {
           console.warn(`RetellService - Error parsing settings from ${key}:`, parseError)
         }
       }
+
+      console.log('⚠️ [RetellService TENANT-AWARE] No credentials found with matching tenant_id:', currentTenantId)
     } catch (error) {
       console.warn('RetellService - Error scanning user settings:', error)
     }

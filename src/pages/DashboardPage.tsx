@@ -1032,7 +1032,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user }) => {
         dateRange: selectedDateRange,
         startDate: start,
         endDate: end,
-        companyName: 'ARTLEE Business Platform CRM',
+        companyName: 'Phaeton AI CRM',
         reportTitle: 'Dashboard Analytics Report'
       })
     } catch (error) {

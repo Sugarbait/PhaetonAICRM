@@ -99,7 +99,7 @@ class PDFExportService {
     this.pdf.setTextColor(255, 255, 255)
     this.pdf.setFontSize(24)
     this.pdf.setFont('helvetica', 'bold')
-    this.pdf.text(options.companyName || 'CareXPS Business Platform CRM', centerX, 45, { align: 'center' })
+    this.pdf.text(options.companyName || 'Phaeton AI CRM', centerX, 45, { align: 'center' })
 
     this.pdf.setFontSize(16)
     this.pdf.setFont('helvetica', 'normal')

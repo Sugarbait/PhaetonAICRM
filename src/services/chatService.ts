@@ -280,9 +280,21 @@ export class ChatService {
   }
 
   /**
-   * Load API credentials from localStorage
+   * Load API credentials (synchronous wrapper for async loading)
+   * CRITICAL FIX: Uses tenant-aware credential loading
    */
   private loadCredentials(): void {
+    // Fire off async loading but don't wait for it
+    this.loadCredentialsAsync().catch(error => {
+      console.error('Chat Service: Async credential loading failed:', error)
+    })
+  }
+
+  /**
+   * Load API credentials with tenant isolation (async implementation)
+   * CRITICAL FIX: Uses cloudCredentialService for tenant-aware credential loading
+   */
+  private async loadCredentialsAsync(): Promise<void> {
     // Check if we're in a browser environment
     if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
       console.error('Chat Service: Browser environment not available, cannot load credentials')
@@ -291,34 +303,39 @@ export class ChatService {
     }
 
     try {
-      // BULLETPROOF: First try current user's settings
+      console.log('🏢 [ChatService TENANT-AWARE] Loading credentials with tenant isolation...')
+
+      // PRIORITY 1: Try current user's localStorage settings (for immediate availability)
       const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}')
       console.log('Chat Service: Loading credentials for user:', currentUser.id)
 
       if (currentUser.id) {
         const settings = JSON.parse(localStorage.getItem(`settings_${currentUser.id}`) || '{}')
-        this.apiKey = settings.retellApiKey || ''
-        this.smsAgentId = settings.smsAgentId || ''
+        if (settings.retellApiKey) {
+          this.apiKey = settings.retellApiKey || ''
+          this.smsAgentId = settings.smsAgentId || ''
+          console.log('✅ [ChatService TENANT-AWARE] Loaded credentials from current user localStorage')
+        }
       }
 
-      // BULLETPROOF: If no credentials found, scan ALL user settings (like retellService does)
+      // PRIORITY 2: Use cloudCredentialService for tenant-aware loading (CRITICAL FIX)
+      // This ensures we only load credentials for tenant_id='phaeton_ai'
       if (!this.apiKey) {
-        console.log('🔍 Chat Service: No credentials for current user, scanning all user settings...')
-        const allKeys = Object.keys(localStorage)
-        const settingsKeys = allKeys.filter(key => key.startsWith('settings_') && key !== 'settings_undefined')
+        console.log('🔍 [ChatService TENANT-AWARE] No credentials in localStorage, checking cloud storage with tenant filter...')
 
-        for (const key of settingsKeys) {
-          try {
-            const settings = JSON.parse(localStorage.getItem(key) || '{}')
-            if (settings.retellApiKey) {
-              console.log('🎯 Chat Service: Found credentials in', key)
-              this.apiKey = settings.retellApiKey
-              this.smsAgentId = settings.smsAgentId || ''
-              break
-            }
-          } catch (parseError) {
-            console.warn(`Chat Service: Error parsing settings from ${key}:`, parseError)
+        try {
+          const { cloudCredentialService } = await import('./cloudCredentialService')
+          const cloudCreds = await cloudCredentialService.getCredentialsWithFallback(currentUser.id)
+
+          if (cloudCreds && cloudCreds.apiKey) {
+            this.apiKey = cloudCreds.apiKey
+            this.smsAgentId = cloudCreds.smsAgentId
+            console.log('✅ [ChatService TENANT-AWARE] Loaded credentials from cloud storage (tenant-filtered)')
+          } else {
+            console.warn('⚠️ [ChatService TENANT-AWARE] No credentials found in cloud storage for current tenant')
           }
+        } catch (cloudError) {
+          console.error('❌ [ChatService TENANT-AWARE] Cloud credential loading failed:', cloudError)
         }
       }
 
@@ -326,14 +343,15 @@ export class ChatService {
         hasApiKey: !!this.apiKey,
         apiKeyLength: this.apiKey.length,
         hasSmsAgentId: !!this.smsAgentId,
-        isDemoMode: !this.apiKey
+        isDemoMode: !this.apiKey,
+        source: 'tenant_aware_loading'
         // Security: Do not log API keys or Agent IDs
       })
 
       // Disable demo mode - always try real API
       this.isDemoMode = false
     } catch (error) {
-      console.error('Chat Service: Failed to load credentials from localStorage:', error)
+      console.error('Chat Service: Failed to load credentials:', error)
       this.isDemoMode = false // Still try real API
     }
   }

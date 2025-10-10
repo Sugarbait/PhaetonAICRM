@@ -392,13 +392,40 @@ class PDFExportService {
   }
 
   private drawPieSlice(centerX: number, centerY: number, radius: number, startAngle: number, endAngle: number): void {
-    const startX = centerX + radius * Math.cos(startAngle)
-    const startY = centerY + radius * Math.sin(startAngle)
-    const endX = centerX + radius * Math.cos(endAngle)
-    const endY = centerY + radius * Math.sin(endAngle)
+    // Draw a proper circular arc by approximating with many small line segments
+    const segments = 50 // Number of line segments to approximate the arc
+    const angleStep = (endAngle - startAngle) / segments
 
-    // For simplicity, we'll draw sectors as triangular approximations
-    this.pdf.triangle(centerX, centerY, startX, startY, endX, endY, 'F')
+    // Start path from center
+    this.pdf.setLineWidth(0.1)
+
+    // Draw filled sector using path
+    const path: [number, number][] = [[centerX, centerY]]
+
+    // Add points along the arc
+    for (let i = 0; i <= segments; i++) {
+      const angle = startAngle + angleStep * i
+      const x = centerX + radius * Math.cos(angle)
+      const y = centerY + radius * Math.sin(angle)
+      path.push([x, y])
+    }
+
+    // Close path back to center
+    path.push([centerX, centerY])
+
+    // Draw the filled path
+    this.pdf.lines(
+      path.slice(1).map((point, i) => {
+        if (i === 0) {
+          return [point[0] - path[0][0], point[1] - path[0][1]]
+        }
+        return [point[0] - path[i][0], point[1] - path[i][1]]
+      }),
+      path[0][0],
+      path[0][1],
+      [1, 1],
+      'F'
+    )
   }
 
   private generateChartLegend(items: Array<{ label: string; color: [number, number, number] }>, yPosition: number): void {

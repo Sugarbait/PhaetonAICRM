@@ -2375,16 +2375,6 @@ export const SMSPage: React.FC<SMSPageProps> = ({ user }) => {
                     <option value="ended">Ended</option>
                     <option value="error">Error</option>
                   </select>
-                  <select
-                    value={sentimentFilter}
-                    onChange={(e) => setSentimentFilter(e.target.value)}
-                    className="px-3 sm:px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px] text-sm sm:text-base flex-1 sm:min-w-[130px] touch-manipulation"
-                  >
-                    <option value="all">All Sentiment</option>
-                    <option value="positive">Positive</option>
-                    <option value="neutral">Neutral</option>
-                    <option value="negative">Negative</option>
-                  </select>
                 </div>
               </div>
             </div>

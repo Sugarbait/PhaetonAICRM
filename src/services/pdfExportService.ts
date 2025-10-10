@@ -6,6 +6,7 @@
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
 import { format, startOfDay, endOfDay } from 'date-fns'
+import { logoService } from './logoService'
 
 interface DashboardMetrics {
   totalCalls: number
@@ -566,56 +567,89 @@ class PDFExportService {
 
   private async addLogoToPDF(centerX: number, y: number): Promise<void> {
     try {
-      // Try to load the logo - first try local copy, then fallback to external URL
-      let logoUrl = '/images/Logo.png'
-      let response = await fetch(logoUrl).catch(() => null)
+      // First, try to get the uploaded company logo from CRM settings
+      const companyLogos = await logoService.getLogos()
+      let logoUrl = companyLogos.headerLogo || ''
 
-      if (!response || !response.ok) {
-        // Try external URL as fallback
-        logoUrl = 'https://nexasync.ca/images/Logo.png'
-        response = await fetch(logoUrl).catch(() => null)
+      console.log('📄 PDF Export: Attempting to load logo:', logoUrl ? 'Using uploaded company logo' : 'No company logo, trying fallbacks')
+
+      let base64Data: string | null = null
+
+      // If we have a company logo
+      if (logoUrl) {
+        // Check if it's already base64
+        if (logoUrl.startsWith('data:image')) {
+          console.log('✅ PDF Export: Using base64 company logo from settings')
+          base64Data = logoUrl
+        } else {
+          // It's a URL, try to fetch it
+          console.log('📥 PDF Export: Fetching company logo from URL')
+          const response = await fetch(logoUrl).catch(() => null)
+          if (response?.ok) {
+            const blob = await response.blob()
+            base64Data = await this.blobToBase64(blob)
+            console.log('✅ PDF Export: Successfully loaded company logo from URL')
+          } else {
+            console.warn('⚠️ PDF Export: Failed to fetch company logo, trying fallbacks')
+          }
+        }
       }
 
-      if (!response.ok) {
-        // Silently skip logo if unavailable to reduce console noise
+      // Fallback to hardcoded logo if company logo not available
+      if (!base64Data) {
+        console.log('📥 PDF Export: Trying fallback logo at /images/Logo.png')
+        let response = await fetch('/images/Logo.png').catch(() => null)
+
+        if (!response || !response.ok) {
+          console.log('📥 PDF Export: Trying external fallback logo')
+          response = await fetch('https://nexasync.ca/images/Logo.png').catch(() => null)
+        }
+
+        if (response?.ok) {
+          const blob = await response.blob()
+          base64Data = await this.blobToBase64(blob)
+          console.log('✅ PDF Export: Loaded fallback logo')
+        }
+      }
+
+      // If we still don't have a logo, skip silently
+      if (!base64Data) {
+        console.log('⚠️ PDF Export: No logo available, skipping')
         return
       }
 
-      const blob = await response.blob()
+      // Calculate logo dimensions (maintaining aspect ratio)
+      const logoWidth = 30 // mm
+      const logoHeight = 15 // mm (approximate 2:1 ratio)
 
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader()
-        reader.onload = () => {
-          try {
-            const base64Data = reader.result as string
+      // Add the logo to the PDF
+      this.pdf.addImage(
+        base64Data,
+        'PNG',
+        centerX - logoWidth / 2, // Center horizontally
+        y,
+        logoWidth,
+        logoHeight
+      )
 
-            // Calculate logo dimensions (maintaining aspect ratio)
-            const logoWidth = 30 // mm
-            const logoHeight = 15 // mm (approximate 2:1 ratio)
-
-            // Add the logo to the PDF
-            this.pdf.addImage(
-              base64Data,
-              'PNG',
-              centerX - logoWidth / 2, // Center horizontally
-              y,
-              logoWidth,
-              logoHeight
-            )
-
-            resolve()
-          } catch (error) {
-            reject(error)
-          }
-        }
-        reader.onerror = () => reject(new Error('Failed to read image'))
-        reader.readAsDataURL(blob)
-      })
+      console.log('✅ PDF Export: Logo added to PDF successfully')
     } catch (error) {
-      // Silently skip logo if there's a CORS or network error
-      // This prevents console errors while maintaining PDF generation
+      console.warn('⚠️ PDF Export: Logo loading failed, continuing without logo:', error)
+      // Silently skip logo if there's an error
       return
     }
+  }
+
+  /**
+   * Convert blob to base64 string
+   */
+  private async blobToBase64(blob: Blob): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result as string)
+      reader.onerror = () => reject(new Error('Failed to read image'))
+      reader.readAsDataURL(blob)
+    })
   }
 }
 

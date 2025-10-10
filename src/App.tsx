@@ -422,6 +422,21 @@ const App: React.FC = () => {
     const initializeBulletproofApi = async () => {
       try {
         console.log('🔧 App - Initializing bulletproof API system...')
+
+        // CRITICAL: Validate and clean tenant credentials FIRST
+        try {
+          const { validateAndCleanTenantCredentials } = await import('./utils/tenantCredentialGuard')
+          const validationResult = await validateAndCleanTenantCredentials()
+
+          console.log('🔐 Tenant Credential Guard Result:', validationResult.action)
+          if (validationResult.action === 'cleared') {
+            console.log('🗑️ Cleared credentials from different tenant:', validationResult.details)
+            console.log('   Cleared keys:', validationResult.clearedKeys)
+          }
+        } catch (guardError) {
+          console.error('❌ Tenant credential guard failed:', guardError)
+        }
+
         // PRODUCTION MODE: Enable Retell AI monitoring
         console.log('🚀 Production Mode - Initializing Retell AI services')
         await retellService.ensureCredentialsLoaded()

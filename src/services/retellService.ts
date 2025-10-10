@@ -194,13 +194,14 @@ class RetellService {
 
   /**
    * Internal credentials loading with comprehensive fallback logic
+   * CRITICAL: Now validates tenant_id at each step
    */
   private async loadCredentialsInternal(): Promise<void> {
     try {
-      console.log('🔄 Phaeton AI: Loading user-configured credentials...')
+      console.log('🔄 Phaeton AI: Loading user-configured credentials with tenant validation...')
 
-      // PRIORITY 1: Load from currentUser localStorage (user-configured keys)
-      let credentials = this.loadFromCurrentUser()
+      // PRIORITY 1: Load from currentUser localStorage (user-configured keys) with tenant validation
+      let credentials = await this.loadFromCurrentUser()
 
       // PRIORITY 2: Scan all user settings if not found in currentUser
       if (!credentials.apiKey) {
@@ -217,13 +218,13 @@ class RetellService {
         credentials = this.loadFromMemoryBackup()
       }
 
-      // PRIORITY 5: Try cloud storage
+      // PRIORITY 5: Try cloud storage (tenant-filtered by cloudCredentialService)
       if (!credentials.apiKey) {
         try {
           const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}')
           const cloudCreds = await cloudCredentialService.getCredentialsWithFallback(currentUser.id)
           if (validateCredentials(cloudCreds)) {
-            console.log('☁️ Phaeton AI - Found credentials in cloud storage')
+            console.log('☁️ Phaeton AI - Found credentials in cloud storage (tenant-filtered)')
             credentials = {
               apiKey: cloudCreds.apiKey,
               callAgentId: cloudCreds.callAgentId,
@@ -269,20 +270,33 @@ class RetellService {
   }
 
   /**
-   * Load credentials from current user localStorage
+   * Load credentials from current user localStorage (with tenant validation)
+   * CRITICAL: Validates tenant_id to prevent cross-tenant credential loading
    */
-  private loadFromCurrentUser(): {apiKey: string, callAgentId: string, smsAgentId: string} {
+  private async loadFromCurrentUser(): Promise<{apiKey: string, callAgentId: string, smsAgentId: string}> {
     try {
+      // Get current tenant ID for validation
+      const { getCurrentTenantId } = await import('../config/tenantConfig')
+      const currentTenantId = getCurrentTenantId()
+
       const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}')
       if (currentUser.id) {
         const settings = JSON.parse(localStorage.getItem(`settings_${currentUser.id}`) || '{}')
         // Check if retellApiKey property exists (even if blank)
         if ('retellApiKey' in settings) {
-          console.log('🎯 Phaeton AI - Found credentials via currentUser')
-          return {
-            apiKey: settings.retellApiKey || '',
-            callAgentId: settings.callAgentId || '',
-            smsAgentId: settings.smsAgentId || ''
+          // CRITICAL: Verify credentials belong to current tenant
+          const storedTenantId = settings.tenant_id || currentUser.tenant_id
+
+          if (!storedTenantId || storedTenantId === currentTenantId) {
+            console.log('🎯 Phaeton AI - Found credentials via currentUser (tenant validated:', storedTenantId || 'unknown', ')')
+            return {
+              apiKey: settings.retellApiKey || '',
+              callAgentId: settings.callAgentId || '',
+              smsAgentId: settings.smsAgentId || ''
+            }
+          } else {
+            console.warn(`⚠️ Phaeton AI - localStorage credentials belong to different tenant (${storedTenantId}) - skipping`)
+            console.log(`   Current tenant: ${currentTenantId}, Stored tenant: ${storedTenantId}`)
           }
         }
       }
@@ -744,9 +758,14 @@ class RetellService {
 
   /**
    * Update localStorage with plain text credentials for UI display
+   * CRITICAL: Now includes tenant_id for validation
    */
-  private updateLocalStorageCredentials(apiKey?: string, callAgentId?: string, smsAgentId?: string): void {
+  private async updateLocalStorageCredentials(apiKey?: string, callAgentId?: string, smsAgentId?: string): Promise<void> {
     try {
+      // Get current tenant ID for storage
+      const { getCurrentTenantId } = await import('../config/tenantConfig')
+      const currentTenantId = getCurrentTenantId()
+
       const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}')
       if (currentUser.id) {
         const settings = JSON.parse(localStorage.getItem(`settings_${currentUser.id}`) || '{}')
@@ -762,8 +781,12 @@ class RetellService {
           settings.smsAgentId = smsAgentId
         }
 
+        // CRITICAL: Add tenant_id to validate credentials later
+        settings.tenant_id = currentTenantId
+        settings.stored_at = new Date().toISOString()
+
         // Security: Do not log API keys or Agent IDs
-        console.log('Fresh RetellService - Updated credentials in localStorage')
+        console.log('Fresh RetellService - Updated credentials in localStorage with tenant_id:', currentTenantId)
 
         localStorage.setItem(`settings_${currentUser.id}`, JSON.stringify(settings))
 

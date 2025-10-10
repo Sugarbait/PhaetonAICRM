@@ -305,23 +305,35 @@ export class ChatService {
     try {
       console.log('🏢 [ChatService TENANT-AWARE] Loading credentials with tenant isolation...')
 
-      // PRIORITY 1: Try current user's localStorage settings (for immediate availability)
+      // Get current tenant ID for validation
+      const { getCurrentTenantId } = await import('../config/tenantConfig')
+      const currentTenantId = getCurrentTenantId()
+
+      // PRIORITY 1: Try current user's localStorage settings (with tenant validation)
       const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}')
-      console.log('Chat Service: Loading credentials for user:', currentUser.id)
+      console.log('Chat Service: Loading credentials for user:', currentUser.id, 'tenant:', currentTenantId)
 
       if (currentUser.id) {
         const settings = JSON.parse(localStorage.getItem(`settings_${currentUser.id}`) || '{}')
         if (settings.retellApiKey) {
-          this.apiKey = settings.retellApiKey || ''
-          this.smsAgentId = settings.smsAgentId || ''
-          console.log('✅ [ChatService TENANT-AWARE] Loaded credentials from current user localStorage')
+          // CRITICAL: Verify credentials belong to current tenant
+          const storedTenantId = settings.tenant_id || currentUser.tenant_id
+
+          if (storedTenantId === currentTenantId) {
+            this.apiKey = settings.retellApiKey || ''
+            this.smsAgentId = settings.smsAgentId || ''
+            console.log('✅ [ChatService TENANT-AWARE] Loaded credentials from localStorage (tenant validated:', storedTenantId, ')')
+          } else {
+            console.warn(`⚠️ [ChatService TENANT-AWARE] localStorage credentials belong to different tenant (${storedTenantId}) - skipping and using cloud storage`)
+            console.log(`   Current tenant: ${currentTenantId}, Stored tenant: ${storedTenantId}`)
+          }
         }
       }
 
       // PRIORITY 2: Use cloudCredentialService for tenant-aware loading (CRITICAL FIX)
       // This ensures we only load credentials for tenant_id='phaeton_ai'
       if (!this.apiKey) {
-        console.log('🔍 [ChatService TENANT-AWARE] No credentials in localStorage, checking cloud storage with tenant filter...')
+        console.log('🔍 [ChatService TENANT-AWARE] No valid credentials in localStorage, checking cloud storage with tenant filter...')
 
         try {
           const { cloudCredentialService } = await import('./cloudCredentialService')

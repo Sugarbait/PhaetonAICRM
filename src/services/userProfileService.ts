@@ -971,11 +971,11 @@ export class UserProfileService {
         const currentTenantId = getCurrentTenantId()
         console.log(`🏢 [TENANT DEBUG] Creating user with tenant_id: "${currentTenantId}"`)
 
-        // CRITICAL: Generate unique ID for user (database doesn't auto-generate TEXT ids)
-        const newUserId = `artlee_${Date.now()}_${crypto.randomUUID?.() || Math.random().toString(36).substring(2, 15)}`
+        // CRITICAL: Generate UUID for user (database requires valid UUID format)
+        const newUserId = crypto.randomUUID()
 
         const userToInsert = {
-          id: newUserId, // CRITICAL: Must include ID for TEXT PRIMARY KEY columns
+          id: newUserId, // CRITICAL: Must include ID for UUID PRIMARY KEY columns
           email: userData.email,
           name: userData.name,
           role: dbRole, // Use mapped role for database
@@ -1089,8 +1089,8 @@ export class UserProfileService {
       } catch (supabaseError: any) {
         console.log('UserProfileService: Supabase creation failed, using localStorage fallback:', supabaseError.message)
 
-        // Enhanced localStorage fallback with better ID generation
-        const newUserId = `local_user_${Date.now()}_${crypto.randomUUID?.() || Math.random().toString(36).substring(2, 15)}`
+        // Enhanced localStorage fallback with proper UUID generation
+        const newUserId = crypto.randomUUID()
 
         newUserProfileData = {
           id: newUserId,
@@ -1177,45 +1177,50 @@ export class UserProfileService {
       console.log('UserProfileService: Deleting user from Supabase and localStorage:', userId)
 
       // STEP 1: Delete from Supabase first for cross-device sync
-      try {
-        console.log('UserProfileService: Attempting to delete user from Supabase...')
+      console.log('UserProfileService: Attempting to delete user from Supabase...')
 
-        const { error: deleteError } = await supabase
-          .from('users')
-          .delete()
-          .eq('id', userId)
+      // Delete from users table - CRITICAL: Must succeed
+      const { error: deleteError } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', userId)
 
-        if (deleteError) {
-          console.warn('UserProfileService: Supabase deletion failed:', deleteError.message)
-          console.log('UserProfileService: Continuing with localStorage deletion...')
-        } else {
-          console.log('✅ UserProfileService: User successfully deleted from Supabase')
-        }
+      if (deleteError) {
+        console.error('❌ UserProfileService: Failed to delete user from users table:', deleteError.message)
+        await auditLogger.logSecurityEvent('USER_DELETE_FAILED', 'users', false, {
+          userId,
+          error: deleteError.message,
+          table: 'users'
+        })
+        return { status: 'error', error: `Failed to delete user from database: ${deleteError.message}` }
+      }
 
-        // Also delete from user_profiles table
-        try {
-          await supabase
-            .from('user_profiles')
-            .delete()
-            .eq('user_id', userId)
-          console.log('✅ UserProfileService: User profile deleted from Supabase')
-        } catch (profileError) {
-          console.log('UserProfileService: No user profile to delete or table missing')
-        }
+      console.log('✅ UserProfileService: User successfully deleted from users table')
 
-        // Also delete from user_settings table
-        try {
-          await supabase
-            .from('user_settings')
-            .delete()
-            .eq('user_id', userId)
-          console.log('✅ UserProfileService: User settings deleted from Supabase')
-        } catch (settingsError) {
-          console.log('UserProfileService: No user settings to delete or table missing')
-        }
+      // Delete from user_profiles table
+      const { error: profileError } = await supabase
+        .from('user_profiles')
+        .delete()
+        .eq('user_id', userId)
 
-      } catch (supabaseError) {
-        console.warn('UserProfileService: Supabase deletion error, continuing with localStorage:', supabaseError)
+      if (profileError) {
+        // Log warning but continue - profile might not exist
+        console.warn('⚠️ UserProfileService: Failed to delete from user_profiles (may not exist):', profileError.message)
+      } else {
+        console.log('✅ UserProfileService: User profile deleted from Supabase')
+      }
+
+      // Delete from user_settings table
+      const { error: settingsError } = await supabase
+        .from('user_settings')
+        .delete()
+        .eq('user_id', userId)
+
+      if (settingsError) {
+        // Log warning but continue - settings might not exist
+        console.warn('⚠️ UserProfileService: Failed to delete from user_settings (may not exist):', settingsError.message)
+      } else {
+        console.log('✅ UserProfileService: User settings deleted from Supabase')
       }
 
       // STEP 2: Remove from localStorage
@@ -2198,42 +2203,34 @@ export class UserProfileService {
   }
 
   /**
-   * Map existing database role values to expected CareXPS role values
+   * Map existing database role values to expected application role values
+   * ARTLEE CRM: Only supports 'super_user' and 'user' roles
    */
-  private static mapExistingRoleToExpected(existingRole: string): 'admin' | 'super_user' | 'business_provider' | 'staff' {
-    if (!existingRole) return 'staff'
+  private static mapExistingRoleToExpected(existingRole: string): 'super_user' | 'user' {
+    if (!existingRole) return 'user'
 
     const role = existingRole.toLowerCase()
 
-    // Map existing roles to CareXPS roles
-    if (role === 'super_user' || role === 'superuser' || role === 'super user') {
+    // ARTLEE CRM: Only two roles - super_user and user
+    if (role === 'super_user' || role === 'superuser' || role === 'super user' || role === 'admin' || role === 'administrator') {
       return 'super_user'
-    } else if (role === 'admin' || role === 'administrator') {
-      return 'admin'
-    } else if (role === 'provider' || role === 'business_provider' || role === 'doctor' || role === 'physician') {
-      return 'business_provider'
     } else {
-      return 'staff' // Default fallback
+      return 'user' // Default fallback for all other roles (staff, provider, etc.)
     }
   }
 
   /**
-   * Map CareXPS role values to database schema roles
-   * CRITICAL FIX: Database schema supports 'super_user' role - DO NOT convert to 'admin'
+   * Map application role values to database schema roles
+   * ARTLEE CRM: Only supports 'super_user' and 'user' roles
    */
-  private static mapRoleForDatabase(careXpsRole: string): 'admin' | 'business_provider' | 'staff' | 'super_user' {
-    const role = careXpsRole.toLowerCase()
+  private static mapRoleForDatabase(appRole: string): 'super_user' | 'user' {
+    const role = appRole.toLowerCase()
 
-    // Map CareXPS roles to database schema roles
-    // CRITICAL: Preserve 'super_user' role for first user and super administrators
-    if (role === 'super_user' || role === 'superuser' || role === 'super user') {
-      return 'super_user' // FIXED: Database schema supports super_user role directly
-    } else if (role === 'admin' || role === 'administrator') {
-      return 'admin'
-    } else if (role === 'provider' || role === 'business_provider' || role === 'doctor' || role === 'physician') {
-      return 'business_provider'
+    // ARTLEE CRM: Only two roles - super_user and user
+    if (role === 'super_user' || role === 'superuser' || role === 'super user' || role === 'admin' || role === 'administrator') {
+      return 'super_user'
     } else {
-      return 'staff' // Default fallback
+      return 'user' // Default fallback for all other roles
     }
   }
 

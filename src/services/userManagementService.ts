@@ -199,7 +199,7 @@ export class UserManagementService {
       }
 
       // Check if this is a demo user by email - if so, never lock them out
-      const isDemoUser = email === 'demo@carexps.com' || email === 'elmfarrell@yahoo.com' || email === 'pierre@phaetonai.com'
+      const isDemoUser = email === 'demo@carexps.com' || email === 'elmfarrell@yahoo.com'
 
       if (!isDemoUser) {
         // Check if user is locked (only for non-demo users)
@@ -1146,6 +1146,10 @@ export class UserManagementService {
           console.warn('Failed to update localStorage:', parseError)
         }
       }
+
+      // CRITICAL: Also clear individual user profile cache to force fresh load on next login
+      localStorage.removeItem(`userProfile_${userId}`)
+      console.log(`🧹 Cleared cached user profile for userId: ${userId}`)
 
       console.log('✅ User account enabled successfully')
 

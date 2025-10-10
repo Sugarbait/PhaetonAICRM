@@ -205,17 +205,17 @@ class RetellService {
 
       // PRIORITY 2: Scan all user settings if not found in currentUser
       if (!credentials.apiKey) {
-        credentials = this.scanAllUserSettings()
+        credentials = await this.scanAllUserSettings()
       }
 
       // PRIORITY 3: Load from sessionStorage backup
       if (!credentials.apiKey) {
-        credentials = this.loadFromSessionStorage()
+        credentials = await this.loadFromSessionStorage()
       }
 
       // PRIORITY 4: Load from memory backup
       if (!credentials.apiKey) {
-        credentials = this.loadFromMemoryBackup()
+        credentials = await this.loadFromMemoryBackup()
       }
 
       // PRIORITY 5: Try cloud storage (tenant-filtered by cloudCredentialService)
@@ -247,10 +247,10 @@ class RetellService {
       }
 
       // Create memory backup for future fallback
-      this.createMemoryBackup()
+      await this.createMemoryBackup()
 
       // Store in sessionStorage for reliability
-      this.saveToSessionStorage()
+      await this.saveToSessionStorage()
 
       this.isInitialized = true
 
@@ -354,16 +354,32 @@ class RetellService {
   }
 
   /**
-   * Load credentials from sessionStorage backup
+   * Load credentials from sessionStorage backup (with tenant validation)
    */
-  private loadFromSessionStorage(): {apiKey: string, callAgentId: string, smsAgentId: string} {
+  private async loadFromSessionStorage(): Promise<{apiKey: string, callAgentId: string, smsAgentId: string}> {
     try {
       const sessionData = sessionStorage.getItem('retell_credentials_backup')
       if (sessionData) {
-        const credentials = JSON.parse(sessionData)
-        if (credentials.apiKey) {
-          console.log('🎯 RetellService - Found credentials in sessionStorage backup')
-          return credentials
+        const backup = JSON.parse(sessionData)
+        if (backup.apiKey) {
+          // Validate tenant_id if present
+          if (backup.tenant_id) {
+            const { getCurrentTenantId } = await import('../config/tenantConfig')
+            const currentTenantId = getCurrentTenantId()
+
+            if (backup.tenant_id !== currentTenantId) {
+              console.warn(`⚠️ RetellService - sessionStorage credentials belong to different tenant (${backup.tenant_id}), clearing...`)
+              sessionStorage.removeItem('retell_credentials_backup')
+              return {apiKey: '', callAgentId: '', smsAgentId: ''}
+            }
+          }
+
+          console.log('🎯 RetellService - Found credentials in sessionStorage backup (tenant validated)')
+          return {
+            apiKey: backup.apiKey,
+            callAgentId: backup.callAgentId || '',
+            smsAgentId: backup.smsAgentId || ''
+          }
         }
       }
     } catch (error) {
@@ -373,14 +389,30 @@ class RetellService {
   }
 
   /**
-   * Load credentials from in-memory backup
+   * Load credentials from in-memory backup (with tenant validation)
    */
-  private loadFromMemoryBackup(): {apiKey: string, callAgentId: string, smsAgentId: string} {
+  private async loadFromMemoryBackup(): Promise<{apiKey: string, callAgentId: string, smsAgentId: string}> {
     try {
       const backup = (window as any).__retellCredentialsBackup
       if (backup && backup.apiKey) {
-        console.log('🎯 RetellService - Found credentials in memory backup')
-        return backup
+        // Validate tenant_id if present
+        if (backup.tenant_id) {
+          const { getCurrentTenantId } = await import('../config/tenantConfig')
+          const currentTenantId = getCurrentTenantId()
+
+          if (backup.tenant_id !== currentTenantId) {
+            console.warn(`⚠️ RetellService - memory backup credentials belong to different tenant (${backup.tenant_id}), clearing...`)
+            delete (window as any).__retellCredentialsBackup
+            return {apiKey: '', callAgentId: '', smsAgentId: ''}
+          }
+        }
+
+        console.log('🎯 RetellService - Found credentials in memory backup (tenant validated)')
+        return {
+          apiKey: backup.apiKey,
+          callAgentId: backup.callAgentId || '',
+          smsAgentId: backup.smsAgentId || ''
+        }
       }
     } catch (error) {
       console.warn('RetellService - Error loading from memory backup:', error)
@@ -417,26 +449,38 @@ class RetellService {
   }
 
   /**
-   * Create in-memory backup of credentials (including blank ones)
+   * Create in-memory backup of credentials (including blank ones) with tenant_id
    */
-  private createMemoryBackup(): void {
-    (window as any).__retellCredentialsBackup = {
-      apiKey: this.apiKey,
-      callAgentId: this.callAgentId,
-      smsAgentId: this.smsAgentId,
-      timestamp: Date.now()
+  private async createMemoryBackup(): Promise<void> {
+    try {
+      const { getCurrentTenantId } = await import('../config/tenantConfig')
+      const currentTenantId = getCurrentTenantId()
+
+      (window as any).__retellCredentialsBackup = {
+        apiKey: this.apiKey,
+        callAgentId: this.callAgentId,
+        smsAgentId: this.smsAgentId,
+        tenant_id: currentTenantId,
+        timestamp: Date.now()
+      }
+    } catch (error) {
+      console.warn('RetellService - Error creating memory backup:', error)
     }
   }
 
   /**
-   * Save credentials to sessionStorage for reliability (including blank ones)
+   * Save credentials to sessionStorage for reliability (including blank ones) with tenant_id
    */
-  private saveToSessionStorage(): void {
+  private async saveToSessionStorage(): Promise<void> {
     try {
+      const { getCurrentTenantId } = await import('../config/tenantConfig')
+      const currentTenantId = getCurrentTenantId()
+
       sessionStorage.setItem('retell_credentials_backup', JSON.stringify({
         apiKey: this.apiKey,
         callAgentId: this.callAgentId,
         smsAgentId: this.smsAgentId,
+        tenant_id: currentTenantId,
         timestamp: Date.now()
       }))
     } catch (error) {

@@ -1070,14 +1070,17 @@ HOSTINGER_EMAIL_PASSWORD length: 16
 - Service initialization and connection logic
 - Integration patterns and data transformation
 
-### **API Credential Loading System (SMS Page) - LOCKED DOWN WITH TENANT ISOLATION:**
-**✅ FIXED (2025-10-10): The SMS page API credential loading now includes tenant isolation to prevent cross-CRM credential leakage.**
+### **API Credential Loading System - LOCKED DOWN WITH TENANT ISOLATION:**
+**✅ FIXED (2025-10-10): Both SMS and Calls pages now include tenant isolation to prevent cross-CRM credential leakage.**
 
 **Protected Pattern (TENANT-AWARE):**
-- SMS page uses Dashboard pattern: `retellService.loadCredentialsAsync()` → `chatService.syncWithRetellService()`
-- chatService uses tenant-aware credential loading via cloudCredentialService
-- Only loads credentials with `tenant_id='phaeton_ai'` from Supabase cloud storage
-- Prevents loading Agent IDs from other CRMs (ARTLEE, MedEx, CareXPS)
+- **SMS Page**: Uses `retellService.loadCredentialsAsync()` → `chatService.syncWithRetellService()`
+  - chatService uses tenant-aware credential loading via cloudCredentialService
+  - Only loads credentials with `tenant_id='phaeton_ai'` from Supabase cloud storage
+- **Calls Page**: Uses `retellService.loadCredentialsAsync()` (line 277)
+  - retellService.scanAllUserSettings() validates tenant_id before returning credentials
+  - Skips credentials from other tenants (ARTLEE, MedEx, CareXPS)
+  - Only returns credentials matching current tenant (phaeton_ai)
 
 **Critical Files - DO NOT MODIFY:**
 - `src/pages/SMSPage.tsx` - **ENTIRE FILE LOCKED**
@@ -1085,19 +1088,24 @@ HOSTINGER_EMAIL_PASSWORD length: 16
 - `src/pages/DashboardPage.tsx` - **ENTIRE FILE LOCKED**
 - `src/services/chatService.ts` - Lines 282-357 (tenant-aware credential loading)
 - `src/services/cloudCredentialService.ts` - Lines 1-410 (tenant filtering for all queries)
-- `src/services/retellService.ts` - **ALL CREDENTIAL METHODS LOCKED**
+- `src/services/retellService.ts` - Lines 309-354 (scanAllUserSettings with tenant validation) - **LOCKED**
 
 **Tenant-Aware Loading Priority (FIXED 2025-10-10):**
 1. **PRIORITY 1**: Current user's localStorage (immediate availability)
 2. **PRIORITY 2**: cloudCredentialService with tenant filter (CRITICAL - only loads `tenant_id='phaeton_ai'`)
-3. **REMOVED**: Problematic ALL-settings localStorage scan (caused cross-CRM leakage)
+3. **PRIORITY 3**: Scan all localStorage settings WITH tenant validation (retellService.scanAllUserSettings)
 
 **What Was Fixed:**
+
+**SMS Page (Commit: 42f8708):**
 - **OLD BEHAVIOR** (BROKEN): chatService scanned ALL localStorage `settings_*` keys → loaded credentials from any CRM
 - **NEW BEHAVIOR** (FIXED): chatService uses cloudCredentialService → only loads Phaeton AI credentials
-- **COMMIT**: 42f8708 - "🔐 CRITICAL FIX: Add tenant isolation to chatService credential loading"
 
-**This system now respects tenant boundaries and MUST remain unchanged**
+**Calls Page (Commit: 1d10e1f):**
+- **OLD BEHAVIOR** (BROKEN): scanAllUserSettings() returned FIRST credentials found → loaded Agent IDs from any CRM
+- **NEW BEHAVIOR** (FIXED): scanAllUserSettings() validates tenant_id → skips wrong-tenant credentials → only returns Phaeton AI credentials
+
+**Both systems now respect tenant boundaries and MUST remain unchanged**
 
 **🔒 AUTHENTICATION SYSTEM IS PERMANENTLY LOCKED AND PROTECTED - NO MODIFICATIONS ALLOWED**
 
@@ -1647,6 +1655,28 @@ Configured SMS agent ID: agent_840d4bfc9d4dac35a6d64546ad
 ---
 
 ## **🔄 RECENT UPDATES**
+
+### **🔐 OCTOBER 10, 2025 - CALLS PAGE TENANT ISOLATION FIX:**
+
+#### **Calls Page Credential Loading - Tenant Validation Added:**
+- **File**: `src/services/retellService.ts` - Lines 309-354 (`scanAllUserSettings()` method)
+- **Problem**: Calls page was loading Agent IDs from other companies (ARTLEE, MedEx, CareXPS)
+- **Root Cause**: `scanAllUserSettings()` scanned ALL localStorage settings and returned FIRST credentials found WITHOUT validating tenant_id
+- **Fix Applied**:
+  - Modified `scanAllUserSettings()` from synchronous to async
+  - Added tenant_id validation using `getCurrentTenantId()` from tenantConfig
+  - Added loop to check each credential's tenant_id before using
+  - Skip credentials from different tenants with warning log
+  - Only return credentials matching current tenant (phaeton_ai)
+- **Impact**:
+  - CallsPage.tsx calls `retellService.loadCredentialsAsync()` at line 277
+  - Now ONLY loads credentials belonging to Phaeton AI
+  - Prevents loading Agent IDs from ARTLEE, MedEx, or other tenants
+  - Matches tenant isolation fix previously applied to SMS page
+- **Commit**: 1d10e1f - "🔐 CRITICAL FIX: Add tenant validation to scanAllUserSettings()"
+- **Status**: ✅ LOCKED - NO MODIFICATIONS ALLOWED
+
+---
 
 ### **🔒 OCTOBER 8, 2025 - FINAL LOCKDOWN (ALL CHANGES LOCKED):**
 

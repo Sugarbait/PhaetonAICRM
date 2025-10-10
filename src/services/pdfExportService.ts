@@ -82,33 +82,30 @@ class PDFExportService {
   private async generateCoverPage(metrics: DashboardMetrics, options: ExportOptions): Promise<void> {
     const centerX = this.pageWidth / 2
 
-    // Header gradient background (simulated with rectangles)
-    this.pdf.setFillColor(59, 130, 246) // Blue-600
+    // White header background for logo visibility
+    this.pdf.setFillColor(255, 255, 255) // White
     this.pdf.rect(0, 0, this.pageWidth, 80, 'F')
 
-    this.pdf.setFillColor(147, 197, 253) // Blue-300
-    this.pdf.rect(0, 60, this.pageWidth, 20, 'F')
-
-    // Add CareXPS logo
+    // Add company logo with proper proportions
     try {
-      await this.addLogoToPDF(centerX, 15)
+      await this.addLogoToPDF(centerX, 10)
     } catch (error) {
       console.error('Failed to load logo, continuing without it:', error)
     }
 
     // Company title and report info
-    this.pdf.setTextColor(255, 255, 255)
+    this.pdf.setTextColor(31, 41, 55) // Dark gray for white background
     this.pdf.setFontSize(24)
     this.pdf.setFont('helvetica', 'bold')
-    this.pdf.text(options.companyName || 'Phaeton AI CRM', centerX, 45, { align: 'center' })
+    this.pdf.text(options.companyName || 'Phaeton AI CRM', centerX, 55, { align: 'center' })
 
     this.pdf.setFontSize(16)
     this.pdf.setFont('helvetica', 'normal')
-    this.pdf.text('Dashboard Analytics Report', centerX, 58, { align: 'center' })
+    this.pdf.text('Dashboard Analytics Report', centerX, 68, { align: 'center' })
 
     // Date range
     this.pdf.setFontSize(11)
-    this.pdf.text(`Report Period: ${options.dateRange}`, centerX, 70, { align: 'center' })
+    this.pdf.text(`Report Period: ${options.dateRange}`, centerX, 78, { align: 'center' })
 
     // Key metrics summary box
     this.pdf.setFillColor(249, 250, 251) // Gray-50
@@ -347,8 +344,8 @@ class PDFExportService {
       this.pdf.circle(centerX, chartCenterY, chartRadius, 'F')
     }
 
-    // Legend
-    const legendY = chartCenterY + chartRadius + 15
+    // Legend - with extra spacing to prevent overlap
+    const legendY = chartCenterY + chartRadius + 20
     this.generateChartLegend([
       { label: `Call Costs: CAD $${metrics.totalCost.toFixed(2)} (${callPercentage.toFixed(1)}%)`, color: [59, 130, 246] },
       { label: `SMS Costs: CAD $${metrics.totalSMSCost.toFixed(2)} (${smsPercentage.toFixed(1)}%)`, color: [168, 85, 247] }
@@ -461,10 +458,6 @@ class PDFExportService {
 
     // Recommendations
     this.generateRecommendationsSection(metrics, yPosition)
-    yPosition += 80
-
-    // Compliance notice
-    this.generateComplianceSection(yPosition)
   }
 
   private generateHighlightsSection(metrics: DashboardMetrics, yPosition: number): void {
@@ -533,31 +526,6 @@ class PDFExportService {
     return recommendations.slice(0, 4)
   }
 
-  private generateComplianceSection(yPosition: number): void {
-    // Compliance box
-    this.pdf.setFillColor(254, 242, 242) // Red-50
-    this.pdf.setDrawColor(252, 165, 165) // Red-300
-    this.pdf.roundedRect(this.margin, yPosition, this.pageWidth - 2 * this.margin, 40, 3, 3, 'FD')
-
-    this.pdf.setFontSize(12)
-    this.pdf.setFont('helvetica', 'bold')
-    this.pdf.setTextColor(153, 27, 27) // Red-800
-    this.pdf.text('Compliance Notice', this.margin + 5, yPosition + 12)
-
-    this.pdf.setFontSize(9)
-    this.pdf.setFont('helvetica', 'normal')
-    this.pdf.setTextColor(127, 29, 29) // Red-900
-
-    const complianceText = [
-      'This report contains Protected Health Information (PHI) and is subject to regulations.',
-      'Unauthorized disclosure is prohibited. Handle according to your organization\'s privacy policies.',
-      'All data has been encrypted and anonymized where possible to ensure patient privacy.'
-    ]
-
-    complianceText.forEach((text, index) => {
-      this.pdf.text(text, this.margin + 5, yPosition + 20 + index * 5)
-    })
-  }
 
   private generateFileName(options: ExportOptions): string {
     const timestamp = format(new Date(), 'yyyy-MM-dd_HH-mm')
@@ -618,11 +586,31 @@ class PDFExportService {
         return
       }
 
-      // Calculate logo dimensions (maintaining aspect ratio)
-      const logoWidth = 30 // mm
-      const logoHeight = 15 // mm (approximate 2:1 ratio)
+      // Get image dimensions to maintain proper aspect ratio
+      const img = new Image()
+      await new Promise((resolve, reject) => {
+        img.onload = resolve
+        img.onerror = reject
+        img.src = base64Data!
+      })
 
-      // Add the logo to the PDF
+      // Calculate dimensions maintaining aspect ratio
+      const maxWidth = 50 // mm - maximum width
+      const maxHeight = 35 // mm - maximum height
+
+      const aspectRatio = img.width / img.height
+      let logoWidth = maxWidth
+      let logoHeight = logoWidth / aspectRatio
+
+      // If height exceeds max, scale down by height instead
+      if (logoHeight > maxHeight) {
+        logoHeight = maxHeight
+        logoWidth = logoHeight * aspectRatio
+      }
+
+      console.log(`📐 PDF Export: Logo dimensions - ${logoWidth.toFixed(1)}mm × ${logoHeight.toFixed(1)}mm (aspect ratio: ${aspectRatio.toFixed(2)})`)
+
+      // Add the logo to the PDF centered
       this.pdf.addImage(
         base64Data,
         'PNG',

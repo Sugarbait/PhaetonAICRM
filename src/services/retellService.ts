@@ -145,6 +145,8 @@ class RetellService {
   private isInitialized = false
   private loadingPromise: Promise<void> | null = null
   private persistenceTimer: NodeJS.Timeout | null = null
+  private lastManualUpdate: number = 0 // Track last manual credential update
+  private readonly MANUAL_UPDATE_PROTECTION_MS = 60000 // 60 seconds protection window
 
   constructor() {
     this.loadCredentials()
@@ -153,11 +155,19 @@ class RetellService {
 
   /**
    * Setup monitoring to ensure API keys persist across navigation
+   * UPDATED: Now respects manual update protection window
    */
   private setupPersistenceMonitoring(): void {
     // Monitor for navigation events and re-validate credentials
     if (typeof window !== 'undefined') {
       const validateCredentials = () => {
+        // PROTECTION: Skip auto-reload if user just saved manually
+        const timeSinceManualUpdate = Date.now() - this.lastManualUpdate
+        if (timeSinceManualUpdate < this.MANUAL_UPDATE_PROTECTION_MS) {
+          console.log(`🛡️ RetellService - Skipping auto-reload (user saved ${Math.floor(timeSinceManualUpdate / 1000)}s ago)`)
+          return
+        }
+
         if (!this.isConfigured()) {
           console.log('🔧 RetellService - Credentials lost during navigation, reloading...')
           this.loadCredentials()
@@ -794,6 +804,7 @@ class RetellService {
 
   /**
    * Update credentials with bulletproof persistence
+   * UPDATED: Now tracks manual update timestamp to prevent auto-reload interference
    */
   public updateCredentials(apiKey?: string, callAgentId?: string, smsAgentId?: string): void {
     console.log('🔧 RetellService - Updating credentials with bulletproof persistence...')
@@ -805,6 +816,10 @@ class RetellService {
 
     // Mark as initialized
     this.isInitialized = true
+
+    // PROTECTION: Record manual update timestamp to prevent auto-reload for 60 seconds
+    this.lastManualUpdate = Date.now()
+    console.log('🛡️ RetellService - Manual update recorded, auto-reload disabled for 60 seconds')
 
     // Update all storage locations for maximum reliability
     this.updateLocalStorageCredentials(apiKey, callAgentId, smsAgentId)

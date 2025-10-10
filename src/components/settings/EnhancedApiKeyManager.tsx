@@ -78,17 +78,13 @@ export const EnhancedApiKeyManager: React.FC<EnhancedApiKeyManagerProps> = ({ us
         const { globalServiceInitializer } = await import('../../services/globalServiceInitializer')
         await globalServiceInitializer.initialize()
 
-        // Force hardwired credentials as backup
-        forceHardwiredCredentials()
-
-        // Load API keys
+        // Load API keys from user settings (don't force hardcoded values)
         loadApiKeys()
 
-        console.log('✅ API Key Manager: Services and credentials initialized')
+        console.log('✅ API Key Manager: Services and credentials initialized from user settings')
       } catch (error) {
         console.error('❌ API Key Manager: Initialization error:', error)
-        // Fallback to old method
-        forceHardwiredCredentials()
+        // Fallback: just load what's in localStorage
         loadApiKeys()
       }
     }
@@ -503,12 +499,11 @@ export const EnhancedApiKeyManager: React.FC<EnhancedApiKeyManagerProps> = ({ us
           </button>
           <button
             onClick={() => {
-              forceHardwiredCredentials()
               loadApiKeys()
             }}
             disabled={isLoading}
             className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-            title="Force reload hardwired credentials and refresh API keys"
+            title="Reload API keys from storage"
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
           </button>

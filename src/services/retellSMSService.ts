@@ -60,8 +60,6 @@ export interface SMSConversation {
 
 class RetellSMSService {
   private static instance: RetellSMSService
-  private smsCache = new Map<string, SMSMessage[]>()
-  private conversationCache = new Map<string, SMSConversation>()
 
   static getInstance(): RetellSMSService {
     if (!RetellSMSService.instance) {

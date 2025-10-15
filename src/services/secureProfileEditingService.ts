@@ -453,7 +453,7 @@ class SecureProfileEditingService {
   /**
    * Check for editing conflicts from other devices
    */
-  private async checkForConflicts(userId: string, updates: Partial<ProfileData>): Promise<{
+  private async checkForConflicts(userId: string, _updates: Partial<ProfileData>): Promise<{
     hasConflict: boolean
     conflictData?: any
   }> {
@@ -648,7 +648,7 @@ class SecureProfileEditingService {
   /**
    * Get profile backup data for rollback
    */
-  private async getProfileBackup(userId: string, timestamp?: string): Promise<Partial<ProfileData> | null> {
+  private async getProfileBackup(userId: string, _timestamp?: string): Promise<Partial<ProfileData> | null> {
     try {
       // Try to get from localStorage first
       const userProfileKey = `userProfile_${userId}`

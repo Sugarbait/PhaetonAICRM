@@ -2,13 +2,26 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-# **ARTLEE CRM - Claude Development Guide**
+---
 
-## **🔴 CRITICAL: Complete Tenant Isolation - ARTLEE System**
+# **⚡ SYSTEM IDENTIFICATION**
 
-**IMPORTANT:** This is **ARTLEE CRM**, a completely isolated tenant system. ARTLEE shares the same Supabase database with CareXPS and MedEx but maintains **100% COMPLETE DATA SEPARATION** through `tenant_id` filtering.
+**PROJECT NAME:** Phaeton AI CRM
+**PACKAGE NAME:** `phaeton-ai-crm`
+**TENANT ID:** `phaeton_ai`
+**FOLDER LOCATION:** `I:\Apps Back Up\Phaeton AI CRM`
+**DEV SERVER:** http://localhost:6545/ (or port 3000)
+
+---
+
+# **PHAETON AI CRM - Claude Development Guide**
+
+## **🔴 CRITICAL: Complete Tenant Isolation - PHAETON AI System**
+
+**IMPORTANT:** This is **PHAETON AI CRM**, a completely isolated tenant system. Phaeton AI shares the same Supabase database with ARTLEE, CareXPS, and MedEx but maintains **100% COMPLETE DATA SEPARATION** through `tenant_id` filtering.
 
 ### **Tenant Isolation Architecture:**
+- **Phaeton AI Tenant ID**: `'phaeton_ai'` - **THIS SYSTEM** - All Phaeton AI users have `tenant_id = 'phaeton_ai'`
 - **ARTLEE Tenant ID**: `'artlee'` - All ARTLEE users have `tenant_id = 'artlee'`
 - **MedEx Tenant ID**: `'medex'` - All MedEx users have `tenant_id = 'medex'`
 - **CareXPS Tenant ID**: `'carexps'` - All CareXPS users have `tenant_id = 'carexps'`
@@ -17,6 +30,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Application Filtering**: All queries MUST include `.eq('tenant_id', getCurrentTenantId())` filter
 
 ### **Authentication Differences:**
+- **Phaeton AI**: Uses **Supabase Auth** with real authentication (email/password via Supabase Auth API) - **THIS SYSTEM**
 - **ARTLEE**: Uses **Supabase Auth** with real authentication (email/password via Supabase Auth API)
 - **MedEx**: Uses **Supabase Auth** with real authentication (email/password via Supabase Auth API)
 - **CareXPS**: Uses **demo users** with localStorage-based authentication
@@ -146,11 +160,11 @@ const { data: users } = await supabase
 
 ### **🚨 CRITICAL BUG FIX - October 7, 2025:**
 
-**Issue Found:** `userProfileService.ts` line 1449 had HARDCODED `tenant_id = 'medex'` filter, causing authentication failures in ARTLEE CRM.
+**Issue Found:** `userProfileService.ts` line 1449 had HARDCODED `tenant_id = 'medex'` filter, causing authentication failures across all tenant systems.
 
-**Root Cause:** When ARTLEE user (guest@guest.com with tenant_id='artlee') tried to login:
-1. `getUserByEmail()` searched with `.eq('tenant_id', 'medex')`
-2. User not found (because guest has tenant_id='artlee')
+**Root Cause:** When a user from one tenant (e.g., guest@guest.com with tenant_id='artlee') tried to login:
+1. `getUserByEmail()` searched with `.eq('tenant_id', 'medex')` (hardcoded wrong tenant)
+2. User not found (because user belongs to different tenant)
 3. Authentication failed with "User not found" error
 
 **Fix Applied:**
@@ -159,7 +173,7 @@ const { data: users } = await supabase
 const { data: user, error: userError } = await supabase
   .from('users')
   .select('*')
-  .eq('tenant_id', 'medex')  // WRONG! Breaks ARTLEE
+  .eq('tenant_id', 'medex')  // WRONG! Breaks all other tenants
 
 // ✅ AFTER - Dynamic tenant filtering
 const currentTenantId = getCurrentTenantId()
@@ -184,8 +198,8 @@ const { data: user, error: userError } = await supabase
 
 ### **🚨 VIOLATION PROTOCOL - MANDATORY ENFORCEMENT:**
 - **SECURITY FIRST:** Any database query without `tenant_id` filter must be **IMMEDIATELY FIXED**
-- **NO CROSS-TENANT ACCESS:** ARTLEE users must NEVER see MedEx/CareXPS data
-- **NO HARDCODED TENANTS:** Always use `getCurrentTenantId()` - never hardcode 'artlee'
+- **NO CROSS-TENANT ACCESS:** Phaeton AI users must NEVER see ARTLEE/MedEx/CareXPS data
+- **NO HARDCODED TENANTS:** Always use `getCurrentTenantId()` - never hardcode 'phaeton_ai'
 - **SUPABASE EXPERT:** For tenant isolation verification, use the `supabase-expert` agent
 - **100% ISOLATION:** Complete tenant separation is a SECURITY REQUIREMENT, not a feature
 
@@ -193,9 +207,9 @@ const { data: user, error: userError } = await supabase
 
 ## **Project Overview**
 
-ARTLEE is a business platform CRM built with React/TypeScript and Vite. It integrates with Retell AI for voice calls, Supabase for data persistence, Supabase Auth for authentication, and includes comprehensive security features.
+Phaeton AI is a business platform CRM built with React/TypeScript and Vite. It integrates with Retell AI for voice calls, Supabase for data persistence, Supabase Auth for authentication, and includes comprehensive security features.
 
-**IMPORTANT:** ARTLEE is a **business platform**, not a healthcare system. Remove all healthcare-specific references when updating UI/documentation.
+**IMPORTANT:** Phaeton AI is a **business platform**, not a healthcare system. Remove all healthcare-specific references when updating UI/documentation.
 
 **Key Features:**
 - AI-powered voice calling via Retell AI
@@ -1601,11 +1615,18 @@ The application includes a comprehensive logout system that properly clears MSAL
    ✅ LOCKED: 2025-10-08 - Database-only authentication working on Hostinger
    ✅ LOCKED: 2025-10-08 - Enhanced error handling for Supabase failures
    ✅ LOCKED: 2025-10-08 - Emergency unlock tools provided
-28. **🔒 ARTLEE BRANDING LOCKDOWN**: All CareXPS references removed - NO MODIFICATIONS ALLOWED
-   ✅ LOCKED: 2025-10-08 - package.json renamed to artlee-business-crm
-   ✅ LOCKED: 2025-10-08 - manifest.json updated to ARTLEE Business CRM
-   ✅ LOCKED: 2025-10-08 - Production build completed and ready
+28. **🔒 PHAETON AI BRANDING**: System properly configured as Phaeton AI CRM
+   ✅ CONFIGURED: package.json set to phaeton-ai-crm
+   ✅ CONFIGURED: manifest.json set to Phaeton AI CRM
+   ✅ CONFIGURED: Tenant ID set to 'phaeton_ai'
 29. **⚠️ KNOWN ISSUE**: Super User role removal during avatar upload - DO NOT ATTEMPT TO FIX
+30. **🔒 FAILED LOGIN ATTEMPT TRACKER LOCKDOWN**: Login security system working perfectly - NO MODIFICATIONS ALLOWED
+   ✅ LOCKED: 2025-10-10 - Fixed warning message counter (properly decrements 3→2→1→blocked)
+   ✅ LOCKED: 2025-10-10 - Removed premature LoginAttemptTracker clearing (lines 524-525 in LoginPage.tsx)
+   ✅ LOCKED: 2025-10-10 - Warning displays correctly: "Only X login attempts remaining"
+   ✅ LOCKED: 2025-10-10 - Account lockout after 3 failed attempts (1 hour block)
+   ✅ LOCKED: 2025-10-10 - Production build deployed with fix (dist folder updated)
+   ✅ LOCKED: 2025-10-10 - **LoginAttemptTracker and LoginPage authentication flow are now LOCKED**
 
 ---
 

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Force Clear & Register</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background: #1a1a1a;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 700px;
+            background: #2a2a2a;
+            padding: 40px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .step {
+            background: #333;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .step h3 {
+            margin-top: 0;
+            color: #00cc44;
+        }
+        code {
+            background: #000;
+            padding: 3px 8px;
+            border-radius: 3px;
+            color: #0f0;
+            font-family: monospace;
+        }
+        button {
+            background: #cc0000;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 10px;
+        }
+        button:hover { background: #aa0000; }
+        .success { background: #00cc44; }
+        .success:hover { background: #00aa33; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Force Clear & Register Helper</h1>
+
+        <div class="step">
+            <h3>Step 1: Go to Registration Page</h3>
+            <p>First, open the registration page in another tab:</p>
+            <button onclick="window.open('http://localhost:3000', '_blank')" class="success">
+                Open Registration Page
+            </button>
+        </div>
+
+        <div class="step">
+            <h3>Step 2: Open Console (F12)</h3>
+            <p>In the registration tab, press <code>F12</code> to open Developer Tools</p>
+            <p>Click on the <strong>Console</strong> tab</p>
+        </div>
+
+        <div class="step">
+            <h3>Step 3: Run This Command</h3>
+            <p>Copy and paste this entire command in the console:</p>
+            <code style="display: block; padding: 15px; margin: 10px 0; white-space: pre-wrap; font-size: 12px;">
+// Aggressive localStorage clear
+console.log('🗑️ Starting aggressive clear...')
+
+// Clear everything
+localStorage.clear()
+sessionStorage.clear()
+
+// Force delete specific keys
+const keysToDelete = [
+  'systemUsers',
+  'currentUser',
+  'userProfile_',
+  'user_settings_',
+  'settings_',
+  'loginStats_',
+  'userCredentials_',
+  'emergencyCredentials_'
+]
+
+console.log('🗑️ Checking for remaining keys...')
+for (let i = localStorage.length - 1; i >= 0; i--) {
+  const key = localStorage.key(i)
+  if (key) {
+    for (const prefix of keysToDelete) {
+      if (key.includes(prefix)) {
+        localStorage.removeItem(key)
+        console.log('🗑️ Removed:', key)
+      }
+    }
+  }
+}
+
+console.log('✅ Clear complete! Remaining keys:', localStorage.length)
+
+// Don't reload - stay on page so you can register immediately
+console.log('✅ Ready! Fill out the registration form now.')
+            </code>
+            <button onclick="copyCommand()">📋 Copy Command</button>
+        </div>
+
+        <div class="step">
+            <h3>Step 4: Register Immediately</h3>
+            <p><strong>IMPORTANT:</strong> After running the command, <strong>DO NOT reload the page</strong></p>
+            <p>Immediately fill out the registration form with:</p>
+            <ul style="text-align: left;">
+                <li>Email: pierre@phaetonai.com</li>
+                <li>Password: (your password)</li>
+                <li>Name: Pierre</li>
+            </ul>
+            <p>Click "Create Account" right away</p>
+        </div>
+
+        <div class="step">
+            <h3>Why This Works</h3>
+            <p>This keeps the registration page open and clears storage WITHOUT reloading, preventing any auto-restore from happening.</p>
+        </div>
+    </div>
+
+    <script>
+        function copyCommand() {
+            const command = `// Aggressive localStorage clear
+console.log('🗑️ Starting aggressive clear...')
+
+// Clear everything
+localStorage.clear()
+sessionStorage.clear()
+
+// Force delete specific keys
+const keysToDelete = [
+  'systemUsers',
+  'currentUser',
+  'userProfile_',
+  'user_settings_',
+  'settings_',
+  'loginStats_',
+  'userCredentials_',
+  'emergencyCredentials_'
+]
+
+console.log('🗑️ Checking for remaining keys...')
+for (let i = localStorage.length - 1; i >= 0; i--) {
+  const key = localStorage.key(i)
+  if (key) {
+    for (const prefix of keysToDelete) {
+      if (key.includes(prefix)) {
+        localStorage.removeItem(key)
+        console.log('🗑️ Removed:', key)
+      }
+    }
+  }
+}
+
+console.log('✅ Clear complete! Remaining keys:', localStorage.length)
+
+// Don't reload - stay on page so you can register immediately
+console.log('✅ Ready! Fill out the registration form now.')`
+
+            navigator.clipboard.writeText(command).then(() => {
+                alert('✅ Command copied! Paste it in the browser console (F12)')
+            }).catch(() => {
+                alert('❌ Copy failed. Please manually copy the command above.')
+            })
+        }
+    </script>
+</body>
+</html>

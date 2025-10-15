@@ -598,7 +598,7 @@ export class NotificationService {
    * Send email notification
    */
   private async sendEmail(
-    channel: NotificationChannel,
+    _channel: NotificationChannel,
     recipient: string,
     message: { subject: string; body: string; isHtml?: boolean }
   ): Promise<boolean> {
@@ -636,7 +636,7 @@ export class NotificationService {
    * Send SMS notification
    */
   private async sendSMS(
-    channel: NotificationChannel,
+    _channel: NotificationChannel,
     recipient: string,
     message: { message: string }
   ): Promise<boolean> {
@@ -672,7 +672,7 @@ export class NotificationService {
    * Send push notification
    */
   private async sendPushNotification(
-    channel: NotificationChannel,
+    _channel: NotificationChannel,
     recipient: string,
     message: { title: string; body: string; icon?: string; actions?: any[] }
   ): Promise<boolean> {
@@ -711,7 +711,7 @@ export class NotificationService {
    * Send webhook notification
    */
   private async sendWebhook(
-    channel: NotificationChannel,
+    _channel: NotificationChannel,
     recipient: string,
     message: { payload: Record<string, any>; headers?: Record<string, string> },
     type: NotificationType

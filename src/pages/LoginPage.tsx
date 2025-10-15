@@ -521,29 +521,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         return
       }
 
-      // Clear lockouts for system users before attempting authentication
-      if (email === 'elmfarrell@yahoo.com' || email === 'pierre@phaetonai.com' || email === 'guest@email.com' || email === 'guest@guest.com') {
-        // Clear failed login attempts for system users
-        const failedAttempts = localStorage.getItem('failed_login_attempts')
-        if (failedAttempts) {
-          try {
-            let attempts = JSON.parse(failedAttempts)
-            attempts = attempts.filter((attempt: any) => attempt.email !== email)
-            localStorage.setItem('failed_login_attempts', JSON.stringify(attempts))
-          } catch (error) {
-            localStorage.removeItem('failed_login_attempts')
-          }
-        }
-
-        // Clear login stats for system users
-        if (email === 'elmfarrell@yahoo.com') {
-          localStorage.removeItem('loginStats_super-user-456')
-        } else if (email === 'pierre@phaetonai.com') {
-          localStorage.removeItem('loginStats_pierre-user-789')
-        } else if (email === 'guest@email.com') {
-          localStorage.removeItem('loginStats_guest-user-456')
-        }
-      }
+      // NOTE: LoginAttemptTracker clearing removed - was resetting counter before each attempt
+      // Failed attempts should only be cleared on SUCCESSFUL login (handled at lines 372, 403)
 
       // For system users, try system account login first for better reliability
       const isSystemUser = email === 'elmfarrell@yahoo.com' || email === 'pierre@phaetonai.com' || email === 'guest@email.com'
@@ -1113,6 +1092,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                 <input type="checkbox" className="mr-2" />
                 Remember me
               </label>
+              <a
+                href="/request-password-reset"
+                className="text-sm text-blue-600 hover:text-blue-700 hover:underline"
+              >
+                Forgot password?
+              </a>
             </div>
 
             <button

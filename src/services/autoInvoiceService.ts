@@ -165,8 +165,7 @@ class AutoInvoiceService {
 
       // Initialize Stripe if not already done
       if (!stripeInvoiceService.isConfigured()) {
-        // Try to load API key from settings
-        const settings = await userSettingsService.getUserSettings(userId)
+        // Try to load API key from localStorage
         const localSettings = localStorage.getItem(`settings_${userId}`)
         const apiKey = localSettings
           ? JSON.parse(localSettings).stripeSecretKey

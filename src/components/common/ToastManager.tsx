@@ -16,7 +16,7 @@ export const ToastManager: React.FC<ToastManagerProps> = ({ userId }) => {
     if (!userId) return
 
     // Initialize the service
-    toastNotificationService.initialize(userId)
+    toastNotificationService.initialize()
 
     // Subscribe to new notifications
     const unsubscribe = toastNotificationService.subscribe((notification) => {

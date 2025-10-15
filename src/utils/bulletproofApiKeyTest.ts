@@ -242,15 +242,16 @@ if (typeof window !== 'undefined') {
 }
 
 // Auto-run test in development mode after a delay
-if (import.meta.env.DEV) {
-  setTimeout(async () => {
-    console.log('🔧 Development mode: Running bulletproof API key test...')
-    await bulletproofApiKeyTest.runAllTests()
+// DISABLED: This test overwrites user credentials with test values
+// if (import.meta.env.DEV) {
+//   setTimeout(async () => {
+//     console.log('🔧 Development mode: Running bulletproof API key test...')
+//     await bulletproofApiKeyTest.runAllTests()
 
-    console.log('\n🔍 Current system diagnostics:')
-    const diagnostics = await bulletproofApiKeyTest.getDiagnostics()
-    console.table(diagnostics)
+//     console.log('\n🔍 Current system diagnostics:')
+//     const diagnostics = await bulletproofApiKeyTest.getDiagnostics()
+//     console.table(diagnostics)
 
-    console.log('\n💡 To manually run tests, use: window.bulletproofApiKeyTest.runAllTests()')
-  }, 3000) // Wait 3 seconds after app initialization
-}
+//     console.log('\n💡 To manually run tests, use: window.bulletproofApiKeyTest.runAllTests()')
+//   }, 3000) // Wait 3 seconds after app initialization
+// }

@@ -351,7 +351,7 @@ export class SupabaseUUIDWrapper {
       '',
       '-- Create default user settings (HIPAA-compliant)',
       'INSERT INTO user_settings (user_id, setting_key, setting_value, created_at, updated_at) VALUES',
-      ...Object.entries(mappings).flatMap(([stringId, uuid]) => [
+      ...Object.entries(mappings).flatMap(([_stringId, uuid]) => [
         `('${uuid}', 'theme', '"light"', NOW(), NOW()),`,
         `('${uuid}', 'session_timeout', '15', NOW(), NOW()),`,
         `('${uuid}', 'mfa_enabled', 'true', NOW(), NOW()),`

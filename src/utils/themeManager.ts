@@ -6,7 +6,7 @@
 export type Theme = 'light' | 'dark' | 'auto'
 
 export class ThemeManager {
-  private static readonly STORAGE_KEY = 'medex_theme'
+  private static readonly STORAGE_KEY = 'phaetonai_theme'
 
   /**
    * Apply theme to the HTML element
@@ -44,7 +44,7 @@ export class ThemeManager {
     } catch (error) {
       console.warn('Failed to get theme from localStorage:', error)
     }
-    return 'light' // default
+    return 'dark' // default to dark mode
   }
 
   /**

@@ -15,7 +15,6 @@ import { AuthError, InteractionRequiredAuthError, BrowserAuthError } from '@azur
 import { secureLogger } from './secureLogger'
 import { auditLogger, AuditAction, ResourceType, AuditOutcome } from './auditLogger'
 import { totpService } from './totpService'
-import { authService } from './authService'
 
 const logger = secureLogger.component('AuthErrorHandler')
 
@@ -67,13 +66,7 @@ class AuthErrorHandler {
     context: AuthErrorContext,
     options: ErrorRecoveryOptions = {}
   ): Promise<AuthErrorResult> {
-    const {
-      maxRetries = 3,
-      retryDelay = 1000,
-      enableFallback = true,
-      logToAudit = true,
-      showUserMessage = true
-    } = options
+    const { logToAudit = true } = options
 
     logger.error('MSAL authentication error', context.userId, context.sessionId, {
       error: error.message,
@@ -156,7 +149,7 @@ class AuthErrorHandler {
   async handleSessionError(
     error: Error,
     context: AuthErrorContext,
-    options: ErrorRecoveryOptions = {}
+    _options: ErrorRecoveryOptions = {}
   ): Promise<AuthErrorResult> {
     logger.error('Session error', context.userId, context.sessionId, {
       error: error.message,
@@ -206,7 +199,7 @@ class AuthErrorHandler {
    */
   private handleInteractionRequiredError(
     error: InteractionRequiredAuthError,
-    context: AuthErrorContext
+    _context: AuthErrorContext
   ): AuthErrorResult {
     return {
       canRecover: true,
@@ -224,7 +217,7 @@ class AuthErrorHandler {
    */
   private handleBrowserAuthError(
     error: BrowserAuthError,
-    context: AuthErrorContext
+    _context: AuthErrorContext
   ): AuthErrorResult {
     // Popup blocked
     if (error.errorCode === 'popup_window_error') {
@@ -268,7 +261,7 @@ class AuthErrorHandler {
    */
   private handleGenericAuthError(
     error: AuthError,
-    context: AuthErrorContext
+    _context: AuthErrorContext
   ): AuthErrorResult {
     return {
       canRecover: true,
@@ -286,7 +279,7 @@ class AuthErrorHandler {
    */
   private handleGenericError(
     error: Error,
-    context: AuthErrorContext
+    _context: AuthErrorContext
   ): AuthErrorResult {
     return {
       canRecover: false,
@@ -349,7 +342,7 @@ class AuthErrorHandler {
    */
   private async handleMFANetworkError(
     userId: string,
-    context: AuthErrorContext,
+    _context: AuthErrorContext,
     options: ErrorRecoveryOptions
   ): Promise<AuthErrorResult> {
     if (options.enableFallback) {
@@ -390,7 +383,7 @@ class AuthErrorHandler {
    */
   private handleInvalidTOTPError(
     userId: string,
-    context: AuthErrorContext
+    _context: AuthErrorContext
   ): AuthErrorResult {
     const retryKey = `totp_${userId}`
     const attempts = this.retryAttempts.get(retryKey) || 0

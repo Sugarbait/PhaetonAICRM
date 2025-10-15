@@ -14,7 +14,6 @@ import {
   CertificateInfo,
   CTLogEntry,
   CTMonitoringConfig,
-  TransmissionSecurityEvent,
   CTMonitoringError,
   CertificateValidationError
 } from '@/types/transmissionSecurityTypes'
@@ -415,9 +414,9 @@ class CertificateMonitoringService {
   }
 
   private async queryGoogleCTLog(
-    ctLog: CertificateTransparencyLog,
-    domain: string,
-    since?: number
+    _ctLog: CertificateTransparencyLog,
+    _domain: string,
+    _since?: number
   ): Promise<CTLogEntry[]> {
     // Google CT logs don't support domain-specific queries directly
     // This would typically require pre-certificate monitoring or SCT validation
@@ -660,9 +659,6 @@ class CertificateMonitoringService {
     lastCheckTime: Date
     domainsMonitored: number
   }> {
-    const now = Date.now()
-    const day24h = 24 * 60 * 60 * 1000
-
     let newLast24h = 0
     let suspicious = 0
     let expiring = 0

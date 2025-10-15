@@ -1,7 +1,7 @@
-import { supabase, supabaseAdmin, hipaaConfig } from '@/config/supabase'
-import { Database, ServiceResponse, PaginatedResponse } from '@/types/supabase'
-import { encryptPHI, decryptPHI, encryptObjectFields, decryptObjectFields, createAuditEntry } from '@/utils/encryption'
-import { connectionState, recordSupabaseSuccess, recordSupabaseFailure } from '@/utils/connectionState'
+import { supabase, hipaaConfig } from '@/config/supabase'
+import { Database, ServiceResponse } from '@/types/supabase'
+import { encryptPHI, decryptObjectFields } from '@/utils/encryption'
+import { connectionState, recordSupabaseFailure } from '@/utils/connectionState'
 import { getCurrentTenantId } from '@/config/tenantConfig'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -296,7 +296,6 @@ export class UserSettingsService extends SupabaseService {
             console.log(`Found ${existingRows.length} duplicate rows for user ${userId}, cleaning up...`)
 
             // Keep the most recently updated row, delete the rest in a single operation
-            const rowsToKeep = existingRows.slice(0, 1)
             const rowsToDelete = existingRows.slice(1)
 
             if (rowsToDelete.length > 0) {

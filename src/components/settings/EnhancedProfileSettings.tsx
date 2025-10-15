@@ -355,21 +355,10 @@ export const EnhancedProfileSettings: React.FC<EnhancedProfileSettingsProps> = (
           }
         }
 
-        // CRITICAL: Force re-application of hardwired credentials after profile save
-        const hardwiredApiSettings = {
-          theme: 'light',
-          mfaEnabled: false,
-          refreshInterval: 30000,
-          sessionTimeout: 15,
-          notifications: { calls: true, sms: true, system: true },
-          retellApiKey: 'key_c3f084f5ca67781070e188b47d7f',
-          callAgentId: 'agent_447a1b9da540237693b0440df6',
-          smsAgentId: 'agent_643486efd4b5a0e9d7e094ab99'
-        }
-
-        // Store hardwired credentials for this user
-        localStorage.setItem(`settings_${user.id}`, JSON.stringify(hardwiredApiSettings))
-        console.log(`✅ BULLETPROOF PROFILE SAVE: Re-applied hardwired credentials for ${user.email}`)
+        // NOTE: Phaeton AI CRM - No hardcoded credentials
+        // Users must configure their own API keys via Settings > API Configuration
+        // This section previously restored hardcoded credentials but has been removed
+        console.log(`✅ BULLETPROOF PROFILE SAVE: Profile saved for ${user.email}`)
 
         // Update last sync time
         bulletproofProfileFieldsService.updateLastSyncTime()
@@ -494,21 +483,10 @@ export const EnhancedProfileSettings: React.FC<EnhancedProfileSettingsProps> = (
             }
           }
 
-          // CRITICAL: Force re-application of hardwired credentials after avatar upload
-          const hardwiredApiSettings = {
-            theme: 'light',
-            mfaEnabled: false,
-            refreshInterval: 30000,
-            sessionTimeout: 15,
-            notifications: { calls: true, sms: true, system: true },
-            retellApiKey: 'key_c3f084f5ca67781070e188b47d7f',
-            callAgentId: 'agent_447a1b9da540237693b0440df6',
-            smsAgentId: 'agent_643486efd4b5a0e9d7e094ab99'
-          }
-
-          // Store hardwired credentials for this user
-          localStorage.setItem(`settings_${user.id}`, JSON.stringify(hardwiredApiSettings))
-          console.log(`✅ AVATAR UPLOAD: Re-applied hardwired credentials for ${user.email}`)
+          // NOTE: Phaeton AI CRM - No hardcoded credentials
+          // Users must configure their own API keys via Settings > API Configuration
+          // This section previously restored hardcoded credentials but has been removed
+          console.log(`✅ AVATAR UPLOAD: Avatar uploaded for ${user.email}`)
 
         } catch (storageError) {
           console.warn('Failed to update localStorage during avatar upload:', storageError)

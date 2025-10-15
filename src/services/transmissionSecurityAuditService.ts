@@ -13,7 +13,6 @@
 import { auditService } from './auditService'
 import { incidentResponseService } from './incidentResponseService'
 import {
-  TransmissionSecurityEvent,
   SecurityAssessment,
   CertificateInfo,
   SecurityHeaderCheck,
@@ -554,7 +553,7 @@ class TransmissionSecurityAuditService {
     return flags
   }
 
-  private getCTRecommendations(eventType: string, ctEntry: CTLogEntry): string[] {
+  private getCTRecommendations(eventType: string, _ctEntry: CTLogEntry): string[] {
     switch (eventType) {
       case 'suspicious_certificate':
         return ['Investigate certificate issuer', 'Verify domain ownership', 'Consider domain monitoring']

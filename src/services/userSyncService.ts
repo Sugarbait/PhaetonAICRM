@@ -229,7 +229,7 @@ class UserSyncService {
   /**
    * Firebase sync implementation
    */
-  private async syncToFirebase(syncData: any): Promise<{ success: boolean; message?: string }> {
+  private async syncToFirebase(_syncData: any): Promise<{ success: boolean; message?: string }> {
     // TODO: Implement Firebase Firestore sync
     console.log('Firebase sync not implemented yet')
     return { success: false, message: 'Firebase sync not implemented' }

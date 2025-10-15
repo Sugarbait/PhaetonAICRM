@@ -1,5 +1,5 @@
 import { supabase } from '@/config/supabase'
-import { RealtimeChannel, RealtimePayload, Database } from '@/types/supabase'
+import { RealtimePayload, Database } from '@/types/supabase'
 import { SupabaseService } from './supabaseService'
 
 type Tables = Database['public']['Tables']
@@ -313,7 +313,7 @@ export class RealtimeService extends SupabaseService {
   static unsubscribeAll(): void {
     try {
       // Remove all channels
-      for (const [channelName, channel] of this.channels) {
+      for (const [_channelName, channel] of this.channels) {
         supabase.removeChannel(channel)
       }
 

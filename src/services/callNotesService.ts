@@ -93,7 +93,7 @@ export class CallNotesService {
     }
 
     try {
-      const { data, error } = await supabase
+      const { data: _data, error } = await supabase
         .from('call_notes')
         .select('count')
         .eq('tenant_id', getCurrentTenantId())

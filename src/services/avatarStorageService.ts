@@ -499,7 +499,7 @@ export class AvatarStorageService {
         return this.fallbackToLocalStorage(userId, blob)
       }
 
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from(this.STORAGE_BUCKET)
         .upload(fileName, blob, {
           cacheControl: '3600',
@@ -581,7 +581,7 @@ export class AvatarStorageService {
     try {
       // 1. Update Supabase database (primary source) with role preservation
       // First get current user data to preserve important fields like role
-      const { data: currentUser, error: fetchError } = await supabase
+      const { data: currentUser } = await supabase
         .from('users')
         .select('role, email')
         .eq('id', userId)
@@ -861,23 +861,6 @@ export class AvatarStorageService {
       }
     } catch (error) {
       console.warn('Error during storage cleanup:', error)
-    }
-  }
-
-  /**
-   * Verify if avatar URL is still accessible
-   */
-  private static async verifyAvatarUrl(url: string): Promise<boolean> {
-    try {
-      // Skip verification for data URLs (they're always "accessible" if valid)
-      if (url.startsWith('data:')) {
-        return true
-      }
-
-      const response = await fetch(url, { method: 'HEAD' })
-      return response.ok
-    } catch (error) {
-      return false
     }
   }
 

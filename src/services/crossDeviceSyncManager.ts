@@ -7,7 +7,6 @@
  */
 
 import { supabase, supabaseConfig } from '@/config/supabase'
-import { Database } from '@/types/supabase'
 import { auditLogger } from './auditLogger'
 import { userSettingsService } from './userSettingsService'
 import { userProfileService } from './userProfileService'
@@ -47,7 +46,6 @@ class CrossDeviceSyncManager {
   private syncStatus = new Map<string, SyncStatus>()
   private periodicSyncIntervals = new Map<string, number>()
   private eventListeners = new Map<string, ((event: SyncTriggerEvent) => void)[]>()
-  private isInitialized = false
   private currentUserId: string | null = null
   private currentDeviceId: string | null = null
 
@@ -129,7 +127,6 @@ class CrossDeviceSyncManager {
         mfaVerified: session.mfaVerified
       })
 
-      this.isInitialized = true
       console.log(`✅ SYNC MANAGER: Initialized successfully for user ${userId}`)
 
       return { success: true, session }

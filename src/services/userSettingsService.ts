@@ -6,7 +6,7 @@
  */
 
 import { supabase, supabaseConfig } from '@/config/supabase'
-import { Database, UserSettings, ServiceResponse, RealtimeChannel, UserDevice, DeviceSession, SyncQueueItem } from '@/types/supabase'
+import { Database, UserDevice } from '@/types/supabase'
 import { encryptionService } from './encryption'
 import { auditLogger } from './auditLogger'
 import { RealtimeChannel as SupabaseRealtimeChannel } from '@supabase/supabase-js'
@@ -91,7 +91,6 @@ class UserSettingsServiceClass {
   private readonly RETRY_COOLDOWN = 30000 // 30 seconds
   private currentDeviceId: string | null = null
   private conflictQueue = new Map<string, ConflictInfo[]>()
-  private syncQueue = new Map<string, SyncQueueItem[]>()
   private lastSyncTimestamp = new Map<string, string>()
   private crossDeviceListeners = new Map<string, ((event: any) => void)[]>()
 
@@ -432,7 +431,7 @@ class UserSettingsServiceClass {
   /**
    * Check for conflicts between local and remote settings
    */
-  private hasConflict(localSettings: UserSettingsData, remoteSettings: Database['public']['Tables']['user_settings']['Row']): boolean {
+  private hasConflict(_localSettings: UserSettingsData, remoteSettings: Database['public']['Tables']['user_settings']['Row']): boolean {
     // Simple timestamp-based conflict detection
     const localTimestamp = this.cache.get(remoteSettings.user_id)?.timestamp || 0
     const remoteTimestamp = new Date(remoteSettings.updated_at).getTime()
@@ -880,7 +879,7 @@ class UserSettingsServiceClass {
   /**
    * Check for concurrent updates from other devices
    */
-  private async checkForConcurrentUpdates(userId: string, localSettings: UserSettingsData): Promise<boolean> {
+  private async checkForConcurrentUpdates(userId: string, _localSettings: UserSettingsData): Promise<boolean> {
     try {
       if (!supabaseConfig.isConfigured()) return false
 
@@ -968,7 +967,7 @@ class UserSettingsServiceClass {
       }
     } else {
       // Unsubscribe all
-      this.realtimeChannels.forEach((channel, userId) => {
+      this.realtimeChannels.forEach((channel) => {
         supabase.removeChannel(channel)
       })
       this.realtimeChannels.clear()
@@ -1245,48 +1244,6 @@ class UserSettingsServiceClass {
       console.error('❌ FORCE SYNC: Failed with exception:', error)
       console.error('❌ FORCE SYNC: Error stack:', error instanceof Error ? error.stack : 'No stack trace')
       return null
-    }
-  }
-
-  /**
-   * Transform robust settings format to local format
-   */
-  private transformRobustToLocal(robustSettings: any): UserSettingsData {
-    return {
-      theme: robustSettings.theme || 'light',
-      notifications: robustSettings.notifications || {
-        email: true,
-        sms: true,
-        push: true,
-        in_app: true,
-        call_alerts: true,
-        sms_alerts: true,
-        security_alerts: true
-      },
-      security_preferences: robustSettings.security_preferences || {
-        session_timeout: 15,
-        require_mfa: true,
-        password_expiry_reminder: true,
-        login_notifications: true
-      },
-      dashboard_layout: robustSettings.dashboard_layout || { widgets: [] },
-      communication_preferences: robustSettings.communication_preferences || {
-        default_method: 'phone',
-        auto_reply_enabled: false,
-        business_hours: {
-          enabled: false,
-          start: '09:00',
-          end: '17:00',
-          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
-        }
-      },
-      accessibility_settings: robustSettings.accessibility_settings || {
-        high_contrast: false,
-        large_text: false,
-        screen_reader: false,
-        keyboard_navigation: false
-      },
-      retell_config: robustSettings.retell_config
     }
   }
 
@@ -1576,6 +1533,142 @@ class UserSettingsServiceClass {
     } else {
       // Remove all callbacks for user
       this.crossDeviceListeners.delete(userId)
+    }
+  }
+
+  /**
+   * Simple initialization method for easy setup (from Enhanced service)
+   * Sets up online/offline listeners and auto-starts sync
+   */
+  initialize(): void {
+    console.log('🔄 UserSettingsService: Initializing...')
+
+    // Monitor online/offline status
+    if (typeof window !== 'undefined') {
+      window.addEventListener('online', () => {
+        console.log('🌐 UserSettingsService: Back online')
+      })
+
+      window.addEventListener('offline', () => {
+        console.log('📴 UserSettingsService: Offline mode')
+      })
+    }
+
+    console.log('✅ UserSettingsService: Initialized successfully')
+  }
+
+  /**
+   * Validate settings data (from Enhanced service)
+   * Ensures data integrity before saving
+   */
+  validateSettings(settings: Partial<UserSettingsData>): { isValid: boolean; errors: string[] } {
+    const errors: string[] = []
+
+    // Validate theme
+    if (settings.theme && !['light', 'dark', 'auto'].includes(settings.theme)) {
+      errors.push('Invalid theme value')
+    }
+
+    // Validate session timeout
+    if (settings.security_preferences?.session_timeout) {
+      const timeout = settings.security_preferences.session_timeout
+      if (timeout < 1 || timeout > 480) {
+        errors.push('Session timeout must be between 1 and 480 minutes')
+      }
+    }
+
+    // Validate business hours
+    if (settings.communication_preferences?.business_hours) {
+      const { start, end } = settings.communication_preferences.business_hours
+      const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/
+
+      if (start && !timeRegex.test(start)) {
+        errors.push('Invalid business hours start time format')
+      }
+
+      if (end && !timeRegex.test(end)) {
+        errors.push('Invalid business hours end time format')
+      }
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors
+    }
+  }
+
+  /**
+   * Export settings for backup or transfer (from Enhanced service)
+   */
+  async exportSettings(userId: string): Promise<{
+    settings: UserSettingsData
+    exportDate: string
+    version: string
+  } | null> {
+    try {
+      const settings = await this.getUserSettings(userId)
+
+      if (!settings) {
+        console.error('Failed to retrieve settings for export')
+        return null
+      }
+
+      const exportData = {
+        settings,
+        exportDate: new Date().toISOString(),
+        version: '2.0.0'
+      }
+
+      console.log(`📦 Exported settings for user ${userId}`)
+      return exportData
+    } catch (error) {
+      console.error('Failed to export settings:', error)
+      return null
+    }
+  }
+
+  /**
+   * Import settings from backup or another device (from Enhanced service)
+   */
+  async importSettings(
+    userId: string,
+    settingsData: Partial<UserSettingsData>,
+    overwrite: boolean = false
+  ): Promise<UserSettingsData | null> {
+    try {
+      let finalSettings = settingsData
+
+      if (!overwrite) {
+        // Merge with existing settings
+        const currentSettings = await this.getUserSettings(userId)
+        if (currentSettings) {
+          finalSettings = {
+            ...currentSettings,
+            ...settingsData,
+            // Deep merge nested objects
+            notifications: { ...currentSettings.notifications, ...settingsData.notifications },
+            security_preferences: { ...currentSettings.security_preferences, ...settingsData.security_preferences },
+            communication_preferences: { ...currentSettings.communication_preferences, ...settingsData.communication_preferences },
+            accessibility_settings: { ...currentSettings.accessibility_settings, ...settingsData.accessibility_settings },
+            retell_config: { ...currentSettings.retell_config, ...settingsData.retell_config }
+          }
+        }
+      }
+
+      // Validate before importing
+      const validation = this.validateSettings(finalSettings)
+      if (!validation.isValid) {
+        console.error('Settings validation failed:', validation.errors)
+        throw new Error(`Validation failed: ${validation.errors.join(', ')}`)
+      }
+
+      const result = await this.updateUserSettings(userId, finalSettings)
+
+      console.log(`📥 Imported settings for user ${userId}`)
+      return result
+    } catch (error) {
+      console.error('Failed to import settings:', error)
+      return null
     }
   }
 

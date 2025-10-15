@@ -29,31 +29,36 @@ export interface RetellCredentials {
  * 3. SMS Agent ID (format: agent_xxxxxxxxxxxxxxxxxxxxx - optional)
  */
 /**
- * Phaeton AI CRM - Production Credentials
- * Last Updated: 2025-10-10
+ * Phaeton AI CRM - User Configuration Required
+ * Last Updated: 2025-10-11
  *
- * IMPORTANT: No hardcoded credentials for Phaeton AI CRM - users configure their own
+ * IMPORTANT: No hardcoded credentials for Phaeton AI CRM.
+ * Users MUST configure their own API keys via Settings > API Configuration.
+ *
+ * When credentials are blank:
+ * - Error messages will be displayed on all pages
+ * - All metrics will show $0.00 values
+ * - No data will be fetched from Retell AI API
  */
 export const HARDCODED_RETELL_CREDENTIALS: RetellCredentials = {
-  // Retell AI API Key - User must configure via Settings
+  // No hardcoded API Key - users must configure via Settings
   apiKey: '',
 
-  // Call Agent ID for voice interactions - User must configure via Settings
+  // No hardcoded Call Agent ID - users must configure via Settings
   callAgentId: '',
 
-  // SMS/Chat Agent ID for text-based interactions - User must configure via Settings
+  // No hardcoded SMS Agent ID - users must configure via Settings
   smsAgentId: ''
 }
 
 /**
  * Credential validation utility
  * Note: SMS Agent ID is optional - can be empty string if SMS functionality is not configured
- * Note: All credentials are optional for Phaeton AI CRM (user must configure)
  */
 export function validateCredentials(credentials: Partial<RetellCredentials>): boolean {
-  // For Phaeton AI CRM, allow empty credentials (user will configure their own)
+  // Allow all empty credentials (user hasn't configured yet)
   if (!credentials.apiKey && !credentials.callAgentId && !credentials.smsAgentId) {
-    return true // All empty is valid - waiting for user configuration
+    return true
   }
 
   const hasValidApiKey = !!(credentials.apiKey && credentials.apiKey.startsWith('key_'))
@@ -65,14 +70,17 @@ export function validateCredentials(credentials: Partial<RetellCredentials>): bo
 
 /**
  * Get bulletproof credentials with validation
- * Note: For Phaeton AI CRM, returns empty credentials (user must configure)
+ *
+ * For Phaeton AI CRM: This always returns empty credentials.
+ * Users MUST configure credentials via Settings > API Configuration.
  */
 export function getBulletproofCredentials(): RetellCredentials {
-  // For Phaeton AI CRM, return empty credentials - user will configure their own
   const credentials = { ...HARDCODED_RETELL_CREDENTIALS }
 
-  console.log('🔐 Phaeton AI: No hardcoded credentials - user must configure via Settings')
-  // Security: Do not log API keys or Agent IDs
+  console.log('⚠️ Phaeton AI: No hardcoded credentials - waiting for user configuration')
+  console.log('   API Key:', credentials.apiKey || 'NOT SET - Configure in Settings')
+  console.log('   Call Agent ID:', credentials.callAgentId || 'NOT SET - Configure in Settings')
+  console.log('   SMS Agent ID:', credentials.smsAgentId || 'NOT SET - Configure in Settings')
 
   return credentials
 }
@@ -144,35 +152,23 @@ export function storeCredentialsEverywhere(credentials: RetellCredentials): void
 
 /**
  * Initialize hardcoded credential persistence on module load
+ *
+ * DISABLED FOR PHAETON AI CRM:
+ * No hardcoded credentials - users must configure via Settings.
+ * This function is kept for interface compatibility but does nothing.
  */
 export function initializeCredentialPersistence(): void {
-  // CRITICAL FIX: Don't initialize credentials if user just logged out
-  if (typeof localStorage !== 'undefined') {
-    const justLoggedOut = localStorage.getItem('justLoggedOut')
-    if (justLoggedOut === 'true') {
-      console.log('🛑 User just logged out - not initializing credential persistence')
-      return
-    }
-  }
+  console.log('⚠️ Phaeton AI: Credential auto-initialization DISABLED')
+  console.log('   Users must configure API keys via Settings > API Configuration')
+  console.log('   No hardcoded fallback credentials available')
 
-  const credentials = getBulletproofCredentials()
-  storeCredentialsEverywhere(credentials)
-
-  console.log('🚀 Hardcoded credential persistence initialized')
+  // Do nothing - no credentials to initialize
+  return
 }
 
-// Auto-initialization DISABLED - User-entered credentials take priority
-// The hardcoded credentials above serve only as documentation/reference
-// Users must configure their own credentials via Settings > API Configuration
-/*
-if (typeof window !== 'undefined') {
-  // Initialize after a short delay to ensure all systems are ready
-  setTimeout(() => {
-    try {
-      initializeCredentialPersistence()
-    } catch (error) {
-      console.error('❌ Failed to auto-initialize credential persistence:', error)
-    }
-  }, 100)
-}
-*/
+// Auto-initialization DISABLED for Phaeton AI CRM
+// Users MUST configure credentials via Settings > API Configuration
+// if (typeof window !== 'undefined') {
+//   // DISABLED - No hardcoded credentials for Phaeton AI
+//   console.log('⚠️ Phaeton AI: Auto-initialization of credentials DISABLED')
+// }

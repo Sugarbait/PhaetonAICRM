@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear Pierre localStorage</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background: #1a1a1a;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 700px;
+            background: #2a2a2a;
+            padding: 40px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        button {
+            background: #cc0000;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 10px;
+        }
+        button:hover { background: #aa0000; }
+        .success { background: #00cc44; }
+        .success:hover { background: #00aa33; }
+        .info {
+            background: #333;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 Clear Pierre localStorage</h1>
+        <p>This will completely clear all localStorage blocks for pierre@phaetonai.com</p>
+
+        <div id="output"></div>
+
+        <button onclick="clearPierreData()">🗑️ Clear Pierre Data</button>
+        <button onclick="clearAllData()" class="success">🗑️ Clear ALL Data</button>
+        <button onclick="location.href='http://localhost:3000'">↗️ Go to App</button>
+    </div>
+
+    <script>
+        function output(message, className = 'info') {
+            const div = document.getElementById('output')
+            div.innerHTML = `<div class="${className}">${message}</div>`
+        }
+
+        function clearPierreData() {
+            let report = '🧹 Clearing Pierre-specific data...\n\n'
+
+            // 1. Check systemUsers for Pierre
+            const systemUsers = localStorage.getItem('systemUsers')
+            if (systemUsers) {
+                try {
+                    const users = JSON.parse(systemUsers)
+                    const pierreIndex = users.findIndex(u =>
+                        u.email?.toLowerCase() === 'pierre@phaetonai.com'
+                    )
+
+                    if (pierreIndex >= 0) {
+                        users.splice(pierreIndex, 1)
+                        localStorage.setItem('systemUsers', JSON.stringify(users))
+                        report += '✅ Removed Pierre from systemUsers\n'
+                    } else {
+                        report += '✅ Pierre not in systemUsers\n'
+                    }
+                } catch (e) {
+                    report += '⚠️  Error parsing systemUsers\n'
+                }
+            } else {
+                report += '✅ No systemUsers found\n'
+            }
+
+            // 2. Check currentUser
+            const currentUser = localStorage.getItem('currentUser')
+            if (currentUser) {
+                try {
+                    const user = JSON.parse(currentUser)
+                    if (user.email?.toLowerCase() === 'pierre@phaetonai.com') {
+                        localStorage.removeItem('currentUser')
+                        report += '✅ Removed Pierre from currentUser\n'
+                    } else {
+                        report += '✅ currentUser is not Pierre\n'
+                    }
+                } catch (e) {
+                    report += '⚠️  Error parsing currentUser\n'
+                }
+            } else {
+                report += '✅ No currentUser found\n'
+            }
+
+            // 3. Check deletedUserEmails
+            const deletedEmails = localStorage.getItem('deletedUserEmails')
+            if (deletedEmails) {
+                try {
+                    let emails = JSON.parse(deletedEmails)
+                    const beforeCount = emails.length
+                    emails = emails.filter(e => e !== 'pierre@phaetonai.com')
+                    localStorage.setItem('deletedUserEmails', JSON.stringify(emails))
+                    report += `✅ Removed Pierre from deletedUserEmails (${beforeCount - emails.length} removed)\n`
+                } catch (e) {
+                    localStorage.removeItem('deletedUserEmails')
+                    report += '✅ Cleared deletedUserEmails\n'
+                }
+            } else {
+                report += '✅ No deletedUserEmails found\n'
+            }
+
+            // 4. Check failed_login_attempts
+            const failedAttempts = localStorage.getItem('failed_login_attempts')
+            if (failedAttempts) {
+                try {
+                    let attempts = JSON.parse(failedAttempts)
+                    const beforeCount = attempts.length
+                    attempts = attempts.filter(a => a.email !== 'pierre@phaetonai.com')
+                    localStorage.setItem('failed_login_attempts', JSON.stringify(attempts))
+                    report += `✅ Removed Pierre from failed_login_attempts (${beforeCount - attempts.length} removed)\n`
+                } catch (e) {
+                    localStorage.removeItem('failed_login_attempts')
+                    report += '✅ Cleared failed_login_attempts\n'
+                }
+            } else {
+                report += '✅ No failed_login_attempts found\n'
+            }
+
+            // 5. Clear any Pierre-specific keys
+            const keysToRemove = []
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i)
+                if (key && (
+                    key.includes('pierre') ||
+                    key.includes('Pierre') ||
+                    key.includes('userProfile_') ||
+                    key.includes('userCredentials_') ||
+                    key.includes('loginStats_') ||
+                    key.includes('settings_')
+                )) {
+                    keysToRemove.push(key)
+                }
+            }
+
+            keysToRemove.forEach(key => {
+                localStorage.removeItem(key)
+                report += `✅ Removed: ${key}\n`
+            })
+
+            if (keysToRemove.length === 0) {
+                report += '✅ No Pierre-specific keys found\n'
+            }
+
+            report += '\n='.repeat(60) + '\n'
+            report += '✅ Pierre data completely cleared!\n'
+            report += '='.repeat(60) + '\n'
+            report += '\n💡 You can now register with pierre@phaetonai.com\n'
+            report += '   Go to http://localhost:3000 and click "Create New Profile"'
+
+            output(report, 'success')
+        }
+
+        function clearAllData() {
+            if (!confirm('⚠️  This will delete ALL localStorage data. Are you sure?')) {
+                return
+            }
+
+            let report = '🗑️  CLEARING ALL DATA...\n\n'
+            const beforeCount = localStorage.length
+            report += `Before: ${beforeCount} localStorage keys\n\n`
+
+            localStorage.clear()
+            sessionStorage.clear()
+
+            const afterCount = localStorage.length
+            report += `After: ${afterCount} localStorage keys\n\n`
+
+            if (afterCount === 0) {
+                report += '✅ SUCCESS! All storage cleared.\n\n'
+                report += '📋 Next steps:\n'
+                report += '1. Click "Go to App" button below\n'
+                report += '2. Register with pierre@phaetonai.com\n'
+                report += '3. You will be the first user (automatic Super User)\n'
+
+                output(report, 'success')
+
+                // Auto-redirect after 3 seconds
+                setTimeout(() => {
+                    window.location.href = 'http://localhost:3000'
+                }, 3000)
+            } else {
+                report += '⚠️  WARNING: Some keys remain\n'
+                output(report, 'info')
+            }
+        }
+
+        // Auto-run on load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                let status = '📊 CURRENT STATUS:\n\n'
+
+                // Check systemUsers
+                const systemUsers = localStorage.getItem('systemUsers')
+                if (systemUsers) {
+                    try {
+                        const users = JSON.parse(systemUsers)
+                        const pierre = users.find(u => u.email?.toLowerCase() === 'pierre@phaetonai.com')
+                        if (pierre) {
+                            status += '⚠️  Pierre FOUND in systemUsers\n'
+                        } else {
+                            status += '✅ Pierre NOT in systemUsers\n'
+                        }
+                    } catch (e) {
+                        status += '⚠️  systemUsers parse error\n'
+                    }
+                } else {
+                    status += '✅ No systemUsers\n'
+                }
+
+                // Check deletedUserEmails
+                const deletedEmails = localStorage.getItem('deletedUserEmails')
+                if (deletedEmails) {
+                    try {
+                        const emails = JSON.parse(deletedEmails)
+                        if (emails.includes('pierre@phaetonai.com')) {
+                            status += '⚠️  Pierre FOUND in deletedUserEmails\n'
+                        } else {
+                            status += '✅ Pierre NOT in deletedUserEmails\n'
+                        }
+                    } catch (e) {
+                        status += '⚠️  deletedUserEmails parse error\n'
+                    }
+                } else {
+                    status += '✅ No deletedUserEmails\n'
+                }
+
+                // Check failed attempts
+                const failedAttempts = localStorage.getItem('failed_login_attempts')
+                if (failedAttempts) {
+                    try {
+                        const attempts = JSON.parse(failedAttempts)
+                        const pierreAttempts = attempts.filter(a => a.email === 'pierre@phaetonai.com')
+                        if (pierreAttempts.length > 0) {
+                            status += `⚠️  Pierre has ${pierreAttempts.length} failed login attempts\n`
+                        } else {
+                            status += '✅ Pierre has no failed attempts\n'
+                        }
+                    } catch (e) {
+                        status += '⚠️  failed_login_attempts parse error\n'
+                    }
+                } else {
+                    status += '✅ No failed_login_attempts\n'
+                }
+
+                status += '\nTotal localStorage keys: ' + localStorage.length
+
+                output(status)
+            }, 500)
+        })
+    </script>
+</body>
+</html>

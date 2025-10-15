@@ -283,7 +283,7 @@ export const CallsPage: React.FC<CallsPageProps> = ({ user }) => {
       // Check if Retell API has at minimum an API key configured
       const hasApiKey = !!retellService.getApiKey()
       if (!hasApiKey) {
-        setError('API not configured. Go to Settings → API Configuration to set up your credentials.')
+        setError('Calls API endpoint not found. Please check your configuration.')
         setLoading(false)
         return
       }
@@ -373,9 +373,13 @@ export const CallsPage: React.FC<CallsPageProps> = ({ user }) => {
             confidence_score: 0.8 // Default confidence score
           } : undefined,
           metadata: {
-            customer_name: retellCall.metadata?.customer_name || `Caller Unknown`,
-            call_type: retellCall.call_type === 'phone_call' ? 'Phone Call' : 'Web Call',
-            ...retellCall.metadata
+            ...retellCall.metadata,
+            customer_name: retellCall.call_analysis?.custom_analysis_data?.name ||
+                          retellCall.call_analysis?.custom_analysis_data?.Name ||
+                          retellCall.call_analysis?.custom_analysis_data?.customer_name ||
+                          retellCall.metadata?.customer_name ||
+                          'Caller Unknown',
+            call_type: retellCall.call_type === 'phone_call' ? 'Phone Call' : 'Web Call'
           }
         }
       })
@@ -435,7 +439,13 @@ export const CallsPage: React.FC<CallsPageProps> = ({ user }) => {
 
     } catch (error) {
       safeError('Failed to fetch calls:', error)
-      setError(error instanceof Error ? error.message : 'Failed to fetch call data')
+      // Check if it's a 404 error (API endpoint not found)
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      if (errorMessage.includes('404') || errorMessage.includes('Not Found')) {
+        setError('Calls API endpoint not found. Please check your configuration.')
+      } else {
+        setError(error instanceof Error ? error.message : 'Failed to fetch call data')
+      }
     } finally {
       setLoading(false)
     }
@@ -1163,8 +1173,9 @@ export const CallsPage: React.FC<CallsPageProps> = ({ user }) => {
 
         {/* Search and Filters */}
         <div className="mb-4 sm:mb-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-5 lg:p-6">
-          <div className="flex flex-col gap-3 sm:gap-4">
-            <div className="relative w-full sm:w-80">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+            {/* Search Bar */}
+            <div className="relative w-full sm:max-w-md">
               <SearchIcon className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
               <input
                 type="search"
@@ -1185,18 +1196,18 @@ export const CallsPage: React.FC<CallsPageProps> = ({ user }) => {
                 <ZapIcon className="w-4 h-4" />
               </button>
             </div>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <select
-                value={sentimentFilter}
-                onChange={(e) => setSentimentFilter(e.target.value)}
-                className="px-3 sm:px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px] text-sm sm:text-base w-full sm:w-80 touch-manipulation capitalize"
-              >
-                <option value="all">All Sentiment</option>
-                <option value="positive" className="capitalize">positive</option>
-                <option value="neutral" className="capitalize">neutral</option>
-                <option value="negative" className="capitalize">negative</option>
-              </select>
-            </div>
+
+            {/* Sentiment Filter */}
+            <select
+              value={sentimentFilter}
+              onChange={(e) => setSentimentFilter(e.target.value)}
+              className="px-3 sm:px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px] text-sm sm:text-base w-full sm:w-48 touch-manipulation capitalize"
+            >
+              <option value="all">All Sentiment</option>
+              <option value="positive" className="capitalize">Positive</option>
+              <option value="neutral" className="capitalize">Neutral</option>
+              <option value="negative" className="capitalize">Negative</option>
+            </select>
           </div>
         </div>
 
@@ -1211,10 +1222,11 @@ export const CallsPage: React.FC<CallsPageProps> = ({ user }) => {
             <div className="overflow-x-auto">
               {/* Table Header */}
               <div className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 px-4 sm:px-6 py-3 hidden lg:block">
-                <div className="grid grid-cols-10 gap-2 lg:gap-4 text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
+                <div className="grid grid-cols-11 gap-2 lg:gap-4 text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
                   <div className="col-span-1">#</div>
-                  <div className="col-span-3">Customer</div>
+                  <div className="col-span-2">Customer</div>
                   <div className="col-span-2">Date & Time</div>
+                  <div className="col-span-2">Sentiment</div>
                   <div className="col-span-2">Duration</div>
                   <div className="col-span-2">Cost</div>
                 </div>
@@ -1239,14 +1251,14 @@ export const CallsPage: React.FC<CallsPageProps> = ({ user }) => {
                       }}
                     >
                       {/* Desktop Layout */}
-                      <div className="hidden lg:grid grid-cols-10 gap-2 lg:gap-4 items-center">
+                      <div className="hidden lg:grid grid-cols-11 gap-2 lg:gap-4 items-center">
                         {/* Row Number */}
                         <div className="col-span-1">
                           <span className="text-sm font-medium text-gray-500 dark:text-gray-400">#{rowNumber}</span>
                         </div>
 
                         {/* Customer Info */}
-                        <div className="col-span-3">
+                        <div className="col-span-2">
                         <div className="flex items-center">
                           <div>
                             <div className="font-medium text-gray-900 dark:text-gray-100 flex items-center gap-2">
@@ -1277,6 +1289,17 @@ export const CallsPage: React.FC<CallsPageProps> = ({ user }) => {
                         </div>
                       </div>
 
+                      {/* Sentiment */}
+                      <div className="col-span-2">
+                        {call.sentiment_analysis ? (
+                          <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium border ${getSentimentColor(call.sentiment_analysis.overall_sentiment)}`}>
+                            {call.sentiment_analysis.overall_sentiment}
+                          </span>
+                        ) : (
+                          <span className="text-sm text-gray-400 dark:text-gray-500">N/A</span>
+                        )}
+                      </div>
+
                       {/* Duration */}
                       <div className="col-span-2">
                         <div className="flex items-center gap-2">
@@ -1294,11 +1317,6 @@ export const CallsPage: React.FC<CallsPageProps> = ({ user }) => {
                           <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                             {formatCallCost(call)}
                           </span>
-                          {call.sentiment_analysis && (
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getSentimentColor(call.sentiment_analysis.overall_sentiment)}`}>
-                              {call.sentiment_analysis.overall_sentiment}
-                            </span>
-                          )}
                         </div>
                       </div>
 

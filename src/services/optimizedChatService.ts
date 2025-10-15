@@ -10,7 +10,7 @@
  */
 
 import { optimizedApiService } from './optimizedApiService'
-import { chatService, type Chat, type ChatListOptions, type ChatListResponse, type ChatFilters } from './chatService'
+import { chatService, type Chat, type ChatListOptions, type ChatListResponse } from './chatService'
 
 interface OptimizedChatOptions extends ChatListOptions {
   priority?: 'high' | 'medium' | 'low'
@@ -42,8 +42,6 @@ export class OptimizedChatService {
   }
 
   private readonly DELTA_UPDATE_INTERVAL = 30000 // 30 seconds
-  private readonly FULL_REFRESH_INTERVAL = 300000 // 5 minutes
-  private readonly MAX_CACHED_PAGES = 10
 
   /**
    * Get chats with intelligent caching and delta updates
@@ -200,7 +198,6 @@ export class OptimizedChatService {
       }
 
       // Simple but effective change detection: compare chat count and recent chat IDs
-      const newChatIds = new Set(response.chats.map(chat => chat.chat_id))
       const currentChatIds = new Set(currentChats.map(chat => chat.chat_id))
 
       // Check for new chats (in response but not in current)
@@ -378,13 +375,13 @@ export class OptimizedChatService {
     return `${baseUrl}?${params.toString()}`
   }
 
-  private async getCachedChatData(cacheKey: string): Promise<CachedChatData | null> {
+  private async getCachedChatData(_cacheKey: string): Promise<CachedChatData | null> {
     // This would integrate with optimizedApiService's cache
     // For now, return null to skip cache
     return null
   }
 
-  private async setCachedChatData(cacheKey: string, data: CachedChatData): Promise<void> {
+  private async setCachedChatData(_cacheKey: string, _data: CachedChatData): Promise<void> {
     // This would integrate with optimizedApiService's cache
     // Implementation would store the data with appropriate TTL
   }
@@ -428,78 +425,6 @@ export class OptimizedChatService {
       lastMessage: chat.message_with_tool_calls?.slice(-1)[0]?.content || ''
     }
     return btoa(JSON.stringify(hashData))
-  }
-
-  private async checkForNewChats(options: ChatListOptions): Promise<{ hasNewChats: boolean; count: number }> {
-    try {
-      // Quick check with minimal data - just get count
-      const quickCheck = await optimizedApiService.request<{ total_count: number }>(
-        this.buildChatApiUrl({ ...options, limit: 1 }),
-        {
-          priority: 'low',
-          cacheTTL: 10000, // Short cache
-          backgroundRequest: true
-        }
-      )
-
-      const currentKnownCount = this.changeTracker.knownChatIds.size
-      const apiCount = quickCheck.total_count || 0
-
-      return {
-        hasNewChats: apiCount > currentKnownCount,
-        count: Math.max(0, apiCount - currentKnownCount)
-      }
-    } catch (error) {
-      console.warn('[OptimizedChatService] Failed to check for new chats:', error)
-      return { hasNewChats: false, count: 0 }
-    }
-  }
-
-  private async checkForUpdatedChats(currentChats: Chat[]): Promise<Chat[]> {
-    const updatedChats: Chat[] = []
-
-    // Sample a few recent chats to check for updates
-    const recentChats = currentChats
-      .filter(chat => chat.chat_status === 'ongoing')
-      .slice(0, 5) // Check only first 5 ongoing chats
-
-    if (recentChats.length === 0) return updatedChats
-
-    try {
-      const requests = recentChats.map(chat => ({
-        url: `https://api.retellai.com/get-chat/${chat.chat_id}`,
-        options: {
-          priority: 'low' as const,
-          cacheTTL: 5000,
-          backgroundRequest: true
-        }
-      }))
-
-      const results = await optimizedApiService.batchRequests<Chat>(requests, {
-        maxConcurrency: 2,
-        delayBetweenBatches: 200,
-        priority: 'low'
-      })
-
-      results.forEach((result, index) => {
-        if (result instanceof Error) return
-
-        const updatedChat = result as Chat
-        const originalChat = recentChats[index]
-        const newHash = this.calculateChatHash(updatedChat)
-        const oldHash = this.changeTracker.chatHashes.get(originalChat.chat_id)
-
-        if (oldHash && newHash !== oldHash) {
-          updatedChats.push(updatedChat)
-          this.changeTracker.chatHashes.set(updatedChat.chat_id, newHash)
-        }
-      })
-
-    } catch (error) {
-      console.warn('[OptimizedChatService] Failed to check for updated chats:', error)
-    }
-
-    return updatedChats
   }
 }
 

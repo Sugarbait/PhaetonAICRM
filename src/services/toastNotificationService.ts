@@ -63,7 +63,7 @@ class ToastNotificationService {
   /**
    * Initialize the toast notification service
    */
-  async initialize(userId: string): Promise<void> {
+  async initialize(): Promise<void> {
     if (this.isInitialized) return
 
     // Record service start time to prevent showing pre-existing records
@@ -74,7 +74,7 @@ class ToastNotificationService {
     })
 
     // Load user preferences
-    await this.loadUserPreferences(userId)
+    await this.loadUserPreferences()
 
     // Set up tab visibility tracking
     this.setupVisibilityTracking()
@@ -102,7 +102,7 @@ class ToastNotificationService {
   /**
    * Update notification preferences
    */
-  async updatePreferences(userId: string, preferences: Partial<ToastNotificationPreferences>): Promise<void> {
+  async updatePreferences(preferences: Partial<ToastNotificationPreferences>): Promise<void> {
     this.preferences = { ...this.preferences, ...preferences }
 
     // Save to localStorage for quick access
@@ -154,7 +154,7 @@ class ToastNotificationService {
   /**
    * Load user notification preferences
    */
-  private async loadUserPreferences(userId: string): Promise<void> {
+  private async loadUserPreferences(): Promise<void> {
     try {
       // Try to load from localStorage first (fast)
       const stored = localStorage.getItem('toast_notification_preferences')
@@ -443,7 +443,7 @@ class ToastNotificationService {
     const notificationId = `call_${recordId}_${Date.now()}`
 
     // Check for recent duplicates
-    if (this.isDuplicate(notificationId, recordId)) return
+    if (this.isDuplicate(recordId)) return
 
     const notification: ToastNotificationData = {
       id: notificationId,
@@ -482,7 +482,7 @@ class ToastNotificationService {
     const notificationId = `sms_${smsRecord.id}_${Date.now()}`
 
     // Check for recent duplicates
-    if (this.isDuplicate(notificationId, smsRecord.id)) return
+    if (this.isDuplicate(smsRecord.id)) return
 
     const notification: ToastNotificationData = {
       id: notificationId,
@@ -507,7 +507,7 @@ class ToastNotificationService {
   /**
    * Check if notification is a duplicate
    */
-  private isDuplicate(notificationId: string, recordId: string): boolean {
+  private isDuplicate(recordId: string): boolean {
     const now = Date.now()
     const recentKey = `${recordId}`
 

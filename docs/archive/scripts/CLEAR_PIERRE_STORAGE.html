@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fix Pierre's Credentials - Phaeton AI CRM</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #1a202c;
+            font-size: 28px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: #718096;
+            font-size: 16px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .info-box {
+            background: #edf2f7;
+            border-left: 4px solid #4299e1;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 4px;
+        }
+
+        .info-box h2 {
+            color: #2d3748;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .info-box p {
+            color: #4a5568;
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+
+        .credentials-box {
+            background: #f7fafc;
+            border: 2px solid #cbd5e0;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+
+        .credentials-box h3 {
+            color: #2d3748;
+            font-size: 16px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .credential-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: white;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .credential-label {
+            color: #4a5568;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .credential-value {
+            color: #2d3748;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            background: #edf2f7;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 16px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #2d3748;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e0;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .result {
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .result.success {
+            background: #c6f6d5;
+            border: 2px solid #48bb78;
+            color: #22543d;
+        }
+
+        .result.error {
+            background: #fed7d7;
+            border: 2px solid #f56565;
+            color: #742a2a;
+        }
+
+        .result h3 {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .result ul {
+            margin-left: 20px;
+            margin-top: 10px;
+        }
+
+        .result li {
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+
+        .log {
+            background: #1a202c;
+            color: #68d391;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 300px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .log-line {
+            margin-bottom: 5px;
+        }
+
+        .warning {
+            background: #fef5e7;
+            border: 2px solid #f39c12;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .warning p {
+            color: #7d6608;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .warning ul {
+            margin-left: 20px;
+            color: #7d6608;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Fix Pierre's Credentials</h1>
+        <p class="subtitle">Clear wrong localStorage data and restore API credentials</p>
+
+        <div class="info-box">
+            <h2>📋 What This Tool Does</h2>
+            <p><strong>User:</strong> pierre@phaetonai.com (166b5086-5ec5-49f3-9eff-68f75d0c8e79)</p>
+            <p><strong>Problem:</strong> Login password appearing in API key field</p>
+            <p><strong>Solution:</strong> Clear all credential storage and reload from Supabase</p>
+        </div>
+
+        <div class="credentials-box">
+            <h3>✅ Correct Credentials (Already in Supabase)</h3>
+            <div class="credential-item">
+                <span class="credential-label">API Key:</span>
+                <span class="credential-value">key_cda2021a151b9a84e721299f2c04</span>
+            </div>
+            <div class="credential-item">
+                <span class="credential-label">Call Agent ID:</span>
+                <span class="credential-value">agent_544379e4fc2a465b7e8eb6fd19</span>
+            </div>
+            <div class="credential-item">
+                <span class="credential-label">SMS Agent ID:</span>
+                <span class="credential-value">(empty - not used)</span>
+            </div>
+        </div>
+
+        <div class="warning">
+            <p>⚠️ <strong>Important Instructions:</strong></p>
+            <ul>
+                <li>Make sure you're on <strong>localhost:3001</strong> (Phaeton AI CRM)</li>
+                <li>Click "Fix My Credentials" below</li>
+                <li>After cleanup completes, refresh the page (F5)</li>
+                <li>Log in again with your credentials</li>
+            </ul>
+        </div>
+
+        <div class="button-group">
+            <button class="btn btn-primary" id="fixBtn" onclick="fixCredentials()">
+                🔧 Fix My Credentials
+            </button>
+            <button class="btn btn-secondary" onclick="diagnoseOnly()">
+                🔍 Diagnose Only (Don't Fix)
+            </button>
+        </div>
+
+        <div id="result" class="result"></div>
+        <div id="log" class="log"></div>
+    </div>
+
+    <script>
+        const userId = '166b5086-5ec5-49f3-9eff-68f75d0c8e79';
+        const settingsKey = `settings_${userId}`;
+        const password = '$Ineed1millie$_phaetonai';
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            logDiv.style.display = 'block';
+
+            const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'warning' ? '⚠️' : '📋';
+            const line = document.createElement('div');
+            line.className = 'log-line';
+            line.textContent = `${icon} ${message}`;
+            logDiv.appendChild(line);
+
+            // Scroll to bottom
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function showResult(success, title, messages) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = `result ${success ? 'success' : 'error'}`;
+            resultDiv.style.display = 'block';
+
+            let html = `<h3>${success ? '✅' : '❌'} ${title}</h3>`;
+            if (messages && messages.length > 0) {
+                html += '<ul>';
+                messages.forEach(msg => {
+                    html += `<li>${msg}</li>`;
+                });
+                html += '</ul>';
+            }
+
+            resultDiv.innerHTML = html;
+        }
+
+        function diagnoseOnly() {
+            document.getElementById('log').innerHTML = '';
+            document.getElementById('result').style.display = 'none';
+
+            log('🔍 DIAGNOSING PIERRE\'S STORAGE...', 'info');
+            log('='.repeat(60));
+
+            // Step 1: Check settings
+            log('\\n📋 STEP 1: Checking Current Settings');
+
+            const settingsJson = localStorage.getItem(settingsKey);
+            if (settingsJson) {
+                try {
+                    const settings = JSON.parse(settingsJson);
+
+                    log(`Settings found for Pierre:`, 'success');
+                    log(`  retellApiKey: ${settings.retellApiKey || 'NOT SET'}`);
+                    log(`  callAgentId: ${settings.callAgentId || 'NOT SET'}`);
+                    log(`  smsAgentId: ${settings.smsAgentId || 'NOT SET'}`);
+                    log(`  tenant_id: ${settings.tenant_id || 'NOT SET'}`);
+
+                    // Check if password is in any field
+                    const hasPassword =
+                        settings.retellApiKey === password ||
+                        settings.callAgentId === password ||
+                        settings.smsAgentId === password;
+
+                    if (hasPassword) {
+                        log('\\n⚠️ PASSWORD FOUND IN CREDENTIALS!', 'warning');
+                        if (settings.retellApiKey === password) log('  → Found in retellApiKey field', 'warning');
+                        if (settings.callAgentId === password) log('  → Found in callAgentId field', 'warning');
+                        if (settings.smsAgentId === password) log('  → Found in smsAgentId field', 'warning');
+                    } else {
+                        log('\\n✅ No password found in credential fields', 'success');
+                    }
+                } catch (e) {
+                    log(`Error parsing settings: ${e.message}`, 'error');
+                }
+            } else {
+                log('❌ No settings found for Pierre', 'error');
+            }
+
+            // Step 2: Check ALL localStorage keys
+            log('\\n📋 STEP 2: All Credential-Related Keys');
+
+            const allKeys = Object.keys(localStorage);
+            const credentialKeys = allKeys.filter(k =>
+                k.startsWith('settings_') ||
+                k.startsWith('userCredentials_') ||
+                k.startsWith('retell') ||
+                k === 'currentUser'
+            );
+
+            log(`Found ${credentialKeys.length} credential-related keys:`);
+            credentialKeys.forEach(key => {
+                log(`  - ${key}`);
+            });
+
+            // Step 3: Search for password in ALL keys
+            log('\\n🔍 STEP 3: Searching for Password in ALL Keys');
+
+            let passwordFound = false;
+            allKeys.forEach(key => {
+                const value = localStorage.getItem(key);
+                if (value && value.includes(password)) {
+                    passwordFound = true;
+                    log(`⚠️ PASSWORD FOUND IN: ${key}`, 'warning');
+                    log(`   Value: ${value.substring(0, 100)}...`);
+                }
+            });
+
+            if (!passwordFound) {
+                log('✅ Password not found in any localStorage key', 'success');
+            }
+
+            log('\\n' + '='.repeat(60));
+            log('🔍 DIAGNOSIS COMPLETE');
+
+            if (passwordFound || settingsJson) {
+                showResult(false, 'Issues Found', [
+                    passwordFound ? 'Password found in localStorage credentials' : 'Wrong credentials in localStorage',
+                    'Click "Fix My Credentials" to clean up and restore correct values'
+                ]);
+            } else {
+                showResult(true, 'No Issues Found', [
+                    'localStorage is clean',
+                    'Try refreshing the page (F5) and logging in again'
+                ]);
+            }
+        }
+
+        function fixCredentials() {
+            document.getElementById('log').innerHTML = '';
+            document.getElementById('result').style.display = 'none';
+            document.getElementById('fixBtn').disabled = true;
+
+            log('🔧 FIXING PIERRE\'S STORAGE...', 'info');
+            log('='.repeat(60));
+
+            let deletedCount = 0;
+
+            // Delete all credential-related keys
+            const keysToDelete = Object.keys(localStorage).filter(k =>
+                k.startsWith('settings_') ||
+                k.startsWith('userCredentials_') ||
+                k === 'retell_credentials_backup' ||
+                k === '__emergencyRetellCredentials' ||
+                k === '__fallbackRetellConfig'
+            );
+
+            log(`\\nDeleting ${keysToDelete.length} localStorage keys...`);
+
+            keysToDelete.forEach(key => {
+                localStorage.removeItem(key);
+                log(`  ✅ Deleted: ${key}`, 'success');
+                deletedCount++;
+            });
+
+            // Clear sessionStorage
+            sessionStorage.removeItem('retell_credentials_backup');
+            log('\\n✅ Cleared sessionStorage backup', 'success');
+
+            // Clear memory backup
+            if (window.__retellCredentialsBackup) {
+                delete window.__retellCredentialsBackup;
+                log('✅ Cleared memory backup', 'success');
+            }
+
+            log('\\n' + '='.repeat(60));
+            log(`✅ CLEANUP COMPLETE! Deleted ${deletedCount} keys`, 'success');
+            log('='.repeat(60));
+
+            showResult(true, 'Credentials Fixed!', [
+                `Deleted ${deletedCount} localStorage keys`,
+                'Cleared sessionStorage and memory backups',
+                '<strong>Next Steps:</strong>',
+                '1. Refresh the page (F5)',
+                '2. Log in with: pierre@phaetonai.com',
+                '3. Password: $Ineed1millie$_phaetonai',
+                '4. Credentials will load from Supabase automatically'
+            ]);
+
+            document.getElementById('fixBtn').disabled = false;
+
+            // Auto-refresh after 3 seconds
+            setTimeout(() => {
+                log('\\n🔄 Auto-refreshing page in 3 seconds...');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 3000);
+            }, 1000);
+        }
+    </script>
+</body>
+</html>

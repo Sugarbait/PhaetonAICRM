@@ -16,8 +16,6 @@ import { msalInstance, loginRequest, tokenRequest } from '../config/msalConfig'
 import { authService } from './authService'
 import { totpService } from './totpService'
 import { secureLogger } from './secureLogger'
-import { encryptionService } from './encryption'
-import { supabase } from '../config/supabase'
 import type { User, SessionInfo, AuthenticationState } from '../types'
 
 const logger = secureLogger.component('AuthMiddleware')

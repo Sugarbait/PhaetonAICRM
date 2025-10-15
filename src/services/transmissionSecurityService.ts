@@ -1179,13 +1179,6 @@ class TransmissionSecurityService implements ITransmissionSecurityService {
       }
     }
   }
-
-  private emit(event: string, data: any): void {
-    const listeners = this.eventListeners.get(event)
-    if (listeners) {
-      listeners.forEach(callback => callback(data))
-    }
-  }
 }
 
 // Export singleton instance

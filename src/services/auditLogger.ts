@@ -198,7 +198,7 @@ class HIPAAAuditLogger {
    */
   async logAuthenticationEvent(
     action: AuditAction.LOGIN | AuditAction.LOGOUT | AuditAction.LOGIN_FAILURE,
-    userId: string,
+    _userId: string,
     outcome: AuditOutcome,
     failureReason?: string
   ): Promise<void> {

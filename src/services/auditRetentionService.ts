@@ -104,14 +104,14 @@ class AuditRetentionService {
       }
 
       // Get oldest and newest logs
-      const { data: oldestLog, error: oldestError } = await supabase
+      const { data: oldestLog, error: _oldestError } = await supabase
         .from('audit_logs')
         .select('timestamp')
         .order('timestamp', { ascending: true })
         .limit(1)
         .single()
 
-      const { data: newestLog, error: newestError } = await supabase
+      const { data: newestLog, error: _newestError } = await supabase
         .from('audit_logs')
         .select('timestamp')
         .order('timestamp', { ascending: false })

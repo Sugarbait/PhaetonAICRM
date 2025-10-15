@@ -72,7 +72,6 @@ class CloudSyncTOTPService {
   }
 
   private syncSubscription: any = null
-  private lastSyncTime: Date = new Date()
 
   constructor() {
     this.initializeRealTimeSync()
@@ -218,7 +217,7 @@ class CloudSyncTOTPService {
       // Primary: Store in database for cloud synchronization
       console.log('☁️ Cloud TOTP: Storing TOTP data in database...')
       try {
-        const { data: upsertResult, error: upsertError } = await supabase.rpc('upsert_user_totp', {
+        const { error: upsertError } = await supabase.rpc('upsert_user_totp', {
           target_user_id: userId,
           secret: encrypted_secret,
           backup_codes_json: encrypted_backup_codes,

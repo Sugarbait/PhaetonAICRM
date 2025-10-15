@@ -17,6 +17,9 @@ import {
 import { enhancedUserService } from '@/services/enhancedUserService'
 import { apiKeyFallbackService } from '@/services/apiKeyFallbackService'
 import { retellService } from '@/services'
+import { supabase } from '@/config/supabase'
+import { getCurrentTenantId } from '@/config/tenantConfig'
+import { getPrimaryCredentialUserId, hasSharedCredentials, getCredentialOwnerInfo } from '@/config/tenantCredentialConfig'
 
 interface EnhancedApiKeyManagerProps {
   user: {
@@ -71,63 +74,12 @@ export const EnhancedApiKeyManager: React.FC<EnhancedApiKeyManagerProps> = ({ us
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
 
   useEffect(() => {
-    // CRITICAL: Ensure services are initialized globally before loading API keys
-    const initializeAndLoad = async () => {
-      try {
-        // Initialize global services first
-        const { globalServiceInitializer } = await import('../../services/globalServiceInitializer')
-        await globalServiceInitializer.initialize()
-
-        // Load API keys from user settings (don't force hardcoded values)
-        loadApiKeys()
-
-        console.log('✅ API Key Manager: Services and credentials initialized from user settings')
-      } catch (error) {
-        console.error('❌ API Key Manager: Initialization error:', error)
-        // Fallback: just load what's in localStorage
-        loadApiKeys()
-      }
-    }
-
-    initializeAndLoad()
+    // CRITICAL FIX: Load from Supabase FIRST for cross-device sync
+    // Falls back to localStorage if Supabase unavailable (offline mode)
+    // This ensures credentials are always loaded from the authoritative source
+    console.log('🔧 API Key Manager: Initializing Supabase-first credential loading')
+    loadApiKeys()
   }, [user.id])
-
-  const forceHardwiredCredentials = () => {
-    console.log('🔧 API KEY MANAGEMENT: Loading stored credentials (Phaeton AI CRM)')
-
-    // Don't force any hardwired credentials - this is Phaeton AI CRM, not ARTLEE
-    // Just load what's in localStorage
-    try {
-      const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}')
-      if (currentUser.id) {
-        const settings = JSON.parse(localStorage.getItem(`settings_${currentUser.id}`) || '{}')
-
-        const storedApiKeys = {
-          retell_api_key: settings.retellApiKey || '',
-          call_agent_id: settings.callAgentId || '',
-          sms_agent_id: settings.smsAgentId || ''
-        }
-
-        // Set in component state
-        setApiKeys(storedApiKeys)
-        setOriginalApiKeys({ ...storedApiKeys })
-
-        // Update retell service if keys exist
-        if (storedApiKeys.retell_api_key) {
-          retellService.updateCredentials(
-            storedApiKeys.retell_api_key,
-            storedApiKeys.call_agent_id,
-            storedApiKeys.sms_agent_id
-          )
-        }
-
-        console.log('✅ API KEY MANAGEMENT: Loaded stored credentials from localStorage')
-      }
-    } catch (error) {
-      console.warn('Failed to load stored credentials:', error)
-    }
-  }
-
 
   // Track unsaved changes by comparing current state with original saved state
   useEffect(() => {
@@ -142,141 +94,129 @@ export const EnhancedApiKeyManager: React.FC<EnhancedApiKeyManagerProps> = ({ us
     setError(null)
 
     try {
-      console.log('Loading API keys for user:', user.id)
+      console.log('🔄 API Key Manager: Loading credentials with Supabase-first strategy...')
 
-      // First, try to load from localStorage (primary, reliable source)
+      // Get current user
       const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}')
-      if (currentUser.id) {
-        const settings = JSON.parse(localStorage.getItem(`settings_${currentUser.id}`) || '{}')
-
-        if (settings.retellApiKey && !settings.retellApiKey.includes('cbc:')) {
-          // Found plain text API key in localStorage - use it
-          console.log('Found plain text API key in localStorage:', {
-            hasApiKey: !!settings.retellApiKey,
-            apiKeyLength: settings.retellApiKey?.length || 0,
-            apiKeyPrefix: settings.retellApiKey ? settings.retellApiKey.substring(0, 15) + '...' : 'none',
-            callAgentId: settings.callAgentId || 'not set',
-            smsAgentId: settings.smsAgentId || 'not set'
-          })
-
-          const localApiKeys = {
-            retell_api_key: settings.retellApiKey || '',
-            call_agent_id: settings.callAgentId || '',
-            sms_agent_id: settings.smsAgentId || ''
-          }
-
-          setApiKeys(localApiKeys)
-          // Update original state to match loaded values
-          setOriginalApiKeys({ ...localApiKeys })
-
-          // Update retell service
-          retellService.updateCredentials(
-            localApiKeys.retell_api_key,
-            localApiKeys.call_agent_id,
-            localApiKeys.sms_agent_id
-          )
-
-          console.log('Loaded API keys from localStorage successfully')
-          setIsLoading(false)
-          return
-        }
-      }
-
-      console.log('No valid localStorage keys found, trying service layer...')
-
-      // Fallback: try to load from service (may return encrypted keys)
-      const response = await enhancedUserService.getUserApiKeys(user.id)
-
-      if (response.status === 'success' && response.data) {
-        console.log('API keys loaded from service:', {
-          hasApiKey: !!response.data.retell_api_key,
-          apiKeyLength: response.data.retell_api_key?.length || 0,
-          apiKeyPrefix: response.data.retell_api_key ? response.data.retell_api_key.substring(0, 15) + '...' : 'none',
-          isEncrypted: response.data.retell_api_key?.includes('cbc:') || response.data.retell_api_key?.includes('gcm:'),
-          callAgentId: response.data.call_agent_id || 'not set',
-          smsAgentId: response.data.sms_agent_id || 'not set'
-        })
-
-        // Check if the API key is encrypted
-        if (response.data.retell_api_key?.includes('cbc:') || response.data.retell_api_key?.includes('gcm:')) {
-          console.log('Received encrypted API key from service - clearing encrypted values')
-
-          // Don't use any hardcoded fallbacks - just clear encrypted values
-          const correctApiKeys = {
-            retell_api_key: '',
-            call_agent_id: response.data.call_agent_id || '',
-            sms_agent_id: response.data.sms_agent_id || ''
-          }
-
-          setApiKeys(correctApiKeys)
-          // Update original state to match loaded values
-          setOriginalApiKeys({ ...correctApiKeys })
-
-          // Update localStorage with correct values
-          if (currentUser.id) {
-            const settings = JSON.parse(localStorage.getItem(`settings_${currentUser.id}`) || '{}')
-            settings.retellApiKey = correctApiKeys.retell_api_key
-            settings.callAgentId = correctApiKeys.call_agent_id
-            settings.smsAgentId = correctApiKeys.sms_agent_id
-            localStorage.setItem(`settings_${currentUser.id}`, JSON.stringify(settings))
-            console.log('Updated localStorage with correct API keys')
-          }
-
-          // Update retell service
-          retellService.updateCredentials(
-            correctApiKeys.retell_api_key,
-            correctApiKeys.call_agent_id,
-            correctApiKeys.sms_agent_id
-          )
-
-          setSuccessMessage('API keys corrected and loaded successfully!')
-          setTimeout(() => setSuccessMessage(null), 3000)
-        } else {
-          // Use the response data as-is (not encrypted)
-          const loadedApiKeys = {
-            retell_api_key: response.data.retell_api_key || '',
-            call_agent_id: response.data.call_agent_id || '',
-            sms_agent_id: response.data.sms_agent_id || ''
-          }
-
-          setApiKeys(loadedApiKeys)
-          // Update original state to match loaded values
-          setOriginalApiKeys({ ...loadedApiKeys })
-
-          // Update retell service
-          retellService.updateCredentials(
-            loadedApiKeys.retell_api_key,
-            loadedApiKeys.call_agent_id,
-            loadedApiKeys.sms_agent_id
-          )
-        }
-      } else {
-        console.log('No API keys found, starting with blank values')
-        const defaultApiKeys = {
+      if (!currentUser.id) {
+        console.log('⚠️ API Key Manager: No current user found')
+        const blankApiKeys = {
           retell_api_key: '',
           call_agent_id: '',
           sms_agent_id: ''
         }
-
-        setApiKeys(defaultApiKeys)
-        // Update original state to match loaded values
-        setOriginalApiKeys({ ...defaultApiKeys })
-
-        console.log('Initialized with blank API keys - user will need to configure')
+        setApiKeys(blankApiKeys)
+        setOriginalApiKeys({ ...blankApiKeys })
+        setIsLoading(false)
+        return
       }
-    } catch (err: any) {
-      console.error('Exception loading API keys:', err)
-      setError(`Failed to load API keys: ${err.message}`)
-      const defaultApiKeys = {
+
+      const tenantId = getCurrentTenantId()
+
+      // SHARED CREDENTIALS: Determine which user ID to load credentials from
+      const credentialUserId = hasSharedCredentials(tenantId)
+        ? getPrimaryCredentialUserId(tenantId) || currentUser.id
+        : currentUser.id
+
+      const isUsingSharedCredentials = credentialUserId !== currentUser.id
+
+      if (isUsingSharedCredentials) {
+        const ownerInfo = getCredentialOwnerInfo(tenantId)
+        console.log(`🔗 API Key Manager: SHARED CREDENTIALS MODE`)
+        console.log(`   Current user: ${currentUser.id} (${currentUser.email})`)
+        console.log(`   Credential owner: ${ownerInfo?.primaryUserEmail}`)
+        console.log(`   Any user can update - changes sync to all users in tenant`)
+      } else {
+        console.log(`🏢 API Key Manager: Loading for user ${currentUser.id}, tenant: ${tenantId}`)
+      }
+
+      let loadedApiKeys = {
         retell_api_key: '',
         call_agent_id: '',
         sms_agent_id: ''
       }
 
-      setApiKeys(defaultApiKeys)
-      // Update original state to match loaded values
-      setOriginalApiKeys({ ...defaultApiKeys })
-      console.log('Using blank API keys due to loading error')
+      // STRATEGY 1: Try loading from Supabase FIRST (cross-device sync)
+      try {
+        console.log('☁️ API Key Manager: Attempting Supabase load...')
+        const { data, error } = await supabase
+          .from('user_settings')
+          .select('retell_api_key, call_agent_id, sms_agent_id')
+          .eq('user_id', credentialUserId) // Load from primary user if shared credentials enabled
+          .eq('tenant_id', tenantId)
+          .single()
+
+        if (!error && data) {
+          console.log('✅ API Key Manager: Loaded from Supabase:', {
+            hasApiKey: !!data.retell_api_key,
+            apiKeyLength: data.retell_api_key?.length || 0,
+            apiKeyPrefix: data.retell_api_key ? data.retell_api_key.substring(0, 15) + '...' : 'EMPTY',
+            callAgentId: data.call_agent_id || 'EMPTY',
+            smsAgentId: data.sms_agent_id || 'EMPTY'
+          })
+
+          loadedApiKeys = {
+            retell_api_key: data.retell_api_key || '',
+            call_agent_id: data.call_agent_id || '',
+            sms_agent_id: data.sms_agent_id || ''
+          }
+
+          // Update localStorage to match Supabase (single source of truth)
+          const settings = JSON.parse(localStorage.getItem(`settings_${currentUser.id}`) || '{}')
+          settings.retellApiKey = loadedApiKeys.retell_api_key
+          settings.callAgentId = loadedApiKeys.call_agent_id
+          settings.smsAgentId = loadedApiKeys.sms_agent_id
+          localStorage.setItem(`settings_${currentUser.id}`, JSON.stringify(settings))
+          console.log('💾 API Key Manager: Synced Supabase data to localStorage')
+
+        } else {
+          console.log('⚠️ API Key Manager: Supabase query returned no data or error:', error?.message)
+          throw new Error('Supabase data not available')
+        }
+
+      } catch (supabaseError) {
+        // STRATEGY 2: Fallback to localStorage if Supabase fails
+        console.log('📦 API Key Manager: Supabase unavailable, falling back to localStorage')
+
+        try {
+          const settings = JSON.parse(localStorage.getItem(`settings_${currentUser.id}`) || '{}')
+
+          loadedApiKeys = {
+            retell_api_key: settings.retellApiKey || '',
+            call_agent_id: settings.callAgentId || '',
+            sms_agent_id: settings.smsAgentId || ''
+          }
+
+          console.log('✅ API Key Manager: Loaded from localStorage fallback:', {
+            hasApiKey: !!loadedApiKeys.retell_api_key,
+            apiKeyLength: loadedApiKeys.retell_api_key?.length || 0,
+            apiKeyPrefix: loadedApiKeys.retell_api_key ? loadedApiKeys.retell_api_key.substring(0, 15) + '...' : 'EMPTY',
+            callAgentId: loadedApiKeys.call_agent_id || 'EMPTY',
+            smsAgentId: loadedApiKeys.sms_agent_id || 'EMPTY'
+          })
+
+        } catch (localStorageError) {
+          console.error('❌ API Key Manager: Both Supabase and localStorage failed')
+          // loadedApiKeys remains empty, which is fine
+        }
+      }
+
+      setApiKeys(loadedApiKeys)
+      setOriginalApiKeys({ ...loadedApiKeys })
+
+      console.log('🎯 API Key Manager: Load complete')
+
+    } catch (err: any) {
+      console.error('❌ API Key Manager: Critical error loading API keys:', err)
+      setError(`Failed to load API keys: ${err.message}`)
+
+      const blankApiKeys = {
+        retell_api_key: '',
+        call_agent_id: '',
+        sms_agent_id: ''
+      }
+      setApiKeys(blankApiKeys)
+      setOriginalApiKeys({ ...blankApiKeys })
     } finally {
       setIsLoading(false)
     }
@@ -365,9 +305,22 @@ export const EnhancedApiKeyManager: React.FC<EnhancedApiKeyManagerProps> = ({ us
         trimmedApiKeys.sms_agent_id
       )
 
-      // Try to save to database (this is secondary to localStorage)
+      // SHARED CREDENTIALS: Determine which user ID to save credentials to
+      const tenantId = getCurrentTenantId()
+      const credentialUserId = hasSharedCredentials(tenantId)
+        ? getPrimaryCredentialUserId(tenantId) || user.id
+        : user.id
+
+      const isUsingSharedCredentials = credentialUserId !== user.id
+
+      if (isUsingSharedCredentials) {
+        const ownerInfo = getCredentialOwnerInfo(tenantId)
+        console.log(`🔗 Saving to SHARED credential storage (owner: ${ownerInfo?.primaryUserEmail})`)
+      }
+
+      // Try to save to database (primary user's record if shared credentials enabled)
       try {
-        const response = await enhancedUserService.updateUserApiKeys(user.id, trimmedApiKeys)
+        const response = await enhancedUserService.updateUserApiKeys(credentialUserId, trimmedApiKeys)
 
         if (response.status === 'success') {
           console.log('Successfully saved API keys to database')
@@ -483,9 +436,29 @@ export const EnhancedApiKeyManager: React.FC<EnhancedApiKeyManagerProps> = ({ us
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
             <Key className="w-5 h-5 text-blue-600" />
             API Key Management
+            {(() => {
+              const tenantId = getCurrentTenantId()
+              const isShared = hasSharedCredentials(tenantId)
+              const ownerInfo = getCredentialOwnerInfo(tenantId)
+
+              return isShared && ownerInfo ? (
+                <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 rounded-md border border-green-300 dark:border-green-700">
+                  <Link className="w-3 h-3" />
+                  Shared with all users
+                </span>
+              ) : null
+            })()}
           </h2>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            Configure your API credentials for call and SMS services
+            {(() => {
+              const tenantId = getCurrentTenantId()
+              const isShared = hasSharedCredentials(tenantId)
+              const ownerInfo = getCredentialOwnerInfo(tenantId)
+
+              return isShared && ownerInfo
+                ? `Shared credentials managed by ${ownerInfo.primaryUserEmail}. Any user can update these credentials.`
+                : 'Configure your API credentials for call and SMS services'
+            })()}
           </p>
         </div>
         <div className="flex items-center gap-2">

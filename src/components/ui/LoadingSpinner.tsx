@@ -19,7 +19,7 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   return (
     <div
       className={clsx(
-        'animate-spin rounded-full border-2 border-neutral-300 border-t-primary-500',
+        'animate-spin rounded-full border-2 border-neutral-300 dark:border-neutral-600 border-t-primary-500 dark:border-t-primary-400',
         sizeClasses[size],
         className
       )}

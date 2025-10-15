@@ -1,6 +1,5 @@
 import { supabase } from '@/config/supabase'
 import { Database, ServiceResponse } from '@/types/supabase'
-import { encryptionService } from './encryption'
 import { auditLogger } from './auditLogger'
 import { apiKeyFallbackService } from './apiKeyFallbackService'
 import { getCurrentTenantId } from '@/config/tenantConfig'
@@ -503,7 +502,7 @@ export class EnhancedUserService {
       console.log(`EnhancedUserService: Granting super user privileges to ${userId}`)
 
       // Use the stored function for atomic update
-      const { data, error } = await supabase.rpc('grant_super_user_privileges', {
+      const { error } = await supabase.rpc('grant_super_user_privileges', {
         p_user_id: userId,
         p_granted_by: grantedBy,
         p_permissions: permissions
@@ -531,7 +530,7 @@ export class EnhancedUserService {
       console.log(`EnhancedUserService: Revoking super user privileges from ${userId}`)
 
       // Use the stored function for atomic update
-      const { data, error } = await supabase.rpc('revoke_super_user_privileges', {
+      const { error } = await supabase.rpc('revoke_super_user_privileges', {
         p_user_id: userId,
         p_revoked_by: revokedBy
       })
@@ -690,24 +689,6 @@ export class EnhancedUserService {
         error: error.message
       })
       return { status: 'error', error: error.message || 'Failed to create user' }
-    }
-  }
-
-  /**
-   * Helper method to get next settings version
-   */
-  private static async getNextSettingsVersion(userId: string): Promise<number> {
-    try {
-      const { data } = await supabase
-        .from('user_settings')
-        .select('settings_version')
-        .eq('user_id', userId)
-        .eq('tenant_id', getCurrentTenantId())
-        .single()
-
-      return (data?.settings_version || 0) + 1
-    } catch {
-      return 1
     }
   }
 

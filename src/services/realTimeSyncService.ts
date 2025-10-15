@@ -747,12 +747,12 @@ class RealTimeSyncService {
     }, delay)
   }
 
-  private async applySyncInsert(tableName: string, recordData: any): Promise<void> {
+  private async applySyncInsert(tableName: string, _recordData: any): Promise<void> {
     // Implementation would depend on the specific table and business logic
     logger.debug('Applying sync insert', this.userId, undefined, { tableName })
   }
 
-  private async applySyncUpdate(tableName: string, recordId: string, recordData: any): Promise<void> {
+  private async applySyncUpdate(tableName: string, recordId: string, _recordData: any): Promise<void> {
     // Implementation would depend on the specific table and business logic
     logger.debug('Applying sync update', this.userId, undefined, { tableName, recordId })
   }

@@ -47,7 +47,7 @@ export class ApiKeyFallbackService {
 
     try {
       // Try to select the columns - if they don't exist, this will fail
-      const { data, error } = await supabase
+      const { data: _data, error } = await supabase
         .from('user_profiles')
         .select('encrypted_agent_config, encrypted_retell_api_key')
         .eq('tenant_id', getCurrentTenantId())

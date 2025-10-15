@@ -27,10 +27,8 @@ import {
   IncidentConfiguration,
   IncidentMetrics,
   UserSecurityProfile,
-  IncidentEvidence,
   AutomatedResponse,
   NotificationResponse,
-  ContainmentAction,
   ResponseAction,
   NotificationType,
   CreateIncidentRequest,
@@ -1145,7 +1143,7 @@ export class IncidentResponseService {
       this.storeData(IncidentResponseService.STORAGE_KEYS.LOCKOUTS, activeLockouts)
 
       // Clean up expired monitoring
-      for (const [userId, profile] of this.securityProfiles) {
+      for (const [, profile] of this.securityProfiles) {
         if (profile.enhancedMonitoring && profile.monitoringExpiresAt &&
             new Date(profile.monitoringExpiresAt).getTime() <= now) {
           profile.enhancedMonitoring = false
@@ -1291,10 +1289,6 @@ export class IncidentResponseService {
       }
 
       // Calculate metrics
-      const now = Date.now()
-      const oneDayAgo = now - 24 * 60 * 60 * 1000
-      const oneWeekAgo = now - 7 * 24 * 60 * 60 * 1000
-
       const totalIncidents = incidents.length
       const openIncidents = incidents.filter(i => i.status === IncidentStatus.OPEN).length
       const resolvedIncidents = incidents.filter(i => i.status === IncidentStatus.RESOLVED).length

@@ -45,7 +45,7 @@ export const ChatDetailModal: React.FC<ChatDetailModalProps> = ({ chat, isOpen, 
     }
   }, [isOpen, chat?.chat_id])
 
-  // Generate Patient ID based on phone number when modal opens
+  // Generate Customer ID based on phone number when modal opens
   useEffect(() => {
     if (isOpen && chat) {
       // Use the same phone number extraction logic as the display (around line 441)
@@ -81,12 +81,12 @@ export const ChatDetailModal: React.FC<ChatDetailModalProps> = ({ chat, isOpen, 
       if (phoneNumber && phoneNumber !== 'Unknown Number') {
         const patientId = patientIdService.getPatientId(phoneNumber)
         const record = patientIdService.getPatientRecord(phoneNumber)
-        console.log('ChatDetailModal: Generated Patient ID:', patientId, 'for phone: [REDACTED]')
+        console.log('ChatDetailModal: Generated Customer ID:', patientId, 'for phone: [REDACTED]')
         setGeneratedPatientId(patientId)
         setPatientRecord(record)
       } else {
         console.log('ChatDetailModal: No valid phone number found - setting fallback')
-        setGeneratedPatientId('PT00000000')
+        setGeneratedPatientId('CT00000000')
         setPatientRecord(null)
       }
     }
@@ -473,7 +473,7 @@ export const ChatDetailModal: React.FC<ChatDetailModalProps> = ({ chat, isOpen, 
   const displayName = extractedName ? callerName : `Caller`
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all">
       <div className="bg-white dark:bg-gray-800 dark:bg-gray-800 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
@@ -540,7 +540,7 @@ export const ChatDetailModal: React.FC<ChatDetailModalProps> = ({ chat, isOpen, 
               <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <MessageSquareIcon className="w-4 h-4 text-blue-600" />
-                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">SMS Segments</span>
+                  <span className="text-sm font-bold text-gray-900 dark:text-gray-100">SMS Segments</span>
                 </div>
                 <div className="text-2xl font-bold text-blue-600">
                   {calculateChatSMSSegments(displayChat)}
@@ -550,7 +550,7 @@ export const ChatDetailModal: React.FC<ChatDetailModalProps> = ({ chat, isOpen, 
               <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <TrendingUpIcon className="w-4 h-4 text-green-600" />
-                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Status</span>
+                  <span className="text-sm font-bold text-gray-900 dark:text-gray-100">Status</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${getChatStatusColor(displayChat.chat_status)}`}>
@@ -563,7 +563,7 @@ export const ChatDetailModal: React.FC<ChatDetailModalProps> = ({ chat, isOpen, 
               <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <MessageSquareIcon className="w-4 h-4 text-purple-600" />
-                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Messages</span>
+                  <span className="text-sm font-bold text-gray-900 dark:text-gray-100">Messages</span>
                 </div>
                 <div className="text-2xl font-bold text-purple-600">
                   {displayChat.message_with_tool_calls?.length || 0}
@@ -573,7 +573,7 @@ export const ChatDetailModal: React.FC<ChatDetailModalProps> = ({ chat, isOpen, 
               <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <DollarSignIcon className="w-4 h-4 text-orange-600" />
-                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">SMS Cost</span>
+                  <span className="text-sm font-bold text-gray-900 dark:text-gray-100">SMS Cost</span>
                 </div>
                 <div className="text-2xl font-bold text-orange-600">
                   ${calculateChatSMSCost(displayChat).toFixed(3)}
@@ -582,40 +582,73 @@ export const ChatDetailModal: React.FC<ChatDetailModalProps> = ({ chat, isOpen, 
             </div>
 
             {/* Contact Information */}
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Chat Information</h3>
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Chat Information</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Caller Name</label>
-                  <p className="text-gray-900 dark:text-gray-100">{callerName}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Phone Number</label>
-                  <p className="text-gray-900 dark:text-gray-100">{phoneNumber}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Patient ID</label>
-                  <div className="flex items-center gap-2">
-                    <IdCardIcon className="w-4 h-4 text-blue-600" />
-                    <p className="text-gray-900 dark:text-gray-100 font-mono font-semibold">
-                      {generatedPatientId || 'PT00000000'}
-                    </p>
-                    {patientRecord && (
-                      <span className="text-xs text-gray-500 dark:text-gray-400">(Phone-based)</span>
-                    )}
+                {/* Customer Name */}
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-bold text-gray-500 dark:text-gray-400">
+                    <UserIcon className="w-4 h-4" />
+                    <span>Customer Name</span>
+                  </div>
+                  <div className="pl-6">
+                    <p className="text-lg text-gray-900 dark:text-gray-100">{callerName}</p>
                   </div>
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Agent ID</label>
-                  <p className="text-gray-900 dark:text-gray-100">{displayChat.agent_id}</p>
+
+                {/* Phone Number */}
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-bold text-gray-500 dark:text-gray-400">
+                    <PhoneIcon className="w-4 h-4" />
+                    <span>Phone Number</span>
+                  </div>
+                  <div className="pl-6">
+                    <a
+                      href={`tel:${phoneNumber}`}
+                      className="text-lg text-blue-600 dark:text-blue-400 hover:underline"
+                    >
+                      {phoneNumber}
+                    </a>
+                  </div>
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Success Status</label>
-                  <p className={`font-medium ${
-                    displayChat.chat_analysis?.chat_successful ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    {displayChat.chat_analysis?.chat_successful ? 'Successful' : 'Unsuccessful'}
-                  </p>
+
+                {/* Customer ID */}
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-bold text-gray-500 dark:text-gray-400">
+                    <IdCardIcon className="w-4 h-4" />
+                    <span>Customer ID</span>
+                  </div>
+                  <div className="pl-6">
+                    <p className="text-lg font-mono text-gray-900 dark:text-gray-100">
+                      {generatedPatientId || 'CT00000000'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Agent ID */}
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-bold text-gray-500 dark:text-gray-400">
+                    <BotIcon className="w-4 h-4" />
+                    <span>Agent ID</span>
+                  </div>
+                  <div className="pl-6">
+                    <p className="text-lg text-gray-900 dark:text-gray-100">{displayChat.agent_id}</p>
+                  </div>
+                </div>
+
+                {/* Success Status */}
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-bold text-gray-500 dark:text-gray-400">
+                    <CheckCircleIcon className="w-4 h-4" />
+                    <span>Success Status</span>
+                  </div>
+                  <div className="pl-6">
+                    <p className={`text-lg font-medium ${
+                      displayChat.chat_analysis?.chat_successful ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      {displayChat.chat_analysis?.chat_successful ? 'Successful' : 'Unsuccessful'}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -634,7 +667,7 @@ export const ChatDetailModal: React.FC<ChatDetailModalProps> = ({ chat, isOpen, 
                     <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border">
                       <div className="flex items-center gap-2 mb-2">
                         <CheckCircleIcon className="w-5 h-5 text-green-600" />
-                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Chat Success</span>
+                        <span className="text-sm font-bold text-gray-900 dark:text-gray-100">Chat Success</span>
                       </div>
                       <div className={`text-lg font-semibold ${
                         displayChat.chat_analysis.chat_successful ? 'text-green-600' : 'text-red-600'
@@ -648,7 +681,7 @@ export const ChatDetailModal: React.FC<ChatDetailModalProps> = ({ chat, isOpen, 
                       <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border">
                         <div className="flex items-center gap-2 mb-2">
                           <TrendingUpIcon className="w-5 h-5 text-purple-600" />
-                          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">User Sentiment</span>
+                          <span className="text-sm font-bold text-gray-900 dark:text-gray-100">User Sentiment</span>
                         </div>
                         <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getSentimentColor(displayChat.chat_analysis.user_sentiment)}`}>
                           {displayChat.chat_analysis.user_sentiment}
@@ -672,7 +705,7 @@ export const ChatDetailModal: React.FC<ChatDetailModalProps> = ({ chat, isOpen, 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {Object.entries(displayChat.chat_analysis.custom_analysis_data).map(([key, value]) => (
                           <div key={key} className="border-l-4 border-blue-500 pl-3">
-                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 capitalize">
+                            <label className="text-sm font-bold text-gray-700 dark:text-gray-300 capitalize">
                               {key.replace(/_/g, ' ').replace(/([A-Z])/g, ' $1').trim()}
                             </label>
                             <p className="text-gray-900 dark:text-gray-100 text-sm mt-1">
@@ -694,7 +727,7 @@ export const ChatDetailModal: React.FC<ChatDetailModalProps> = ({ chat, isOpen, 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {Object.entries(displayChat.collected_dynamic_variables).map(([key, value]) => (
                     <div key={key}>
-                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300 capitalize">
+                      <label className="text-sm font-bold text-gray-700 dark:text-gray-300 capitalize">
                         {key.replace(/_/g, ' ')}
                       </label>
                       <p className="text-gray-900 dark:text-gray-100">{String(value)}</p>

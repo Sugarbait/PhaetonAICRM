@@ -236,8 +236,23 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user }) => {
 
   // Load credentials and fetch initial data on mount
   useEffect(() => {
-    console.log('🚀 Dashboard: Initial mount - loading credentials and data')
-    fetchDashboardData()
+    const initializeDashboard = async () => {
+      console.log('🚀 Dashboard: Initial mount - initializing services and loading credentials')
+
+      try {
+        // CRITICAL: Initialize global services first (loads credentials from cloud)
+        const { globalServiceInitializer } = await import('../services/globalServiceInitializer')
+        await globalServiceInitializer.initialize()
+        console.log('✅ Dashboard: Global services initialized successfully')
+      } catch (error) {
+        console.warn('⚠️ Dashboard: Service initialization failed, continuing with fallback:', error)
+      }
+
+      // Now fetch dashboard data with credentials loaded
+      fetchDashboardData()
+    }
+
+    initializeDashboard()
   }, []) // Empty dependency array = run once on mount
 
   // Save cache when it changes
@@ -779,6 +794,59 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user }) => {
     setError('')
 
     try {
+      // 🔐 CRITICAL: Check API configuration BEFORE doing anything else
+      console.log('🔐 Dashboard: Checking API configuration before fetching data...')
+
+      // Reload credentials to ensure we have the latest
+      try {
+        await retellService.loadCredentialsAsync()
+        console.log('✅ Dashboard: Credentials loaded successfully')
+      } catch (error) {
+        console.log('⚠️ Dashboard: Supabase credential sync failed, using localStorage fallback:', error)
+      }
+
+      // Check if API key is configured
+      let apiKey = retellService.getApiKey()
+      let hasApiKey = !!apiKey
+
+      if (!hasApiKey) {
+        console.log('🔄 Dashboard: No API key found on first check, forcing credential reload...')
+        retellService.loadCredentials()
+        apiKey = retellService.getApiKey()
+        hasApiKey = !!apiKey
+      }
+
+      // 🚨 CRITICAL: If no API key, stop here and show error
+      if (!hasApiKey) {
+        console.log('❌ Dashboard: No API key configured - cannot fetch data')
+        setRetellStatus('not-configured')
+        setError('Dashboard API endpoint not found. Please check your configuration.')
+        setIsLoading(false)
+
+        // Set all metrics to 0
+        setMetrics({
+          totalCalls: 0,
+          avgCallDuration: '0:00',
+          avgCostPerCall: 0,
+          callSuccessRate: 0,
+          totalCost: 0,
+          highestCostCall: 0,
+          lowestCostCall: 0,
+          totalCallDuration: '0:00',
+          totalMessages: 0,
+          avgMessagesPerChat: 0,
+          avgCostPerMessage: 0,
+          messageDeliveryRate: 0,
+          totalSMSCost: 0,
+          totalSegments: 0
+        })
+
+        return
+      }
+
+      console.log('✅ Dashboard: API key verified, proceeding with data fetch')
+      setRetellStatus('connected')
+
       // CRITICAL: Clear all cached data to ensure fresh data from YOUR Retell AI account
       console.log('🗑️ Dashboard: Clearing all service caches')
       chatService.clearAllCache()
@@ -790,9 +858,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user }) => {
       } catch (e) {
         console.warn('Failed to clear SMS segment cache:', e)
       }
-
-      // PRODUCTION MODE: Load API credentials
-      console.log('📊 Production Mode - Loading API credentials')
 
       // Get date range
       const { start, end } = getDateRangeFromSelection(selectedDateRange, customStartDate, customEndDate)
@@ -811,34 +876,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user }) => {
       let callsResponse, chatsResponse
 
       console.log('🚀 Production Mode: Fetching real data from Retell AI API')
-
-      // Reload credentials to ensure we have the latest
-      try {
-        await retellService.loadCredentialsAsync()
-        console.log('✅ Credentials loaded successfully')
-      } catch (error) {
-        console.log('⚠️ Supabase credential sync failed, using localStorage fallback:', error)
-      }
-
-      // Check if API key is configured
-      let apiKey = retellService.getApiKey()
-      let hasApiKey = !!apiKey
-
-      if (!hasApiKey) {
-        console.log('🔄 No API key found on first check, forcing credential reload...')
-        retellService.loadCredentials()
-        apiKey = retellService.getApiKey()
-        hasApiKey = !!apiKey
-      }
-
-      if (!hasApiKey) {
-        console.log('❌ No API key found, showing not-configured warning')
-        setRetellStatus('not-configured')
-        setIsLoading(false)
-        return
-      }
-
-      setRetellStatus('connected')
 
       // Fetch real calls from Retell AI
       console.log('📞 PRODUCTION MODE: Fetching calls from Retell AI...')

@@ -103,8 +103,8 @@ export const Header: React.FC<HeaderProps> = ({ user, onMenuToggle, sidebarOpen,
   const displayAvatar = user?.avatar || dynamicAvatar
 
   return (
-    <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-3 sm:py-4">
-      <div className="flex items-center justify-between">
+    <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 h-16">
+      <div className="flex items-center justify-between h-full px-4 sm:px-6">
         <div className="flex items-center gap-2 sm:gap-4">
           <button
             onClick={onMenuToggle}

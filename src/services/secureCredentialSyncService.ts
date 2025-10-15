@@ -11,11 +11,9 @@
  */
 
 import { supabase, supabaseConfig } from '@/config/supabase'
-import { Database } from '@/types/supabase'
 import { encryptionService } from './encryption'
 import { auditLogger } from './auditLogger'
 import { totpService } from './totpService'
-import { conflictResolver } from './crossDeviceConflictResolver'
 import { getCurrentTenantId } from '@/config/tenantConfig'
 
 export interface SecureCredential {
@@ -539,7 +537,7 @@ class SecureCredentialSyncService {
    * Private helper methods
    */
 
-  private async assessDeviceTrust(userId: string, deviceId: string, fingerprint: string, options: {
+  private async assessDeviceTrust(userId: string, deviceId: string, _fingerprint: string, options: {
     mfaVerified: boolean
   }): Promise<DeviceTrust['trustLevel']> {
     // Check if device exists in trusted devices
@@ -605,7 +603,7 @@ class SecureCredentialSyncService {
     return btoa(components.join('|')).substring(0, 32)
   }
 
-  private async getDeviceFingerprint(deviceId: string): Promise<string> {
+  private async getDeviceFingerprint(_deviceId: string): Promise<string> {
     return this.generateDeviceFingerprint()
   }
 
@@ -666,7 +664,7 @@ class SecureCredentialSyncService {
     }
   }
 
-  private async syncTotpSecrets(userId: string, deviceId: string): Promise<{ success: boolean; error?: string }> {
+  private async syncTotpSecrets(_userId: string, _deviceId: string): Promise<{ success: boolean; error?: string }> {
     try {
       // This would integrate with the existing totpService
       // For now, we'll just return success to avoid circular dependencies

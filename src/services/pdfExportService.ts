@@ -4,8 +4,7 @@
  */
 
 import jsPDF from 'jspdf'
-import html2canvas from 'html2canvas'
-import { format, startOfDay, endOfDay } from 'date-fns'
+import { format } from 'date-fns'
 import { logoService } from './logoService'
 
 interface DashboardMetrics {
@@ -35,16 +34,12 @@ interface ExportOptions {
 class PDFExportService {
   private pdf: jsPDF
   private pageWidth: number
-  private pageHeight: number
   private margin: number
-  private lineHeight: number
 
   constructor() {
     this.pdf = new jsPDF('p', 'mm', 'a4')
     this.pageWidth = this.pdf.internal.pageSize.getWidth()
-    this.pageHeight = this.pdf.internal.pageSize.getHeight()
     this.margin = 20
-    this.lineHeight = 6
   }
 
   async generateDashboardReport(
@@ -60,15 +55,15 @@ class PDFExportService {
 
       // Add new page for detailed metrics
       this.pdf.addPage()
-      this.generateMetricsPage(metrics, options)
+      this.generateMetricsPage(metrics)
 
       // Add charts page
       this.pdf.addPage()
-      await this.generateChartsPage(metrics, options)
+      await this.generateChartsPage(metrics)
 
       // Add summary page
       this.pdf.addPage()
-      this.generateSummaryPage(metrics, options)
+      this.generateSummaryPage(metrics)
 
       // Save the PDF
       const fileName = this.generateFileName(options)
@@ -155,7 +150,7 @@ class PDFExportService {
     this.pdf.text('Confidential Business Data - Compliant', centerX, 280, { align: 'center' })
   }
 
-  private generateMetricsPage(metrics: DashboardMetrics, options: ExportOptions): void {
+  private generateMetricsPage(metrics: DashboardMetrics): void {
     let yPosition = this.margin
 
     // Page title
@@ -293,7 +288,7 @@ class PDFExportService {
     return insights.slice(0, 3) // Limit to 3 insights
   }
 
-  private async generateChartsPage(metrics: DashboardMetrics, options: ExportOptions): Promise<void> {
+  private async generateChartsPage(metrics: DashboardMetrics): Promise<void> {
     let yPosition = this.margin
 
     // Page title
@@ -442,7 +437,7 @@ class PDFExportService {
     })
   }
 
-  private generateSummaryPage(metrics: DashboardMetrics, options: ExportOptions): void {
+  private generateSummaryPage(metrics: DashboardMetrics): void {
     let yPosition = this.margin
 
     // Page title

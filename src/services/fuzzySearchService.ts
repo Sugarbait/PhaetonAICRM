@@ -13,7 +13,7 @@
  */
 
 import Fuse from 'fuse.js'
-import { auditLogger, AuditAction, ResourceType, AuditOutcome } from './auditLogger'
+import { AuditOutcome } from './auditLogger'
 import type { Chat } from './chatService'
 import type { Call } from '@/types'
 
@@ -258,7 +258,7 @@ class FuzzySearchService {
 
       // Search through all custom analysis data fields (detailed analysis from ChatModal)
       if (chat.chat_analysis?.custom_analysis_data) {
-        for (const [key, value] of Object.entries(chat.chat_analysis.custom_analysis_data)) {
+        for (const [, value] of Object.entries(chat.chat_analysis.custom_analysis_data)) {
           if (value && typeof value === 'string' && value.toLowerCase().includes(lowerQuery)) return true
           if (value && typeof value === 'number' && value.toString().includes(lowerQuery)) return true
         }
@@ -323,7 +323,7 @@ class FuzzySearchService {
         if (analysisName.toLowerCase().includes(lowerQuery)) return true
 
         // Search through all custom analysis data fields
-        for (const [key, value] of Object.entries(call.call_analysis.custom_analysis_data)) {
+        for (const [, value] of Object.entries(call.call_analysis.custom_analysis_data)) {
           if (value && typeof value === 'string' && value.toLowerCase().includes(lowerQuery)) return true
           if (value && typeof value === 'number' && value.toString().includes(lowerQuery)) return true
         }
@@ -368,9 +368,8 @@ class FuzzySearchService {
   /**
    * Update search configuration for SMS
    */
-  updateSMSSearchConfig(config: Partial<FuzzySearchConfig>): void {
+  updateSMSSearchConfig(_config: Partial<FuzzySearchConfig>): void {
     if (this.smsSearchEngine) {
-      const newConfig = { ...SMS_SEARCH_CONFIG, ...config }
       // Re-initialize with new config if data exists (note: this is a simplified approach)
       // In a production environment, you might want to store the original data separately
       console.log('SMS search config updated, re-initialization required with original data')
@@ -380,9 +379,8 @@ class FuzzySearchService {
   /**
    * Update search configuration for calls
    */
-  updateCallsSearchConfig(config: Partial<FuzzySearchConfig>): void {
+  updateCallsSearchConfig(_config: Partial<FuzzySearchConfig>): void {
     if (this.callsSearchEngine) {
-      const newConfig = { ...CALLS_SEARCH_CONFIG, ...config }
       // Re-initialize with new config if data exists (note: this is a simplified approach)
       // In a production environment, you might want to store the original data separately
       console.log('Calls search config updated, re-initialization required with original data')

@@ -22,7 +22,6 @@ import {
   SecurityIncident,
   IncidentType,
   IncidentSeverity,
-  UserSecurityProfile,
   NotificationType
 } from '@/types/incidentTypes'
 

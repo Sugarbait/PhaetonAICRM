@@ -7,9 +7,7 @@
  */
 
 import { supabase, supabaseConfig } from '@/config/supabase'
-import { Database } from '@/types/supabase'
 import { auditLogger } from './auditLogger'
-import { encryptionService } from './encryption'
 
 export interface ConflictData<T = any> {
   conflictId: string
@@ -143,8 +141,8 @@ class CrossDeviceConflictResolver {
         remoteTimestamp,
         conflictingFields,
         conflictType: this.determineConflictType(localData, remoteData, conflictingFields),
-        severity: this.assessConflictSeverity(table, conflictingFields),
-        autoResolvable: this.isAutoResolvable(table, conflictingFields),
+        severity: this.assessConflictSeverity(conflictingFields),
+        autoResolvable: this.isAutoResolvable(conflictingFields),
         deviceId,
         createdAt: new Date().toISOString()
       }
@@ -426,7 +424,7 @@ class CrossDeviceConflictResolver {
   /**
    * Assess conflict severity
    */
-  private assessConflictSeverity(table: string, conflictingFields: string[]): ConflictData['severity'] {
+  private assessConflictSeverity(conflictingFields: string[]): ConflictData['severity'] {
     // Critical severity for security-related fields
     const criticalFields = ['mfa_enabled', 'encrypted_secret', 'retell_config', 'password', 'api_key']
     if (conflictingFields.some(field => criticalFields.some(cf => field.includes(cf)))) {
@@ -451,7 +449,7 @@ class CrossDeviceConflictResolver {
   /**
    * Check if conflict can be auto-resolved
    */
-  private isAutoResolvable(table: string, conflictingFields: string[]): boolean {
+  private isAutoResolvable(conflictingFields: string[]): boolean {
     // Never auto-resolve critical security fields
     const criticalFields = ['mfa_enabled', 'encrypted_secret', 'retell_config', 'role', 'permissions']
     if (conflictingFields.some(field => criticalFields.some(cf => field.includes(cf)))) {

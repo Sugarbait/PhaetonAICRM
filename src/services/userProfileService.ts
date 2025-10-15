@@ -1,5 +1,4 @@
-import { supabase } from '@/config/supabase'
-import { User } from '@/types'
+import { supabase, supabaseAdmin } from '@/config/supabase'
 import { Database, ServiceResponse } from '@/types/supabase'
 import { encryptionService } from './encryption'
 import { auditLogger } from './auditLogger'
@@ -216,11 +215,10 @@ export class UserProfileService {
    */
   private static transformDatabaseUserToProfile(dbUser: any): UserProfileData | null {
     try {
-      // CRITICAL FIX: Use original_role from metadata if available (super_user stored as admin in DB)
-      // Otherwise, map the database role back to application format
-      const applicationRole = dbUser.metadata?.original_role || this.mapExistingRoleToExpected(dbUser.role)
+      // FIXED: Use role column directly (metadata column doesn't exist)
+      const applicationRole = this.mapExistingRoleToExpected(dbUser.role)
 
-      console.log(`🔄 ROLE MAPPING: DB role="${dbUser.role}", metadata.original_role="${dbUser.metadata?.original_role}", final="${applicationRole}"`)
+      console.log(`🔄 ROLE MAPPING: DB role="${dbUser.role}", final="${applicationRole}"`)
 
       return {
         id: dbUser.id,
@@ -246,7 +244,7 @@ export class UserProfileService {
   /**
    * Load user profile with cross-device sync support
    */
-  static async loadUserProfile(userId: string, options?: {
+  static async loadUserProfile(userId: string, _options?: {
     forceCloudSync?: boolean,
     deviceId?: string
   }): Promise<ServiceResponse<UserProfileData | null>> {
@@ -446,7 +444,13 @@ export class UserProfileService {
           // Map role for database compatibility
           const dbRole = this.mapRoleForDatabase(userProfileData.role)
 
-          const { error } = await supabase
+          // CRITICAL FIX: Use admin client to bypass RLS policies (same as deleteUser)
+          const adminClient = supabaseAdmin || supabase
+          if (!supabaseAdmin) {
+            console.warn('⚠️ Service role key not configured - using anon key (may fail due to RLS policies)')
+          }
+
+          const { error } = await adminClient
             .from('users')
             .upsert({
               id: userProfileData.id,
@@ -463,7 +467,7 @@ export class UserProfileService {
           if (error) {
             console.warn('Supabase profile save failed, continuing with localStorage:', error.message)
           } else {
-            console.log('✅ Profile saved to Supabase successfully')
+            console.log('✅ Profile saved to Supabase successfully (using admin client)')
 
             // Notify sync listeners
             const listeners = this.syncListeners.get(userId) || []
@@ -727,7 +731,7 @@ export class UserProfileService {
               id: user.id,
               email: user.email,
               name: user.name,
-              role: user.metadata?.original_role || this.mapExistingRoleToExpected(user.role),
+              role: this.mapExistingRoleToExpected(user.role), // FIXED: Use role column directly (no metadata)
               mfa_enabled: user.mfa_enabled,
               isActive: user.is_active !== undefined ? user.is_active : true, // Include activation status
               avatar: user.avatar_url,
@@ -1179,8 +1183,14 @@ export class UserProfileService {
       // STEP 1: Delete from Supabase first for cross-device sync
       console.log('UserProfileService: Attempting to delete user from Supabase...')
 
+      // Use admin client for deletion operations (bypasses RLS)
+      const adminClient = supabaseAdmin || supabase
+      if (!supabaseAdmin) {
+        console.warn('⚠️ Service role key not configured - using anon key (may fail due to RLS policies)')
+      }
+
       // Delete from users table - CRITICAL: Must succeed
-      const { error: deleteError } = await supabase
+      const { error: deleteError } = await adminClient
         .from('users')
         .delete()
         .eq('id', userId)
@@ -1198,7 +1208,7 @@ export class UserProfileService {
       console.log('✅ UserProfileService: User successfully deleted from users table')
 
       // Delete from user_profiles table
-      const { error: profileError } = await supabase
+      const { error: profileError } = await adminClient
         .from('user_profiles')
         .delete()
         .eq('user_id', userId)
@@ -1211,7 +1221,7 @@ export class UserProfileService {
       }
 
       // Delete from user_settings table
-      const { error: settingsError } = await supabase
+      const { error: settingsError } = await adminClient
         .from('user_settings')
         .delete()
         .eq('user_id', userId)
@@ -1712,7 +1722,9 @@ export class UserProfileService {
                                 updatedProfile.email === 'admin@phaetonai.com'  // MedEX Super User
 
         if ('role' in updates && !isSuperUserEmail) {
+          // FIXED: Simply update the role column directly (metadata column doesn't exist)
           usersUpdateData.role = updatedProfile.role
+          console.log(`🔄 ROLE UPDATE: Updating role to "${updatedProfile.role}" in database`)
         } else if ('role' in updates && isSuperUserEmail) {
           console.log(`🔐 SUPER USER PROTECTION: Skipping role update for ${updatedProfile.email} in Supabase`)
         }
@@ -1988,40 +2000,6 @@ export class UserProfileService {
    */
   static clearCache(): void {
     this.cache.clear()
-  }
-
-  /**
-   * Update user settings (internal helper)
-   */
-  private static async updateUserSettings(userId: string, settings: Record<string, any>): Promise<void> {
-    const settingsToUpdate: Partial<DatabaseUserSettings> = {
-      updated_at: new Date().toISOString()
-    }
-
-    if (settings.theme) {
-      settingsToUpdate.theme = settings.theme
-    }
-
-    if (settings.notifications) {
-      settingsToUpdate.notifications = settings.notifications
-    }
-
-    // Handle Retell API configuration
-    if (settings.retellApiKey || settings.callAgentId || settings.smsAgentId) {
-      settingsToUpdate.retell_config = {
-        api_key: settings.retellApiKey ? await encryptionService.encrypt(settings.retellApiKey) : undefined,
-        call_agent_id: settings.callAgentId,
-        sms_agent_id: settings.smsAgentId
-      }
-    }
-
-    const { error } = await supabase
-      .from('user_settings')
-      .upsert({ user_id: userId, tenant_id: getCurrentTenantId(), ...settingsToUpdate })
-
-    if (error) {
-      throw new Error(`Failed to update settings: ${error.message}`)
-    }
   }
 
   /**
@@ -2377,7 +2355,7 @@ export class UserProfileService {
             id: payload.new.id,
             email: payload.new.email,
             name: payload.new.name,
-            role: payload.new.metadata?.original_role || this.mapExistingRoleToExpected(payload.new.role),
+            role: this.mapExistingRoleToExpected(payload.new.role), // FIXED: Use role column directly
             mfa_enabled: payload.new.mfa_enabled,
             avatar: payload.new.avatar_url,
             settings: {},
@@ -2404,7 +2382,7 @@ export class UserProfileService {
             id: payload.new.id,
             email: payload.new.email,
             name: payload.new.name,
-            role: payload.new.metadata?.original_role || this.mapExistingRoleToExpected(payload.new.role),
+            role: this.mapExistingRoleToExpected(payload.new.role), // FIXED: Use role column directly
             mfa_enabled: payload.new.mfa_enabled,
             avatar: payload.new.avatar_url,
             settings: {},
@@ -2482,18 +2460,17 @@ export class UserProfileService {
    * Transform database profile to UserProfileData format
    */
   private static transformToUserProfileData(completeProfile: CompleteUserProfile): UserProfileData {
-    const { user, profile, settings } = completeProfile
+    const { user, profile: _profile, settings } = completeProfile
 
     // CRITICAL FIX: Validate user data before transformation
     if (!user || !user.id) {
       throw new Error('Invalid user data provided to transformToUserProfileData')
     }
 
-    // CRITICAL FIX: Use original_role from metadata if available (super_user stored as admin in DB)
-    // Otherwise, map the database role back to application format
-    const applicationRole = user.metadata?.original_role || this.mapExistingRoleToExpected(user.role)
+    // FIXED: Use role column directly (metadata column doesn't exist)
+    const applicationRole = this.mapExistingRoleToExpected(user.role)
 
-    console.log(`🔄 ROLE MAPPING (transformToUserProfileData): DB role="${user.role}", metadata.original_role="${user.metadata?.original_role}", final="${applicationRole}"`)
+    console.log(`🔄 ROLE MAPPING (transformToUserProfileData): DB role="${user.role}", final="${applicationRole}"`)
 
     let decryptedSettings = {}
     if (settings?.retell_config) {

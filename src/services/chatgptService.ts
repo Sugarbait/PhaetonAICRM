@@ -44,7 +44,7 @@ class ChatGPTService {
    * System prompt that defines the chatbot's role and restrictions
    */
   private getSystemPrompt(): string {
-    return `You are a helpful assistant for the ARTLEE business platform. You help users navigate and use the platform features, and can provide insights based on aggregated analytics data.
+    return `You are a helpful assistant for the Phaeton AI business platform. You help users navigate and use the platform features, and can provide insights based on aggregated analytics data.
 
 CRITICAL SECURITY RESTRICTIONS:
 - You have NO access to any patient data, PHI (Protected Health Information), or business records
@@ -212,64 +212,6 @@ When users ask about statistics, patterns, or historical data, provide comprehen
   }
 
   /**
-   * Send message to Azure Function proxy
-   */
-  private async sendToAzureFunction(userMessage: string, conversationHistory: ChatGPTMessage[]): Promise<ChatGPTResponse> {
-    // Build the conversation with system prompt
-    const messages: ChatGPTMessage[] = [
-      { role: 'system', content: this.getSystemPrompt() },
-      ...conversationHistory.slice(-10), // Keep last 10 messages for context
-      { role: 'user', content: userMessage }
-    ]
-
-    const requestBody = {
-      model: this.model,
-      messages: messages,
-      max_tokens: 1000
-    }
-
-    console.log('Sending request to Azure Function proxy:', {
-      messageCount: messages.length,
-      apiUrl: this.apiUrl
-    })
-
-    const response = await fetch(this.apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(requestBody)
-    })
-
-    console.log('Azure Function API Response status:', response.status, response.statusText)
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      console.error('Azure Function API error:', response.status, errorData)
-
-      if (response.status === 401) {
-        throw new Error('Authentication failed')
-      } else if (response.status === 429) {
-        return { success: false, error: 'Rate limit exceeded. Please try again in a moment.' }
-      } else {
-        throw new Error('Service temporarily unavailable')
-      }
-    }
-
-    const data = await response.json()
-
-    if (data.success && data.message) {
-      console.log('ChatGPT response received successfully via Azure Function')
-      return {
-        success: true,
-        message: data.message
-      }
-    }
-
-    throw new Error(data.error || 'No response generated')
-  }
-
-  /**
    * Basic check to prevent potential PHI data from being sent
    * This is a safety measure to catch obvious PHI patterns
    */
@@ -422,7 +364,7 @@ When users ask about statistics, patterns, or historical data, provide comprehen
 
     // Help and getting started
     if (message.includes('help') || message.includes('start') || message.includes('how to')) {
-      return `I'm your ARTLEE Assistant! I can help you with:
+      return `I'm your Phaeton AI Assistant! I can help you with:
 
 **📱 SMS/Chat Features:**
 • View and manage SMS conversations
@@ -538,7 +480,7 @@ The platform is designed to be intuitive - most features are accessible through 
     }
 
     // Default helpful response
-    return `I'm your ARTLEE Assistant! I can help you with platform navigation, SMS/chat features, call management, analytics, and general platform usage.
+    return `I'm your Phaeton AI Assistant! I can help you with platform navigation, SMS/chat features, call management, analytics, and general platform usage.
 
 **Quick Help:**
 • **SMS/Chat:** View conversations, add notes, track costs
@@ -559,11 +501,11 @@ What specific area would you like help with? You can ask about features, navigat
 
     // Try to handle analytics questions even in fallback mode
     if (this.isAnalyticsQuestion(userMessage)) {
-      return "I can help you analyze your ARTLEE usage patterns and statistics! I can provide insights about call volumes, peak hours, costs, SMS usage, and more. However, I need the platform's analytics service to be available. Please try asking about specific metrics like 'What time do I get the most calls?' or 'What are my total costs?'"
+      return "I can help you analyze your Phaeton AI usage patterns and statistics! I can provide insights about call volumes, peak hours, costs, SMS usage, and more. However, I need the platform's analytics service to be available. Please try asking about specific metrics like 'What time do I get the most calls?' or 'What are my total costs?'"
     }
 
     if (message.includes('help') || message.includes('how')) {
-      return "I'm here to help you navigate the ARTLEE platform! I can assist with features like SMS management, call handling, notes, settings, usage analytics, and general platform usage. What would you like to know about?"
+      return "I'm here to help you navigate the Phaeton AI platform! I can assist with features like SMS management, call handling, notes, settings, usage analytics, and general platform usage. What would you like to know about?"
     }
 
     if (message.includes('sms') || message.includes('chat')) {
@@ -575,7 +517,7 @@ What specific area would you like help with? You can ask about features, navigat
     }
 
     if (message.includes('stats') || message.includes('data') || message.includes('analytics')) {
-      return "I can help you understand your ARTLEE usage analytics! Ask me questions like:\n\n• What time do I get the most calls?\n• What are my total communication costs?\n• Which day is busiest for calls?\n• How long are my average calls?\n• What are my SMS usage patterns?\n\nAll analytics are based on aggregated, anonymized data with full PHI protection."
+      return "I can help you understand your Phaeton AI usage analytics! Ask me questions like:\n\n• What time do I get the most calls?\n• What are my total communication costs?\n• Which day is busiest for calls?\n• How long are my average calls?\n• What are my SMS usage patterns?\n\nAll analytics are based on aggregated, anonymized data with full PHI protection."
     }
 
     return "I can help you with platform navigation, SMS/chat features, call management, notes, settings, usage analytics, and general platform usage. What specific area would you like help with?"

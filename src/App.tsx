@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from './config/supabase'
+import { getCurrentTenantId } from './config/tenantConfig'
 import { auditLogger, AuditAction, ResourceType, AuditOutcome } from './services/auditLogger'
 import { userProfileService } from './services/userProfileService'
 import { retellService } from './services/retellService'
@@ -28,7 +29,7 @@ import './utils/enforceSuperUser'
 import { secureUserDataService } from './services/secureUserDataService'
 import { authService } from './services/authService'
 // Removed old TOTP service - using fresh MFA service
-import { UserSettingsService } from './services/userSettingsServiceEnhanced'
+import { userSettingsService } from './services/userSettingsService'
 // Removed old TOTP hook - using fresh MFA service
 import { Sidebar } from './components/layout/Sidebar'
 import { Header } from './components/layout/Header'
@@ -41,14 +42,18 @@ import { ToastManager } from './components/common/ToastManager'
 import { GeneralToast } from './components/common/GeneralToast'
 import { SecurityAlerts } from './components/security/SecurityAlerts'
 import { retellMonitoringService } from './services/retellMonitoringService'
+import { SiteHelpChatbot } from './components/common/SiteHelpChatbot'
 
 // Pages
 import { DashboardPage } from './pages/DashboardPage'
 import { CallsPage } from './pages/CallsPage'
 import { SMSPage } from './pages/SMSPage'
+import { CalendarPage } from './pages/CalendarPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { LoginPage } from './pages/LoginPage'
 import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage'
+import { RequestPasswordResetPage } from './pages/RequestPasswordResetPage'
+import { ResetPasswordPage } from './pages/ResetPasswordPage'
 import { MandatoryMfaLogin } from './components/auth/MandatoryMfaLogin'
 import { MfaProtectedRoute } from './components/auth/MfaProtectedRoute'
 
@@ -65,6 +70,8 @@ const getPageTitle = (pathname: string): string => {
       return 'Calls'
     case '/sms':
       return 'SMS'
+    case '/calendar':
+      return 'Calendar'
     case '/users':
       return 'User Management'
     case '/settings':
@@ -108,6 +115,7 @@ const AppContent: React.FC<{
   const location = useLocation()
   const pageTitle = getPageTitle(location.pathname)
   const [showTimeoutWarning, setShowTimeoutWarning] = useState(false)
+  const [showChatbot, setShowChatbot] = useState(false)
 
   // Setup bulletproof API key monitoring for navigation
   useEffect(() => {
@@ -338,12 +346,29 @@ const AppContent: React.FC<{
               />
 
               <Route
+                path="/calendar"
+                element={<CalendarPage user={user} />}
+              />
+
+              <Route
                 path="/settings"
                 element={<SettingsPage user={user} />}
               />
               <Route
                 path="/privacy-policy"
                 element={<PrivacyPolicyPage />}
+              />
+              <Route
+                path="/request-password-reset"
+                element={<RequestPasswordResetPage />}
+              />
+              <Route
+                path="/reset-password"
+                element={<ResetPasswordPage />}
+              />
+              <Route
+                path="/update-password"
+                element={<ResetPasswordPage />}
               />
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Routes>
@@ -371,6 +396,12 @@ const AppContent: React.FC<{
 
       {/* General Toast Notifications */}
       <GeneralToast />
+
+      {/* Site Help Chatbot */}
+      <SiteHelpChatbot
+        isVisible={showChatbot}
+        onToggle={() => setShowChatbot(!showChatbot)}
+      />
     </div>
   )
 }
@@ -475,7 +506,7 @@ const App: React.FC = () => {
         initializeFavicon()
 
         // Initialize cross-device settings synchronization
-        UserSettingsService.initialize()
+        userSettingsService.initialize()
 
         console.log('Basic security systems, favicon, and cross-device sync initialized successfully')
       } catch (error) {
@@ -795,31 +826,42 @@ const App: React.FC = () => {
             console.log('⚠️ MFA system failed but user not flagged for MFA - proceeding without verification')
           }
 
-          // Force sync settings from Supabase for cross-device access
-          console.log('🔄 Syncing cross-device data on app initialization...')
+          // CREDENTIAL LOADING: Use shared credential loader service
+          console.log('🔄 App.tsx: Loading API credentials via shared service...')
           try {
-            // Import the services
-            const { userSettingsService } = await import('./services/userSettingsService')
+            const { CredentialLoaderService } = await import('./services/credentialLoaderService')
 
-            // Load user settings from cloud
-            const settingsSynced = await userSettingsService.getUserSettings(userData.id)
-            console.log(`✅ Settings loaded on init: ${settingsSynced ? 'successful' : 'using defaults'}`)
+            // Load credentials with Supabase-first strategy and comprehensive fallbacks
+            const credentialResult = await CredentialLoaderService.loadCredentialsWithRetry(userData.id, 3, 500)
 
-            // Reload Retell credentials after settings sync
-            if (settingsSynced && settingsSynced.retell_config) {
+            if (credentialResult.success) {
+              console.log(`✅ App.tsx: Credentials loaded successfully from ${credentialResult.source}`)
+
+              // Update retellService with loaded credentials
+              await CredentialLoaderService.updateRetellService({
+                apiKey: credentialResult.apiKey,
+                callAgentId: credentialResult.callAgentId,
+                smsAgentId: credentialResult.smsAgentId
+              })
+            } else {
+              // Final fallback: Try ensureCredentialsLoaded without pre-loading
+              console.log('⚠️ App.tsx: No credentials loaded from shared service, attempting bulletproof fallback')
               const { retellService } = await import('./services/retellService')
-              retellService.updateCredentials(
-                settingsSynced.retell_config.api_key,
-                settingsSynced.retell_config.call_agent_id,
-                settingsSynced.retell_config.sms_agent_id
-              )
-              // Ensure the bulletproof system has the latest credentials
               await retellService.ensureCredentialsLoaded()
-              console.log('✅ Retell credentials updated and ensured loaded')
+              console.log('🔄 App.tsx: Attempted credentials load via bulletproof system')
             }
-          } catch (syncError) {
-            console.warn('⚠️ Cross-device sync on init failed, using local data:', syncError)
-            // Continue with initialization even if sync fails - will use local/default data
+
+            console.log('🎯 App.tsx: Credential loading complete')
+
+          } catch (credLoadError) {
+            console.error('❌ App.tsx: Critical error loading credentials:', credLoadError)
+            // Still try to initialize retellService for safety
+            try {
+              const { retellService } = await import('./services/retellService')
+              await retellService.ensureCredentialsLoaded()
+            } catch (finalError) {
+              console.error('❌ App.tsx: Final credential loading attempt failed:', finalError)
+            }
           }
 
           // Try to load full profile from Supabase with timeout
@@ -1299,7 +1341,42 @@ const App: React.FC = () => {
 
           // Start session monitoring and load credentials
           await authService.startSessionMonitoring()
-          await retellService.loadCredentialsAsync()
+
+          // CREDENTIAL LOADING: Use shared credential loader service (after MFA)
+          console.log('🔄 App.tsx (MFA): Loading API credentials via shared service...')
+          try {
+            const { CredentialLoaderService } = await import('./services/credentialLoaderService')
+
+            // Load credentials with Supabase-first strategy and comprehensive fallbacks
+            const credentialResult = await CredentialLoaderService.loadCredentialsWithRetry(userData.id, 3, 500)
+
+            if (credentialResult.success) {
+              console.log(`✅ App.tsx (MFA): Credentials loaded successfully from ${credentialResult.source}`)
+
+              // Update retellService with loaded credentials
+              await CredentialLoaderService.updateRetellService({
+                apiKey: credentialResult.apiKey,
+                callAgentId: credentialResult.callAgentId,
+                smsAgentId: credentialResult.smsAgentId
+              })
+            } else {
+              // Final fallback: Try ensureCredentialsLoaded without pre-loading
+              console.log('⚠️ App.tsx (MFA): No credentials loaded from shared service, attempting bulletproof fallback')
+              await retellService.ensureCredentialsLoaded()
+              console.log('🔄 App.tsx (MFA): Attempted credentials load via bulletproof system')
+            }
+
+            console.log('🎯 App.tsx (MFA): Credential loading complete')
+
+          } catch (credLoadError) {
+            console.error('❌ App.tsx (MFA): Critical error loading credentials:', credLoadError)
+            // Still try to initialize retellService for safety
+            try {
+              await retellService.ensureCredentialsLoaded()
+            } catch (finalError) {
+              console.error('❌ App.tsx (MFA): Final credential loading attempt failed:', finalError)
+            }
+          }
 
         } catch (profileError) {
           console.warn('Failed to load full profile after MFA, using pending user data:', profileError)
@@ -1545,7 +1622,7 @@ const App: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400 mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-gray-400">{loadingMessage}</p>
           {mfaCheckInProgress && (
             <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
@@ -1563,7 +1640,7 @@ const App: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400 mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-gray-400">Completing authentication...</p>
         </div>
       </div>

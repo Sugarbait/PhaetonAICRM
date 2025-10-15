@@ -39,21 +39,63 @@ try {
   console.error('❌ Basic setup failed:', error)
 }
 
-// Simple loading component
-const LoadingApp: React.FC = () => (
-  <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-    <div className="text-center">
-      <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-        <span className="text-white text-2xl">🏥</span>
-      </div>
-      <h1 className="text-2xl font-bold text-gray-800 mb-2">Phaeton AI CRM</h1>
-      <p className="text-gray-600">Loading application...</p>
-      <div className="mt-4 text-sm text-gray-500">
-        Initializing HIPAA-compliant environment
+// Simple loading component with inline dark mode support
+const LoadingApp: React.FC = () => {
+  // Check theme from localStorage or system preference
+  const isDark = React.useMemo(() => {
+    try {
+      const savedTheme = localStorage.getItem('theme')
+      if (savedTheme === 'dark') return true
+      if (savedTheme === 'light') return false
+      // Check system preference
+      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+    } catch {
+      return false
+    }
+  }, [])
+
+  return (
+    <div style={{
+      minHeight: '100vh',
+      backgroundColor: isDark ? '#111827' : '#f9fafb',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }}>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{
+          width: '64px',
+          height: '64px',
+          backgroundColor: isDark ? '#2563eb' : '#3b82f6',
+          borderRadius: '50%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          margin: '0 auto 16px',
+          animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+        }}>
+          <span style={{ color: 'white', fontSize: '24px' }}>🏥</span>
+        </div>
+        <h1 style={{
+          fontSize: '24px',
+          fontWeight: 'bold',
+          color: isDark ? '#f3f4f6' : '#1f2937',
+          marginBottom: '8px'
+        }}>Phaeton AI CRM</h1>
+        <p style={{
+          color: isDark ? '#9ca3af' : '#4b5563'
+        }}>Loading application...</p>
+        <div style={{
+          marginTop: '16px',
+          fontSize: '14px',
+          color: isDark ? '#6b7280' : '#6b7280'
+        }}>
+          Initializing HIPAA-compliant environment
+        </div>
       </div>
     </div>
-  </div>
-)
+  )
+}
 
 // Main App Component that loads progressively
 const MainApp: React.FC = () => {
@@ -89,20 +131,56 @@ const MainApp: React.FC = () => {
       .catch((error) => {
         console.error('❌ Failed to load App component:', error)
         // Show error state
-        setApp(() => () => (
-          <div className="min-h-screen bg-red-50 flex items-center justify-center">
-            <div className="text-center">
-              <h1 className="text-2xl font-bold text-red-800 mb-2">Loading Error</h1>
-              <p className="text-red-600">Failed to load application</p>
-              <button
-                onClick={() => window.location.reload()}
-                className="mt-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-              >
-                Retry
-              </button>
+        setApp(() => () => {
+          const isDark = (() => {
+            try {
+              const savedTheme = localStorage.getItem('theme')
+              if (savedTheme === 'dark') return true
+              if (savedTheme === 'light') return false
+              return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+            } catch {
+              return false
+            }
+          })()
+
+          return (
+            <div style={{
+              minHeight: '100vh',
+              backgroundColor: isDark ? '#111827' : '#fef2f2',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <div style={{ textAlign: 'center' }}>
+                <h1 style={{
+                  fontSize: '24px',
+                  fontWeight: 'bold',
+                  color: isDark ? '#f87171' : '#991b1b',
+                  marginBottom: '8px'
+                }}>Loading Error</h1>
+                <p style={{
+                  color: isDark ? '#ef4444' : '#dc2626'
+                }}>Failed to load application</p>
+                <button
+                  onClick={() => window.location.reload()}
+                  style={{
+                    marginTop: '16px',
+                    padding: '8px 16px',
+                    backgroundColor: isDark ? '#dc2626' : '#ef4444',
+                    color: 'white',
+                    borderRadius: '4px',
+                    border: 'none',
+                    cursor: 'pointer'
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.backgroundColor = isDark ? '#b91c1c' : '#dc2626'}
+                  onMouseOut={(e) => e.currentTarget.style.backgroundColor = isDark ? '#dc2626' : '#ef4444'}
+                >
+                  Retry
+                </button>
+              </div>
             </div>
-          </div>
-        ))
+          )
+        })
         setAppLoaded(true)
       })
   }, [])

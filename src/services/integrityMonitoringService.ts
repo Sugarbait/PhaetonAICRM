@@ -33,7 +33,6 @@ import {
   IntegrityStatusSummary,
   IntegrityWorkerMessage,
   WorkerMessageType,
-  IntegrityConfiguration,
   IntegrityServiceResponse,
   IntegrityBatchResult,
   IntegritySystemHealth,
@@ -41,11 +40,6 @@ import {
   DeviationType,
   DeviationSeverity,
   AlertStatus,
-  IntegritySearchCriteria,
-  IntegritySearchResponse,
-  IntegrityReport,
-  IntegrityReportType,
-  ReportPeriod,
   IntegrityMetrics
 } from '@/types/integrityTypes'
 import {
@@ -65,7 +59,6 @@ export class IntegrityMonitoringService {
   private alerts: Map<string, IntegrityAlert> = new Map()
   private eventListeners: Map<string, ((data: any) => void)[]> = new Map()
   private monitoringIntervals: Map<string, NodeJS.Timeout> = new Map()
-  private lastHealthCheck = new Date()
 
   // Storage keys
   private static readonly STORAGE_KEYS = {
@@ -473,8 +466,6 @@ export class IntegrityMonitoringService {
         alerts,
         recommendations
       }
-
-      this.lastHealthCheck = now
 
       return { success: true, data: systemHealth }
 
@@ -973,7 +964,6 @@ export class IntegrityMonitoringService {
       })
 
       const baseline = check.baseline
-      const expectedPattern = baseline?.values.patterns?.audit_log_structure
 
       // If we have a baseline hash, compare it
       const expectedHash = baseline?.values.hashes?.recent_audit_logs
@@ -1209,7 +1199,7 @@ export class IntegrityMonitoringService {
   /**
    * Generate audit log baseline
    */
-  private async generateAuditLogBaseline(check: IntegrityCheck, baseline: IntegrityBaseline): Promise<void> {
+  private async generateAuditLogBaseline(_check: IntegrityCheck, baseline: IntegrityBaseline): Promise<void> {
     try {
       const auditLogsJson = localStorage.getItem('auditLogs')
       if (auditLogsJson) {
@@ -1620,7 +1610,7 @@ export class IntegrityMonitoringService {
   /**
    * Generate health recommendations
    */
-  private generateHealthRecommendations(alerts: IntegrityAlert[], metrics: IntegrityMetrics): string[] {
+  private generateHealthRecommendations(alerts: IntegrityAlert[], _metrics: IntegrityMetrics): string[] {
     const recommendations: string[] = []
 
     if (alerts.length > 0) {

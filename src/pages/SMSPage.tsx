@@ -1047,17 +1047,9 @@ export const SMSPage: React.FC<SMSPageProps> = ({ user }) => {
     // This prevents infinite loading spinner when no SMS Agent ID is configured
     try {
       // WORKING CALLS PAGE PATTERN: Simple and reliable
-      console.log('🔄 [SMSPage] Using PROVEN Calls page pattern...')
+      console.log('🔄 [SMSPage] Loading credentials from user settings...')
 
-      // FORCE HARDWIRED CREDENTIALS FIRST
-      console.log('🔧 [SMSPage] FORCING hardwired credentials immediately...')
-      retellService.updateCredentials(
-        'key_c3f084f5ca67781070e188b47d7f',
-        'agent_447a1b9da540237693b0440df6',
-        'agent_643486efd4b5a0e9d7e094ab99'
-      )
-
-      // Reload credentials (localStorage + Supabase sync) - EXACT CALLS PAGE PATTERN
+      // Load credentials from user settings (localStorage + Supabase sync)
       await retellService.loadCredentialsAsync()
       safeLog('✅ [SMSPage] Reloaded credentials with cross-device sync:', {
         hasApiKey: !!retellService.isConfigured(),
@@ -1814,21 +1806,13 @@ export const SMSPage: React.FC<SMSPageProps> = ({ user }) => {
 
     // Listen for focus events to restart monitoring after navigation
     const handleFocus = async () => {
-      console.log('🛡️ [SMSPage] Window focused - applying Calls page pattern')
+      console.log('🛡️ [SMSPage] Window focused - reloading credentials from user settings')
       try {
-        // FORCE HARDWIRED CREDENTIALS - SIMPLE APPROACH
-        console.log('🔧 [SMSPage] Focus: Forcing hardwired credentials...')
-        retellService.updateCredentials(
-          'key_c3f084f5ca67781070e188b47d7f',
-          'agent_447a1b9da540237693b0440df6',
-          'agent_643486efd4b5a0e9d7e094ab99'
-        )
-
-        // SIMPLE CALLS PAGE PATTERN
+        // Load credentials from user settings
         await retellService.loadCredentialsAsync()
         await chatService.syncWithRetellService()
 
-        console.log('✅ [SMSPage] Focus: Calls page pattern applied successfully')
+        console.log('✅ [SMSPage] Focus: Credentials reloaded successfully')
       } catch (error) {
         console.error('Focus sync error:', error)
       }
@@ -2342,8 +2326,8 @@ export const SMSPage: React.FC<SMSPageProps> = ({ user }) => {
         <div>
             {/* Search and Filters */}
             <div className="mb-4 sm:mb-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-5 lg:p-6">
-              <div className="flex flex-col gap-3 sm:gap-4">
-                <div className="flex-1 relative">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                <div className="relative w-full sm:max-w-md">
                   <SearchIcon className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
                   <input
                     type="search"
@@ -2364,18 +2348,16 @@ export const SMSPage: React.FC<SMSPageProps> = ({ user }) => {
                     <ZapIcon className="w-4 h-4" />
                   </button>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="px-3 sm:px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px] text-sm sm:text-base flex-1 sm:min-w-[120px] touch-manipulation"
-                  >
-                    <option value="all">All Status</option>
-                    <option value="ongoing">Ongoing</option>
-                    <option value="ended">Ended</option>
-                    <option value="error">Error</option>
-                  </select>
-                </div>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="px-3 sm:px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px] text-sm sm:text-base w-full sm:w-48 touch-manipulation"
+                >
+                  <option value="all">All Status</option>
+                  <option value="ongoing">Ongoing</option>
+                  <option value="ended">Ended</option>
+                  <option value="error">Error</option>
+                </select>
               </div>
             </div>
 
@@ -2392,10 +2374,11 @@ export const SMSPage: React.FC<SMSPageProps> = ({ user }) => {
                   <div className="bg-gray-50 border-b border-gray-200 px-4 sm:px-6 py-3 hidden lg:block">
                     <div className="grid grid-cols-12 gap-2 lg:gap-4 text-xs sm:text-sm font-medium text-gray-700">
                       <div className="col-span-1">#</div>
-                      <div className="col-span-3">Patient</div>
-                      <div className="col-span-3">Chat Info</div>
-                      <div className="col-span-2">Cost</div>
+                      <div className="col-span-2">Patient</div>
+                      <div className="col-span-2">Chat Info</div>
+                      <div className="col-span-2">Sentiment</div>
                       <div className="col-span-2">Status & Duration</div>
+                      <div className="col-span-2">Cost</div>
                       <div className="col-span-1">Actions</div>
                     </div>
                   </div>
@@ -2471,7 +2454,7 @@ export const SMSPage: React.FC<SMSPageProps> = ({ user }) => {
                             </div>
 
                             {/* Patient Info */}
-                            <div className="col-span-3">
+                            <div className="col-span-2">
                               <div>
                                 <div className="font-medium text-sm lg:text-base text-gray-900 flex items-center gap-2">
                                   {patientName}
@@ -2491,30 +2474,24 @@ export const SMSPage: React.FC<SMSPageProps> = ({ user }) => {
                             </div>
 
                             {/* Chat Info */}
-                            <div className="col-span-3">
+                            <div className="col-span-2">
                               <div className="text-xs lg:text-sm text-gray-900">
                                 {formatDateTime(chat.start_timestamp).date}
                               </div>
                               <div className="text-xs text-gray-500">
                                 {formatDateTime(chat.start_timestamp).time}
                               </div>
-                              <div className="flex items-center gap-2 mt-1">
-                                {chat.chat_analysis?.user_sentiment && (
-                                  <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getSentimentColor(chat.chat_analysis.user_sentiment)}`}>
-                                    {chat.chat_analysis.user_sentiment}
-                                  </span>
-                                )}
-                              </div>
                             </div>
 
-                            {/* Cost */}
+                            {/* Sentiment */}
                             <div className="col-span-2">
-                              <div className="text-xs lg:text-sm font-medium text-gray-900">
-                                <CostDisplay chat={chat} />
-                              </div>
-                              <div className="text-xs text-gray-500">
-                                SMS cost
-                              </div>
+                              {chat.chat_analysis?.user_sentiment ? (
+                                <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium border ${getSentimentColor(chat.chat_analysis.user_sentiment.toLowerCase())}`}>
+                                  {chat.chat_analysis.user_sentiment}
+                                </span>
+                              ) : (
+                                <span className="text-sm text-gray-400">N/A</span>
+                              )}
                             </div>
 
                             {/* Status & Duration */}
@@ -2526,6 +2503,16 @@ export const SMSPage: React.FC<SMSPageProps> = ({ user }) => {
                               </div>
                               <div className="text-xs text-gray-500">
                                 {formatDuration(chat.start_timestamp, chat.end_timestamp)}
+                              </div>
+                            </div>
+
+                            {/* Cost */}
+                            <div className="col-span-2">
+                              <div className="text-xs lg:text-sm font-medium text-gray-900">
+                                <CostDisplay chat={chat} />
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                SMS cost
                               </div>
                             </div>
 
@@ -2617,7 +2604,7 @@ export const SMSPage: React.FC<SMSPageProps> = ({ user }) => {
                                 {chat.chat_status}
                               </span>
                               {chat.chat_analysis?.user_sentiment && (
-                                <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getSentimentColor(chat.chat_analysis.user_sentiment)}`}>
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getSentimentColor(chat.chat_analysis.user_sentiment.toLowerCase())}`}>
                                   {chat.chat_analysis.user_sentiment}
                                 </span>
                               )}

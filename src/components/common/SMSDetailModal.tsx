@@ -240,7 +240,7 @@ export const SMSDetailModal: React.FC<SMSDetailModalProps> = ({ message, isOpen,
               <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <ClockIcon className="w-4 h-4 text-blue-600" />
-                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Sent</span>
+                  <span className="text-sm font-bold text-gray-900 dark:text-gray-100">Sent</span>
                 </div>
                 <div className="text-lg font-bold text-blue-600">
                   {relative}
@@ -250,7 +250,7 @@ export const SMSDetailModal: React.FC<SMSDetailModalProps> = ({ message, isOpen,
               <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <TrendingUpIcon className="w-4 h-4 text-green-600" />
-                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Status</span>
+                  <span className="text-sm font-bold text-gray-900 dark:text-gray-100">Status</span>
                 </div>
                 <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(message.status)}`}>
                   {message.status}
@@ -260,7 +260,7 @@ export const SMSDetailModal: React.FC<SMSDetailModalProps> = ({ message, isOpen,
               <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <MessageSquareIcon className="w-4 h-4 text-purple-600" />
-                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Length</span>
+                  <span className="text-sm font-bold text-gray-900 dark:text-gray-100">Length</span>
                 </div>
                 <div className="text-lg font-bold text-purple-600">
                   {cleanLength} chars
@@ -277,7 +277,7 @@ export const SMSDetailModal: React.FC<SMSDetailModalProps> = ({ message, isOpen,
                 <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                   <div className="flex items-center gap-2 mb-2">
                     <DollarSignIcon className="w-4 h-4 text-orange-600" />
-                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Cost</span>
+                    <span className="text-sm font-bold text-gray-900 dark:text-gray-100">Cost</span>
                   </div>
                   <div className="text-lg font-bold text-orange-600">
                     ${message.cost.toFixed(4)}
@@ -291,15 +291,15 @@ export const SMSDetailModal: React.FC<SMSDetailModalProps> = ({ message, isOpen,
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Contact Information</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Patient Name</label>
+                  <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Patient Name</label>
                   <p className="text-gray-900 dark:text-gray-100">{message.metadata?.patient_name || 'N/A'}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Phone Number</label>
+                  <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Phone Number</label>
                   <p className="text-gray-900 dark:text-gray-100">{message.phone_number}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Patient ID</label>
+                  <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Patient ID</label>
                   <div className="flex items-center gap-2">
                     <IdCardIcon className="w-4 h-4 text-blue-600" />
                     <p className="text-gray-900 dark:text-gray-100 font-mono font-semibold">{generatedPatientId}</p>
@@ -316,12 +316,12 @@ export const SMSDetailModal: React.FC<SMSDetailModalProps> = ({ message, isOpen,
                   )}
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Message Type</label>
+                  <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Message Type</label>
                   <p className="text-gray-900 dark:text-gray-100">{message.metadata?.message_type || 'N/A'}</p>
                 </div>
                 {message.metadata?.chat_id && (
                   <div className="md:col-span-2">
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Chat ID</label>
+                    <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Chat ID</label>
                     <p className="text-gray-900 dark:text-gray-100 font-mono text-sm">{message.metadata.chat_id}</p>
                   </div>
                 )}
@@ -338,7 +338,7 @@ export const SMSDetailModal: React.FC<SMSDetailModalProps> = ({ message, isOpen,
                 <div className="bg-white dark:bg-gray-800 rounded p-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      <p className="text-sm font-bold text-gray-900 dark:text-gray-100">
                         Patient ID for this phone number:
                       </p>
                       <p className="text-lg font-bold text-blue-600 font-mono">
@@ -411,15 +411,15 @@ export const SMSDetailModal: React.FC<SMSDetailModalProps> = ({ message, isOpen,
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Technical Details</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div>
-                  <label className="text-gray-700 dark:text-gray-300 font-medium">Message ID</label>
+                  <label className="text-gray-700 dark:text-gray-300 font-bold">Message ID</label>
                   <p className="text-gray-600 dark:text-gray-400 font-mono">{message.message_id}</p>
                 </div>
                 <div>
-                  <label className="text-gray-700 dark:text-gray-300 font-medium">Direction</label>
+                  <label className="text-gray-700 dark:text-gray-300 font-bold">Direction</label>
                   <p className="text-gray-600 dark:text-gray-400 capitalize">{message.direction}</p>
                 </div>
                 <div>
-                  <label className="text-gray-700 dark:text-gray-300 font-medium">Timestamp</label>
+                  <label className="text-gray-700 dark:text-gray-300 font-bold">Timestamp</label>
                   <p className="text-gray-600 dark:text-gray-400">{(() => {
                     try {
                       let date: Date
@@ -453,7 +453,7 @@ export const SMSDetailModal: React.FC<SMSDetailModalProps> = ({ message, isOpen,
                   })()}</p>
                 </div>
                 <div>
-                  <label className="text-gray-700 dark:text-gray-300 font-medium">Status</label>
+                  <label className="text-gray-700 dark:text-gray-300 font-bold">Status</label>
                   <p className="text-gray-600 dark:text-gray-400 capitalize">{message.status}</p>
                 </div>
               </div>

@@ -9,12 +9,15 @@ const APP_URL = 'https://carexps.nexasync.ca'
 const LOGO_URL = 'https://carexps.nexasync.ca/images/Logo.png'
 
 interface EmailPayload {
-  type: 'new_sms' | 'new_call' | 'system_alert'
-  record: {
+  type: 'new_sms' | 'new_call' | 'system_alert' | 'custom'
+  record?: {
     id: string
     created_at: string
   }
   recipients: string[]
+  // For custom emails (like password reset)
+  customSubject?: string
+  customHtml?: string
 }
 
 async function sendEmailViaResend(recipients: string[], subject: string, htmlBody: string) {
@@ -22,7 +25,7 @@ async function sendEmailViaResend(recipients: string[], subject: string, htmlBod
   for (const recipient of recipients) {
     try {
       const emailData = {
-        from: 'CareXPS CRM <aibot@phaetonai.com>',
+        from: 'Phaeton AI CRM <aibot@phaetonai.com>',
         to: [recipient],
         subject: subject,
         html: htmlBody
@@ -93,20 +96,39 @@ Deno.serve(async (req) => {
     if (!payload.recipients || payload.recipients.length === 0) {
       throw new Error('No recipients')
     }
+
     let subject = 'CareXPS Notification'
-    let linkUrl = APP_URL
-    if (payload.type === 'new_sms') {
-      subject = 'New SMS Message - CareXPS'
-      linkUrl = APP_URL + '/sms'
-    } else if (payload.type === 'new_call') {
-      subject = 'New Voice Call - CareXPS'
-      linkUrl = APP_URL + '/calls'
+    let htmlBody = ''
+
+    // Handle custom emails (like password reset)
+    if (payload.type === 'custom') {
+      if (!payload.customSubject || !payload.customHtml) {
+        throw new Error('Custom emails require customSubject and customHtml')
+      }
+      subject = payload.customSubject
+      htmlBody = payload.customHtml
+    } else {
+      // Handle notification emails
+      let linkUrl = APP_URL
+      if (payload.type === 'new_sms') {
+        subject = 'New SMS Message - CareXPS'
+        linkUrl = APP_URL + '/sms'
+      } else if (payload.type === 'new_call') {
+        subject = 'New Voice Call - CareXPS'
+        linkUrl = APP_URL + '/calls'
+      }
+
+      if (!payload.record) {
+        throw new Error('Notification emails require record data')
+      }
+
+      const timestamp = new Date(payload.record.created_at).toLocaleString('en-US', {
+        dateStyle: 'long',
+        timeStyle: 'short'
+      })
+      htmlBody = generateEmailHTML(payload.type, timestamp, linkUrl)
     }
-    const timestamp = new Date(payload.record.created_at).toLocaleString('en-US', {
-      dateStyle: 'long',
-      timeStyle: 'short'
-    })
-    const htmlBody = generateEmailHTML(payload.type, timestamp, linkUrl)
+
     const result = await sendEmailViaResend(payload.recipients, subject, htmlBody)
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

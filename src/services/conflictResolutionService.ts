@@ -249,7 +249,7 @@ class ConflictResolutionService {
         resolvedValue,
         resolvedBy: userInput !== undefined ? 'user' : 'system',
         resolvedAt: new Date().toISOString(),
-        reasoning: this.generateResolutionReasoning(conflict, strategy, resolvedValue)
+        reasoning: this.generateResolutionReasoning(conflict, strategy)
       }
 
       // Store resolution
@@ -492,7 +492,7 @@ class ConflictResolutionService {
       }
 
       // Determine if auto-resolvable
-      const autoResolvable = this.isFieldAutoResolvable(fieldName, localValue, remoteValue, tableName)
+      const autoResolvable = this.isFieldAutoResolvable(fieldName, localValue, tableName)
 
       conflicts.push(this.createConflict(
         tableName,
@@ -598,8 +598,7 @@ class ConflictResolutionService {
 
   private generateResolutionReasoning(
     conflict: DataConflict,
-    strategy: ConflictResolutionStrategy,
-    resolvedValue: any
+    strategy: ConflictResolutionStrategy
   ): string {
     switch (strategy.name) {
       case 'last_write_wins':
@@ -666,7 +665,7 @@ class ConflictResolutionService {
     return systemFields.includes(fieldName)
   }
 
-  private isFieldAutoResolvable(fieldName: string, localValue: any, remoteValue: any, tableName: string): boolean {
+  private isFieldAutoResolvable(fieldName: string, localValue: any, tableName: string): boolean {
     // PHI fields should require manual resolution
     const phiFields = ['patient_name', 'ssn', 'medical_record', 'diagnosis', 'treatment']
     if (phiFields.some(field => fieldName.toLowerCase().includes(field))) {
@@ -748,7 +747,7 @@ class ConflictResolutionService {
     }
   }
 
-  private getConflictFromResolution(resolution: ConflictResolution): DataConflict | null {
+  private getConflictFromResolution(_resolution: ConflictResolution): DataConflict | null {
     // This would need to be implemented based on how you store conflict data with resolutions
     // For now, return null as it's not critical for basic functionality
     return null

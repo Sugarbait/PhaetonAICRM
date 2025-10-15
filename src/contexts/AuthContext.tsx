@@ -391,6 +391,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 // API keys are now loaded in main.tsx before React starts
                 retellService.loadCredentials()
 
+                // CRITICAL FIX: Ensure credentials are fully loaded and persisted
+                console.log('🔄 AuthContext: Ensuring API credentials are loaded after login...')
+                await retellService.ensureCredentialsLoaded().catch(error => {
+                  console.warn('⚠️ AuthContext: Failed to ensure credentials loaded:', error)
+                })
+
                 // Dispatch event to notify other components that API is ready
                 setTimeout(() => {
                   window.dispatchEvent(new CustomEvent('apiConfigurationReady', {
@@ -883,6 +889,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
             // API keys are now loaded in main.tsx before React starts
             retellService.loadCredentials()
+
+            // CRITICAL FIX: Ensure credentials are fully loaded and persisted after MFA
+            console.log('🔄 AuthContext: Ensuring API credentials are loaded after MFA...')
+            await retellService.ensureCredentialsLoaded().catch(error => {
+              console.warn('⚠️ AuthContext: Failed to ensure credentials loaded after MFA:', error)
+            })
 
             // Dispatch event to notify other components that API is ready
             setTimeout(() => {

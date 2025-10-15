@@ -79,9 +79,6 @@ export class RobustProfileSyncService {
       this.triggerUpdateEvents(profileData)
 
       const status = result.localSaved ? 'success' : 'error'
-      const message = result.cloudSaved ?
-        'Profile saved and synced to cloud' :
-        result.localSaved ? 'Profile saved locally (cloud sync unavailable)' : 'Profile save failed'
 
       return {
         status,

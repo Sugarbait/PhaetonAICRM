@@ -4,11 +4,11 @@
  * This is a clean implementation focused on the current working Retell AI endpoints
  * Based on official documentation: https://docs.retellai.com/api-references/
  *
- * BULLETPROOF CREDENTIALS: This service now includes hardcoded fallback credentials
- * that ensure the API is ALWAYS available regardless of storage issues.
+ * PHAETON AI CRM: No hardcoded credentials - users must configure API keys via Settings.
+ * Credentials are loaded ONLY from user-configured sources (localStorage, cloud storage).
  */
 
-import { getBulletproofCredentials, validateCredentials, storeCredentialsEverywhere, type RetellCredentials } from '../config/retellCredentials'
+import { validateCredentials, type RetellCredentials } from '../config/retellCredentials'
 import { cloudCredentialService } from './cloudCredentialService'
 
 export interface RetellCall {
@@ -431,34 +431,6 @@ class RetellService {
   }
 
   /**
-   * Load hardcoded credentials as ultimate fallback
-   */
-  private loadHardcodedCredentials(): {apiKey: string, callAgentId: string, smsAgentId: string} {
-    try {
-      console.log('🔐 RetellService - Loading hardcoded credentials as ultimate fallback...')
-      const bulletproofCreds = getBulletproofCredentials()
-
-      if (validateCredentials(bulletproofCreds)) {
-        console.log('✅ RetellService - Hardcoded credentials validated successfully')
-
-        // Store hardcoded credentials in all locations for future use
-        storeCredentialsEverywhere(bulletproofCreds)
-
-        return {
-          apiKey: bulletproofCreds.apiKey,
-          callAgentId: bulletproofCreds.callAgentId,
-          smsAgentId: bulletproofCreds.smsAgentId
-        }
-      } else {
-        console.error('❌ RetellService - Hardcoded credentials failed validation')
-      }
-    } catch (error) {
-      console.error('❌ RetellService - Error loading hardcoded credentials:', error)
-    }
-    return {apiKey: '', callAgentId: '', smsAgentId: ''}
-  }
-
-  /**
    * Create in-memory backup of credentials (including blank ones) with tenant_id
    */
   private async createMemoryBackup(): Promise<void> {
@@ -545,21 +517,17 @@ class RetellService {
   }
 
   /**
-   * Check if service is configured with auto-recovery and hardcoded fallback
+   * Check if service is configured (user-configured credentials only)
+   *
+   * For Phaeton AI CRM: No hardcoded fallback - returns false if credentials not configured.
    */
   public isConfigured(): boolean {
     const configured = !!(this.apiKey && (this.callAgentId || this.smsAgentId))
 
-    // If not configured but should be, try to reload with hardcoded fallback
+    // If not configured, try to reload from user settings (no hardcoded fallback)
     if (!configured && this.isInitialized) {
-      console.log('⚠️ RetellService - Configuration lost, attempting recovery with hardcoded fallback...')
+      console.log('⚠️ RetellService - No credentials configured, attempting to reload from user settings...')
       this.loadCredentials()
-
-      // If still not configured after reload, force use hardcoded credentials
-      if (!this.apiKey) {
-        console.log('🔐 RetellService - Recovery failed, forcing hardcoded credentials...')
-        this.forceUpdateCredentials()
-      }
 
       return !!(this.apiKey && (this.callAgentId || this.smsAgentId))
     }
@@ -874,30 +842,20 @@ class RetellService {
   }
 
   /**
-   * Force update credentials with the correct API key - Now uses hardcoded values
+   * Force update credentials (Phaeton AI: No hardcoded credentials available)
+   *
+   * This method is kept for interface compatibility but does not use hardcoded credentials.
+   * For Phaeton AI CRM, this clears all credentials and users must reconfigure via Settings.
    */
   public forceUpdateCredentials(): void {
-    console.log('Fresh RetellService - Force updating with bulletproof hardcoded credentials')
+    console.log('⚠️ Phaeton AI: Force update called - clearing credentials')
+    console.log('   No hardcoded credentials available')
+    console.log('   Users must configure API keys via Settings > API Configuration')
 
-    try {
-      // Get the bulletproof credentials
-      const bulletproofCreds = getBulletproofCredentials()
+    // Clear all credentials - no hardcoded fallback
+    this.updateCredentials('', '', '')
 
-      // Set the hardcoded values
-      this.updateCredentials(
-        bulletproofCreds.apiKey,
-        bulletproofCreds.callAgentId,
-        bulletproofCreds.smsAgentId
-      )
-
-      console.log('✅ Fresh RetellService - Force update completed with hardcoded credentials')
-    } catch (error) {
-      console.error('❌ Fresh RetellService - Force update failed:', error)
-
-      // Phaeton AI CRM: No hardcoded fallback - user must configure credentials
-      console.log('⚠️ Phaeton AI: No hardcoded credentials available - user must configure via Settings')
-      this.updateCredentials('', '', '')
-    }
+    console.log('✅ Phaeton AI: Credentials cleared - user must reconfigure in Settings')
   }
 
   /**

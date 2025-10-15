@@ -8,7 +8,10 @@ import {
   XIcon,
   PhoneCallIcon,
   TrendingUpIcon,
-  IdCardIcon
+  IdCardIcon,
+  UserIcon,
+  PhoneIcon,
+  BriefcaseIcon
 } from 'lucide-react'
 import { CallNotes } from './CallNotes'
 import { patientIdService } from '@/services/patientIdService'
@@ -37,7 +40,7 @@ export const CallDetailModal: React.FC<CallDetailModalProps> = ({ call, isOpen, 
   const [generatedPatientId, setGeneratedPatientId] = useState<string>('')
   const [patientRecord, setPatientRecord] = useState<any>(null)
 
-  // Generate Patient ID based on phone number when modal opens
+  // Generate Customer ID based on phone number when modal opens
   useEffect(() => {
     if (isOpen && call) {
       // Extract phone number from various possible fields
@@ -49,7 +52,7 @@ export const CallDetailModal: React.FC<CallDetailModalProps> = ({ call, isOpen, 
         setGeneratedPatientId(patientId)
         setPatientRecord(record)
       } else {
-        setGeneratedPatientId('PT00000000')
+        setGeneratedPatientId('CT00000000')
         setPatientRecord(null)
       }
     }
@@ -93,7 +96,7 @@ export const CallDetailModal: React.FC<CallDetailModalProps> = ({ call, isOpen, 
   const { date, time } = formatDateTime(call.start_timestamp)
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all">
       <div className="bg-white dark:bg-gray-800 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
@@ -106,7 +109,7 @@ export const CallDetailModal: React.FC<CallDetailModalProps> = ({ call, isOpen, 
                 {call.metadata?.patient_name || 'Caller'}
               </h2>
               <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
-                <span>ID: {generatedPatientId || 'PT00000000'}</span>
+                <span>ID: {generatedPatientId || 'CT00000000'}</span>
                 <span className="flex items-center gap-1">
                   <CalendarIcon className="w-4 h-4" />
                   {date} at {time}
@@ -130,7 +133,7 @@ export const CallDetailModal: React.FC<CallDetailModalProps> = ({ call, isOpen, 
               <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <ClockIcon className="w-4 h-4 text-blue-600" />
-                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Duration</span>
+                  <span className="text-sm font-bold text-gray-900 dark:text-gray-100">Duration</span>
                 </div>
                 <div className="text-2xl font-bold text-blue-600">
                   {formatDuration(call.call_length_seconds)}
@@ -140,7 +143,7 @@ export const CallDetailModal: React.FC<CallDetailModalProps> = ({ call, isOpen, 
               <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <TrendingUpIcon className="w-4 h-4 text-green-600" />
-                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Status</span>
+                  <span className="text-sm font-bold text-gray-900 dark:text-gray-100">Status</span>
                 </div>
                 <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(call.call_status)}`}>
                   {call.call_status}
@@ -151,7 +154,7 @@ export const CallDetailModal: React.FC<CallDetailModalProps> = ({ call, isOpen, 
                 <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                   <div className="flex items-center gap-2 mb-2">
                     <DollarSignIcon className="w-4 h-4 text-purple-600" />
-                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Cost</span>
+                    <span className="text-sm font-bold text-gray-900 dark:text-gray-100">Cost</span>
                   </div>
                   <div className="text-2xl font-bold text-purple-600">
                     ${call.cost.toFixed(3)}
@@ -161,31 +164,57 @@ export const CallDetailModal: React.FC<CallDetailModalProps> = ({ call, isOpen, 
             </div>
 
             {/* Contact Information */}
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Contact Information</h3>
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Contact Information</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Patient Name</label>
-                  <p className="text-gray-900 dark:text-gray-100">{call.metadata?.patient_name || 'N/A'}</p>
+                {/* Customer Name */}
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-bold text-gray-500 dark:text-gray-400">
+                    <UserIcon className="w-4 h-4" />
+                    <span>Customer Name</span>
+                  </div>
+                  <div className="pl-6">
+                    <p className="text-lg text-gray-900 dark:text-gray-100">{call.metadata?.patient_name || 'N/A'}</p>
+                  </div>
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Phone Number</label>
-                  <p className="text-gray-900 dark:text-gray-100">{call.from_number || call.to_number || call.phone_number || 'N/A'}</p>
+
+                {/* Phone Number */}
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-bold text-gray-500 dark:text-gray-400">
+                    <PhoneIcon className="w-4 h-4" />
+                    <span>Phone Number</span>
+                  </div>
+                  <div className="pl-6">
+                    <a
+                      href={`tel:${call.from_number || call.to_number || call.phone_number || ''}`}
+                      className="text-lg text-blue-600 dark:text-blue-400 hover:underline"
+                    >
+                      {call.from_number || call.to_number || call.phone_number || 'N/A'}
+                    </a>
+                  </div>
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Call Type</label>
-                  <p className="text-gray-900 dark:text-gray-100">{call.metadata?.call_type || call.call_type || 'N/A'}</p>
+
+                {/* Call Type */}
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-bold text-gray-500 dark:text-gray-400">
+                    <BriefcaseIcon className="w-4 h-4" />
+                    <span>Call Type</span>
+                  </div>
+                  <div className="pl-6">
+                    <p className="text-lg text-gray-900 dark:text-gray-100">{call.metadata?.call_type || call.call_type || 'N/A'}</p>
+                  </div>
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Patient ID</label>
-                  <div className="flex items-center gap-2">
-                    <IdCardIcon className="w-4 h-4 text-blue-600" />
-                    <p className="text-gray-900 dark:text-gray-100 font-mono font-semibold">
-                      {generatedPatientId || 'PT00000000'}
+
+                {/* Customer ID */}
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-bold text-gray-500 dark:text-gray-400">
+                    <IdCardIcon className="w-4 h-4" />
+                    <span>Customer ID</span>
+                  </div>
+                  <div className="pl-6">
+                    <p className="text-lg font-mono text-gray-900 dark:text-gray-100">
+                      {generatedPatientId || 'CT00000000'}
                     </p>
-                    {patientRecord && (
-                      <span className="text-xs text-gray-500 dark:text-gray-400">(Phone-based)</span>
-                    )}
                   </div>
                 </div>
               </div>
@@ -222,7 +251,7 @@ export const CallDetailModal: React.FC<CallDetailModalProps> = ({ call, isOpen, 
                 {/* Call Summary (full width if present) */}
                 {call.call_analysis.call_summary && (
                   <div className="mb-4">
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Call Summary</label>
+                    <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Call Summary</label>
                     <p className="text-gray-900 dark:text-gray-100 mt-1">{call.call_analysis.call_summary}</p>
                   </div>
                 )}
@@ -230,7 +259,7 @@ export const CallDetailModal: React.FC<CallDetailModalProps> = ({ call, isOpen, 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {call.call_analysis.in_voicemail !== undefined && (
                     <div>
-                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Voicemail Detection</label>
+                      <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Voicemail Detection</label>
                       <p className={`text-gray-900 dark:text-gray-100 font-medium ${call.call_analysis.in_voicemail ? 'text-yellow-600' : 'text-green-600'}`}>
                         {call.call_analysis.in_voicemail ? 'Reached Voicemail' : 'Live Answer'}
                       </p>
@@ -238,7 +267,7 @@ export const CallDetailModal: React.FC<CallDetailModalProps> = ({ call, isOpen, 
                   )}
                   {call.call_analysis.call_successful !== undefined && (
                     <div>
-                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Call Successful</label>
+                      <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Call Successful</label>
                       <p className={`text-gray-900 dark:text-gray-100 font-medium ${call.call_analysis.call_successful ? 'text-green-600' : 'text-red-600'}`}>
                         {call.call_analysis.call_successful ? 'Yes' : 'No'}
                       </p>
@@ -246,7 +275,7 @@ export const CallDetailModal: React.FC<CallDetailModalProps> = ({ call, isOpen, 
                   )}
                   {call.call_analysis.user_sentiment && (
                     <div>
-                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">User Sentiment</label>
+                      <label className="text-sm font-bold text-gray-700 dark:text-gray-300">User Sentiment</label>
                       <p className={`text-gray-900 dark:text-gray-100 font-medium ${
                         call.call_analysis.user_sentiment.toLowerCase() === 'positive' ? 'text-green-600' :
                         call.call_analysis.user_sentiment.toLowerCase() === 'negative' ? 'text-red-600' :
@@ -262,18 +291,20 @@ export const CallDetailModal: React.FC<CallDetailModalProps> = ({ call, isOpen, 
                 {/* Custom Analysis Data */}
                 {call.call_analysis.custom_analysis_data && Object.keys(call.call_analysis.custom_analysis_data).length > 0 && (
                   <div className="mt-4">
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">Custom Analysis Data</label>
-                    <div className="bg-white dark:bg-gray-800 rounded border border-gray-300 dark:border-gray-600 p-3 space-y-2">
-                      {Object.entries(call.call_analysis.custom_analysis_data).map(([key, value]) => (
-                        <div key={key} className="flex justify-between items-start">
-                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300 capitalize">
-                            {key.replace(/_/g, ' ')}:
-                          </span>
-                          <span className="text-sm text-gray-900 dark:text-gray-100 ml-2 text-right">
-                            {typeof value === 'object' ? JSON.stringify(value) : String(value)}
-                          </span>
-                        </div>
-                      ))}
+                    <label className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 block">Custom Analysis Data</label>
+                    <div className="bg-white dark:bg-gray-800 rounded border border-gray-300 dark:border-gray-600 p-3">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {Object.entries(call.call_analysis.custom_analysis_data).map(([key, value]) => (
+                          <div key={key} className="border-l-4 border-blue-500 pl-3">
+                            <label className="text-sm font-bold text-gray-700 dark:text-gray-300 capitalize block">
+                              {key.replace(/_/g, ' ').replace(/([A-Z])/g, ' $1').trim()}
+                            </label>
+                            <p className="text-gray-900 dark:text-gray-100 text-sm mt-1">
+                              {typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value)}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 )}

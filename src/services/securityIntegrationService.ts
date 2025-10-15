@@ -18,10 +18,8 @@ import { incidentResponseService } from './incidentResponseService'
 import { auditLogger, AuditAction, ResourceType, AuditOutcome } from './auditLogger'
 import { mfaLockoutService } from './mfaLockoutService'
 import {
-  SecurityIncident,
   IncidentType,
-  IncidentSeverity,
-  UserSecurityProfile
+  IncidentSeverity
 } from '@/types/incidentTypes'
 
 export interface SecurityEventPattern {
@@ -90,13 +88,6 @@ export class SecurityIntegrationService {
   private eventPatterns: Map<string, SecurityEventPattern> = new Map()
   private eventQueue: Array<{ event: any; timestamp: Date }> = []
   private patternMatchingInterval: NodeJS.Timeout | null = null
-
-  // Storage keys
-  private static readonly STORAGE_KEYS = {
-    PATTERNS: 'security_event_patterns',
-    METRICS: 'security_integration_metrics',
-    EVENTS: 'security_event_queue'
-  }
 
   constructor() {
     this.setupDefaultPatterns()

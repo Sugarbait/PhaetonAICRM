@@ -190,9 +190,6 @@ class AnalyticsService {
         return chatTimeMs >= startMs && chatTimeMs <= endMs
       })
 
-      // Calculate aggregated SMS metrics
-      const stats = chatService.getChatStats(filteredChats)
-
       // Calculate segments and costs (aggregated only)
       let totalSegments = 0
       let totalCost = 0
@@ -234,7 +231,7 @@ class AnalyticsService {
   /**
    * Calculate peak hours from timestamps (anonymized aggregation)
    */
-  private calculatePeakHours(data: any[], type: 'calls' | 'sms' = 'calls') {
+  private calculatePeakHours(data: any[], _type: 'calls' | 'sms' = 'calls') {
     const hourCounts = new Array(24).fill(0)
 
     data.forEach(item => {
@@ -266,7 +263,7 @@ class AnalyticsService {
   /**
    * Calculate daily distribution (anonymized aggregation)
    */
-  private calculateDailyDistribution(data: any[], type: 'calls' | 'sms' = 'calls') {
+  private calculateDailyDistribution(data: any[], _type: 'calls' | 'sms' = 'calls') {
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
     const dayCounts = new Array(7).fill(0)
 
@@ -433,7 +430,7 @@ class AnalyticsService {
   }
 
   private formatPeakHoursResponse(analytics: AnalyticsData): string {
-    const { calls, sms } = analytics
+    const { calls } = analytics
 
     if (calls.peakHours.length === 0) {
       return "I don't have enough call data to determine peak hours yet. Once you have more calls, I'll be able to analyze the busiest times for you."

@@ -100,29 +100,93 @@ class NotesService {
 
   /**
    * Initialize cross-device synchronization capabilities
+   * FIXED: Distinguishes auth errors from database errors
    */
   private async initializeCrossDeviceSync(): Promise<void> {
     try {
       // Quick test to ensure Supabase is available for cross-device sync
       const { error } = await supabase.from('notes').select('id').eq('tenant_id', getCurrentTenantId()).limit(1).maybeSingle()
       if (error) {
-        // Only log once per session to reduce console noise
-        if (!sessionStorage.getItem('notes-sync-warning-logged')) {
-          safeLog('📝 Notes: localStorage-only mode')
-          sessionStorage.setItem('notes-sync-warning-logged', 'true')
+        // CRITICAL FIX: Check if this is an authentication error
+        const isAuthError = this.isAuthenticationError(error)
+
+        if (isAuthError) {
+          // Auth error - database IS available, just auth endpoint failed
+          // Keep Supabase marked as available for future attempts
+          this.isSupabaseAvailable = true
+          if (!sessionStorage.getItem('notes-auth-warning-logged')) {
+            safeLog('📝 Notes: Authentication issue detected (database still available)')
+            sessionStorage.setItem('notes-auth-warning-logged', 'true')
+          }
+        } else {
+          // Actual database error - mark as unavailable
+          if (!sessionStorage.getItem('notes-sync-warning-logged')) {
+            safeLog('📝 Notes: localStorage-only mode (database error)')
+            sessionStorage.setItem('notes-sync-warning-logged', 'true')
+          }
+          this.isSupabaseAvailable = false
         }
-        this.isSupabaseAvailable = false
       } else {
         this.isSupabaseAvailable = true
       }
     } catch (error) {
-      // Only log connection errors once per session
-      if (!sessionStorage.getItem('notes-connection-error-logged')) {
-        safeLog('📝 Notes: offline mode (connection error)')
-        sessionStorage.setItem('notes-connection-error-logged', 'true')
+      // Check if this is a connection error or auth error
+      const isAuthError = this.isAuthenticationError(error)
+
+      if (isAuthError) {
+        // Auth exception - database still available
+        this.isSupabaseAvailable = true
+        if (!sessionStorage.getItem('notes-auth-error-logged')) {
+          safeLog('📝 Notes: Authentication exception (database available)')
+          sessionStorage.setItem('notes-auth-error-logged', 'true')
+        }
+      } else {
+        // Connection error - mark as unavailable
+        if (!sessionStorage.getItem('notes-connection-error-logged')) {
+          safeLog('📝 Notes: offline mode (connection error)')
+          sessionStorage.setItem('notes-connection-error-logged', 'true')
+        }
+        this.isSupabaseAvailable = false
       }
-      this.isSupabaseAvailable = false
     }
+  }
+
+  /**
+   * Check if an error is an authentication error (not a database availability issue)
+   * Auth errors mean database IS available, just auth failed
+   */
+  private isAuthenticationError(error: any): boolean {
+    if (!error) return false
+
+    // Check error message for auth-related keywords
+    const errorMessage = error.message?.toLowerCase() || error.toString()?.toLowerCase() || ''
+    const authKeywords = [
+      '403',
+      'forbidden',
+      'unauthorized',
+      '401',
+      'jwt',
+      'token',
+      'authentication',
+      'permission',
+      'access denied',
+      'invalid token',
+      'expired token',
+      'auth'
+    ]
+
+    // Check if error contains any auth keywords
+    const hasAuthKeyword = authKeywords.some(keyword => errorMessage.includes(keyword))
+
+    // Check error code/status for auth errors
+    const errorCode = error.code || error.status || error.statusCode
+    const isAuthStatusCode = errorCode === 403 || errorCode === 401 || errorCode === '403' || errorCode === '401'
+
+    // Check error hint for RLS policy failures (auth-related)
+    const errorHint = error.hint?.toLowerCase() || ''
+    const isRLSError = errorHint.includes('policy') || errorHint.includes('row level security')
+
+    return hasAuthKeyword || isAuthStatusCode || isRLSError
   }
 
   /**
@@ -533,7 +597,7 @@ class NotesService {
   /**
    * Background creation in Supabase for cross-device sync
    */
-  private async backgroundCreateNoteInSupabase(localNote: Note, noteData: any): Promise<Note | null> {
+  private async backgroundCreateNoteInSupabase(_localNote: Note, noteData: any): Promise<Note | null> {
     try {
       const { data: supabaseNote, error } = await supabase
         .from('notes')
@@ -1113,7 +1177,7 @@ class NotesService {
   async cleanupAllSubscriptions(): Promise<void> {
     safeLog('Cleaning up all notes subscriptions')
 
-    for (const [key, channel] of this.subscriptions) {
+    for (const [, channel] of this.subscriptions) {
       await supabase.removeChannel(channel)
     }
 
@@ -1378,7 +1442,6 @@ class NotesService {
       // 5. Analysis
       const localCount = result.localStorage.length
       const supabaseCount = result.supabase.length
-      const cacheCount = result.cache?.length || 0
 
       if (localCount === 0 && supabaseCount === 0) {
         result.summary = 'No notes found anywhere - this is the issue'
@@ -1523,7 +1586,7 @@ if (typeof window !== 'undefined') {
     // Test Supabase connection
     testConnection: async () => {
       try {
-        const { data, error } = await supabase.from('notes').select('id').eq('tenant_id', getCurrentTenantId()).limit(1)
+        const { error } = await supabase.from('notes').select('id').eq('tenant_id', getCurrentTenantId()).limit(1)
         if (error) {
           console.error('❌ Connection failed:', error.message)
           return false

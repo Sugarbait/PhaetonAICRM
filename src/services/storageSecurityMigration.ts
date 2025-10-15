@@ -7,7 +7,6 @@
 
 import { secureStorage } from '@/services/secureStorage'
 import { secureLogger } from '@/services/secureLogger'
-import { encryptionService } from '@/services/encryption'
 
 const logger = secureLogger.component('StorageSecurityMigration')
 

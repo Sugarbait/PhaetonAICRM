@@ -12,13 +12,11 @@
  */
 
 import { totpService } from './totpService'
-import { authService } from './authService'
 import { secureStorage } from './secureStorage'
 import { secureLogger } from './secureLogger'
 import { auditLogger, AuditAction, ResourceType, AuditOutcome } from './auditLogger'
 import { supabase } from '../config/supabase'
 import { getCurrentTenantId } from '@/config/tenantConfig'
-import type { User } from '../types'
 
 const logger = secureLogger.component('AuthRecoveryService')
 

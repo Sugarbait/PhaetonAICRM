@@ -161,7 +161,6 @@ export class ChatService {
   private minRequestInterval: number = 200 // 200ms between requests (faster but still safe)
   private chatCache: Map<string, { data: any; timestamp: number }> = new Map()
   private cacheExpiry: number = 60000 // 1 minute cache for better performance
-  private requestQueue: Promise<any>[] = [] // Queue to handle concurrent requests
 
   constructor() {
     this.loadCredentials()
@@ -974,14 +973,6 @@ export class ChatService {
   }
 
   /**
-   * Mock data removed - no longer supported
-   */
-  private getMockChats(filters?: ChatFilters): Chat[] {
-    console.warn('getMockChats called but mock data has been removed')
-    return []
-  }
-
-  /**
    * Format duration from seconds to readable format
    */
   private formatDuration(seconds: number): string {
@@ -998,91 +989,6 @@ export class ChatService {
     } else {
       return `${remainingSeconds}s`
     }
-  }
-
-  /**
-   * Apply client-side filters for reliability (when API filtering is not working)
-   */
-  private applyClientSideFilters(chats: Chat[], filters: ChatFilters): Chat[] {
-    return chats.filter(chat => {
-      // Agent ID filter
-      if (filters.agent_id && chat.agent_id !== filters.agent_id) {
-        return false
-      }
-
-      // Chat status filter
-      if (filters.chat_status && chat.chat_status !== filters.chat_status) {
-        return false
-      }
-
-      // User sentiment filter
-      if (filters.user_sentiment && chat.chat_analysis?.user_sentiment !== filters.user_sentiment) {
-        return false
-      }
-
-      // Chat successful filter
-      if (filters.chat_successful !== undefined && chat.chat_analysis?.chat_successful !== filters.chat_successful) {
-        return false
-      }
-
-      // Start timestamp filter
-      if (filters.start_timestamp) {
-        const chatTime = chat.start_timestamp
-        if (filters.start_timestamp.gte && chatTime < filters.start_timestamp.gte) {
-          return false
-        }
-        if (filters.start_timestamp.lte && chatTime > filters.start_timestamp.lte) {
-          return false
-        }
-      }
-
-      // End timestamp filter
-      if (filters.end_timestamp && chat.end_timestamp) {
-        const chatEndTime = chat.end_timestamp
-        if (filters.end_timestamp.gte && chatEndTime < filters.end_timestamp.gte) {
-          return false
-        }
-        if (filters.end_timestamp.lte && chatEndTime > filters.end_timestamp.lte) {
-          return false
-        }
-      }
-
-      // Phone number filter (check multiple possible fields)
-      if (filters.phone_number) {
-        const phoneFields = [
-          chat.metadata?.phone_number,
-          chat.metadata?.customer_phone_number,
-          chat.metadata?.from_phone_number,
-          chat.metadata?.to_phone_number,
-          chat.collected_dynamic_variables?.phone_number,
-          chat.collected_dynamic_variables?.customer_phone_number
-        ]
-        const hasMatchingPhone = phoneFields.some(phone =>
-          phone && phone.toString().includes(filters.phone_number!)
-        )
-        if (!hasMatchingPhone) {
-          return false
-        }
-      }
-
-      // Patient ID filter
-      if (filters.patient_id) {
-        const patientIdFields = [
-          chat.metadata?.patient_id,
-          chat.metadata?.customer_id,
-          chat.collected_dynamic_variables?.patient_id,
-          chat.collected_dynamic_variables?.customer_id
-        ]
-        const hasMatchingPatientId = patientIdFields.some(id =>
-          id && id.toString().includes(filters.patient_id!)
-        )
-        if (!hasMatchingPatientId) {
-          return false
-        }
-      }
-
-      return true
-    })
   }
 
   /**

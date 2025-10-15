@@ -1,5 +1,5 @@
-import { supabase } from '@/config/supabase'
-import { Database, ServiceResponse } from '@/types/supabase'
+import { supabase, supabaseAdmin } from '@/config/supabase'
+import { ServiceResponse } from '@/types/supabase'
 import { userProfileService, UserProfileData } from './userProfileService'
 import { auditLogger } from './auditLogger'
 import { encryptionService } from './encryption'
@@ -924,7 +924,6 @@ export class UserManagementService {
       const encryptedCredentials = await encryptionService.encryptString(JSON.stringify(credentialsToStore))
 
       // STEP 4: Try Supabase first
-      let supabaseSuccess = false
       try {
         const { error } = await supabase
           .from('user_profiles')
@@ -935,7 +934,6 @@ export class UserManagementService {
 
         if (!error) {
           console.log('UserManagementService: Credentials stored in Supabase successfully')
-          supabaseSuccess = true
         }
       } catch (supabaseError) {
         console.log('UserManagementService: Supabase credential storage failed, using localStorage only')
@@ -1058,8 +1056,14 @@ export class UserManagementService {
     try {
       console.log('UserManagementService: Disabling user account:', userId)
 
+      // Use admin client for user disable operations (bypasses RLS)
+      const adminClient = supabaseAdmin || supabase
+      if (!supabaseAdmin) {
+        console.warn('⚠️ Service role key not configured - using anon key (may fail due to RLS policies)')
+      }
+
       // Update user in database
-      const { error: updateError } = await supabase
+      const { error: updateError } = await adminClient
         .from('users')
         .update({
           is_locked: true,
@@ -1117,19 +1121,34 @@ export class UserManagementService {
     try {
       console.log('UserManagementService: Enabling user account:', userId)
 
+      // Use admin client for user approval operations (bypasses RLS)
+      const adminClient = supabaseAdmin || supabase
+      if (!supabaseAdmin) {
+        console.warn('⚠️ Service role key not configured - using anon key (may fail due to RLS policies)')
+      }
+
       // Enable user account in database
       // Only update is_active to avoid schema errors with non-existent lock columns
-      const { error: updateError } = await supabase
+      const { data, error: updateError } = await adminClient
         .from('users')
         .update({
           is_active: true // Activate the user account
         })
         .eq('tenant_id', getCurrentTenantId())
         .eq('id', userId)
+        .select() // Return updated rows to verify success
 
       if (updateError) {
         throw updateError
       }
+
+      // CRITICAL: Verify the update actually affected rows
+      if (!data || data.length === 0) {
+        console.error('❌ No rows were updated - user not found with ID:', userId)
+        throw new Error('User not found - no database rows were updated. Please check if the user exists.')
+      }
+
+      console.log('✅ Database update confirmed - is_active set to:', data[0].is_active)
 
       // Update in localStorage
       const systemUsers = localStorage.getItem('systemUsers')
@@ -1396,7 +1415,7 @@ export class UserManagementService {
           try {
             const onceDecrypted = await encryptionService.decryptString(credentials.password)
             // If we can decrypt it again, it was double-encrypted
-            const twiceDecrypted = await encryptionService.decryptString(onceDecrypted)
+            await encryptionService.decryptString(onceDecrypted)
 
             console.log('UserManagementService: Found double-encrypted password for user')
 

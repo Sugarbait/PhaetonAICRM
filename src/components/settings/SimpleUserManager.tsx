@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react'
-import { UserPlus, Trash2, Key, Lock, Unlock, UserCheck, UserX, Clock, Shield, User as UserIcon, ArrowRight } from 'lucide-react'
+import { UserPlus, Trash2, Key, Lock, Unlock, UserCheck, UserX, Clock, Shield, User as UserIcon, ArrowRight, ShieldAlert, History, X } from 'lucide-react'
 import { userManagementService } from '@/services/userManagementService'
 import { userProfileService } from '@/services/userProfileService'
 import { PasswordDebugger } from '@/utils/passwordDebug'
 import { generalToast } from '@/services/generalToastService'
 import { useConfirmation } from '@/components/common/ConfirmationModal'
+import { LoginAttemptTracker } from '@/utils/loginAttemptTracker'
 
 interface User {
   id: string
@@ -22,6 +23,9 @@ export const SimpleUserManager: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [showAddUser, setShowAddUser] = useState(false)
   const [showChangePassword, setShowChangePassword] = useState<string | null>(null)
+  const [showLoginHistory, setShowLoginHistory] = useState<string | null>(null)
+  const [loginHistoryData, setLoginHistoryData] = useState<any>(null)
+  const [loadingHistory, setLoadingHistory] = useState(false)
   const { confirm, ConfirmationDialog } = useConfirmation()
 
   // Helper function to format last login with both date and time
@@ -80,6 +84,12 @@ export const SimpleUserManager: React.FC = () => {
       if (response.status === 'success' && response.data) {
         console.log(`✅ DEBUG: Loaded ${response.data.length} users from service`)
 
+        // First, log the raw data from the service
+        console.log('🔍 DEBUG: Raw user data from service:')
+        response.data.forEach(u => {
+          console.log(`  - ${u.email}: isActive=${u.isActive} (type: ${typeof u.isActive})`)
+        })
+
         const mappedUsers = response.data.map(u => {
           const mapped = {
             id: u.id,
@@ -95,12 +105,19 @@ export const SimpleUserManager: React.FC = () => {
             lastLogin: u.lastLogin,
             created_at: (u as any).created_at // Include creation timestamp to identify first user
           }
-          console.log(`👤 DEBUG: User ${u.email} - isActive: ${mapped.isActive} (original: ${u.isActive})`)
+          console.log(`👤 DEBUG: Mapped user ${u.email} - isActive: ${mapped.isActive} (original: ${u.isActive})`)
           return mapped
         })
 
+        console.log('📊 DEBUG: About to set users state. Current count:', users.length, 'New count:', mappedUsers.length)
         setUsers(mappedUsers)
-        console.log('✅ DEBUG: Set users state with', mappedUsers.length, 'users')
+        console.log('✅ DEBUG: Called setUsers with', mappedUsers.length, 'users')
+
+        // Log the pending/active split for debugging
+        const pending = mappedUsers.filter(u => !u.isActive)
+        const active = mappedUsers.filter(u => u.isActive)
+        console.log(`📊 DEBUG: After load - Pending: ${pending.length} users`, pending.map(u => u.email))
+        console.log(`📊 DEBUG: After load - Active: ${active.length} users`, active.map(u => u.email))
       }
     } catch (error) {
       console.error('Failed to load users:', error)
@@ -198,8 +215,17 @@ export const SimpleUserManager: React.FC = () => {
   const handleUnlockUser = async (userId: string, email: string) => {
     setIsLoading(true)
     try {
+      // Clear account lockout in database
       await userManagementService.clearAccountLockout(userId)
-      generalToast.success(`Account ${email} unlocked successfully`, 'Account Unlocked')
+
+      // CRITICAL: Also clear failed login attempts from localStorage (3-attempt block)
+      LoginAttemptTracker.emergencyUnblock(email)
+      console.log(`🔓 UNLOCK: Cleared both account lockout and failed login attempts for ${email}`)
+
+      generalToast.success(
+        `Account ${email} fully unlocked. Both account lockout and failed login attempts have been cleared.`,
+        'Account Unlocked'
+      )
       await loadUsers()
     } catch (error: any) {
       generalToast.error(`Failed to unlock account: ${error.message}`, 'Unlock Failed')
@@ -389,43 +415,74 @@ export const SimpleUserManager: React.FC = () => {
     }
   }
 
+  const handleShowLoginHistory = async (userId: string, userName: string) => {
+    setShowLoginHistory(userId)
+    setLoadingHistory(true)
+    setLoginHistoryData(null)
+
+    try {
+      console.log('📜 Loading login history for user:', userId)
+      const response = await userManagementService.getUserLoginHistory(userId)
+
+      if (response.status === 'success' && response.data) {
+        setLoginHistoryData(response.data)
+        console.log(`✅ Loaded ${response.data.loginHistory.length} login history entries`)
+      } else {
+        generalToast.error(
+          response.error || 'Failed to load login history',
+          'History Load Failed'
+        )
+        setShowLoginHistory(null)
+      }
+    } catch (error: any) {
+      console.error('❌ Failed to load login history:', error)
+      generalToast.error(
+        `Failed to load login history: ${error.message}`,
+        'Error'
+      )
+      setShowLoginHistory(null)
+    } finally {
+      setLoadingHistory(false)
+    }
+  }
+
   const handleEnableUser = async (userId: string, email: string) => {
     setIsLoading(true)
     try {
-      console.log('🔓 Approving user:', email, userId)
+      console.log('🔓 APPROVAL STARTED: User:', email, 'ID:', userId)
 
       // Update in backend first
-      await userManagementService.enableUser(userId)
+      const enableResponse = await userManagementService.enableUser(userId)
+      console.log('📥 APPROVAL: enableUser response:', enableResponse)
 
-      console.log('✅ User enabled in backend, updating UI...')
+      if (enableResponse.status !== 'success') {
+        throw new Error(enableResponse.error || 'Failed to enable user in backend')
+      }
+
+      console.log('✅ APPROVAL: Database updated successfully - is_active set to true')
 
       // CRITICAL: Clear systemUsers cache to ensure fresh data on next login
       localStorage.removeItem('systemUsers')
-      console.log('🧹 Cleared systemUsers cache to prevent stale data')
+      console.log('🧹 APPROVAL: Cleared systemUsers cache')
 
-      // Update the UI state directly without reloading
-      setUsers(prevUsers => {
-        const updated = prevUsers.map(user =>
-          user.id === userId
-            ? { ...user, isActive: true, isLocked: false }
-            : user
-        )
-        console.log('📊 Updated users state:', {
-          total: updated.length,
-          pending: updated.filter(u => !u.isActive).length,
-          active: updated.filter(u => u.isActive).length
-        })
-        return updated
-      })
+      // Small delay to ensure database transaction completes and propagates
+      await new Promise(resolve => setTimeout(resolve, 500))
+      console.log('⏱️ APPROVAL: Waited 500ms for database propagation')
+
+      // Reload users from database to ensure UI matches backend
+      console.log('🔄 APPROVAL: Reloading users from database...')
+      await loadUsers()
+
+      console.log('✅ APPROVAL: Users reloaded - check logs above for isActive values')
 
       generalToast.success(
         `${email} has been approved and can now log in.`,
         'User Approved'
       )
     } catch (error: any) {
-      console.error('❌ Failed to approve user:', error)
+      console.error('❌ APPROVAL FAILED:', error)
       generalToast.error(`Failed to approve user: ${error.message}`, 'Approval Failed')
-      // Only reload on error to revert
+      // Reload on error to revert
       await loadUsers()
     } finally {
       setIsLoading(false)
@@ -633,17 +690,65 @@ export const SimpleUserManager: React.FC = () => {
                       )}
 
                       <button
+                        onClick={() => handleShowLoginHistory(user.id, user.name)}
+                        className="p-1 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900 rounded"
+                        title="View Login History"
+                      >
+                        <History className="w-4 h-4" />
+                      </button>
+
+                      <button
                         onClick={() => setShowChangePassword(user.id)}
                         className="p-1 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900 rounded"
                         title="Change Password"
                       >
                         <Key className="w-4 h-4" />
                       </button>
+
+                      {/* Clear Failed Login Attempts Button (always visible) */}
+                      <button
+                        onClick={async () => {
+                          setIsLoading(true)
+                          try {
+                            // COMPREHENSIVE CLEANUP: Clear from ALL storage locations
+
+                            // 1. Clear database failed_login_attempts (if records exist)
+                            await userManagementService.clearAccountLockout(user.id)
+
+                            // 2. Clear localStorage failed_login_attempts tracker
+                            LoginAttemptTracker.emergencyUnblock(user.email)
+
+                            console.log(`🔓 CLEAR: Removed failed login attempts for ${user.email} from database and localStorage`)
+
+                            generalToast.success(
+                              `Cleared failed login attempts for ${user.email}. They can now try logging in again.`,
+                              'Login Attempts Cleared'
+                            )
+
+                            // Reload user list to reflect any changes
+                            await loadUsers()
+                          } catch (error: any) {
+                            console.error('❌ Failed to clear login attempts:', error)
+                            generalToast.error(
+                              `Failed to clear login attempts: ${error.message}`,
+                              'Clear Failed'
+                            )
+                          } finally {
+                            setIsLoading(false)
+                          }
+                        }}
+                        className="p-1 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900 rounded"
+                        title="Clear Failed Login Attempts (3-try block)"
+                        disabled={isLoading}
+                      >
+                        <ShieldAlert className="w-4 h-4" />
+                      </button>
+
                       {user.isLocked ? (
                         <button
-                          onClick={() => handleEnableUser(user.id, user.email)}
+                          onClick={() => handleUnlockUser(user.id, user.email)}
                           className="p-1 text-green-600 hover:bg-green-50 dark:hover:bg-green-900 rounded"
-                          title="Enable Account"
+                          title="Unlock Account & Clear Failed Login Attempts"
                           disabled={isLoading}
                         >
                           <Unlock className="w-4 h-4" />
@@ -716,6 +821,148 @@ export const SimpleUserManager: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Login History Modal */}
+      {showLoginHistory && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <History className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Login History
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {users.find(u => u.id === showLoginHistory)?.name || 'User'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowLoginHistory(null)
+                  setLoginHistoryData(null)
+                }}
+                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {loadingHistory ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600 dark:text-gray-400">Loading login history...</p>
+                  </div>
+                </div>
+              ) : loginHistoryData ? (
+                <div className="space-y-4">
+                  {/* Summary Stats */}
+                  <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
+                      <p className="text-sm text-green-600 dark:text-green-400 font-medium">Total Successful Logins</p>
+                      <p className="text-2xl font-bold text-green-700 dark:text-green-300">{loginHistoryData.totalLogins}</p>
+                    </div>
+                    <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">Recent Login Attempts</p>
+                      <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{loginHistoryData.loginHistory.length}</p>
+                    </div>
+                  </div>
+
+                  {/* Login History Table */}
+                  {loginHistoryData.loginHistory.length > 0 ? (
+                    <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                      <table className="w-full">
+                        <thead className="bg-gray-50 dark:bg-gray-700">
+                          <tr>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase">Timestamp</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase">Action</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase">Status</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase">Details</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                          {loginHistoryData.loginHistory.map((entry: any, index: number) => (
+                            <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                              <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
+                                {new Date(entry.timestamp).toLocaleString()}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
+                                {entry.action}
+                              </td>
+                              <td className="px-4 py-3 text-sm">
+                                {entry.outcome === 'SUCCESS' ? (
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                                    Success
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
+                                    Failed
+                                  </span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-sm">
+                                {entry.failureReason ? (
+                                  <div className="space-y-1">
+                                    <p className="text-red-600 dark:text-red-400 font-medium">{entry.failureReason}</p>
+                                    {entry.sourceIp && (
+                                      <p className="text-gray-500 dark:text-gray-400 text-xs">IP: {entry.sourceIp}</p>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <div className="space-y-1">
+                                    {entry.sourceIp && (
+                                      <p className="text-gray-600 dark:text-gray-400 text-xs">IP: {entry.sourceIp}</p>
+                                    )}
+                                    {entry.userAgent && (
+                                      <p className="text-gray-500 dark:text-gray-500 text-xs truncate max-w-xs" title={entry.userAgent}>
+                                        {entry.userAgent.substring(0, 50)}...
+                                      </p>
+                                    )}
+                                  </div>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-700">
+                      <History className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                      <p className="text-gray-600 dark:text-gray-400 font-medium">No login history found</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">
+                        This user has not logged in recently
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <p className="text-gray-600 dark:text-gray-400">No data available</p>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end">
+              <button
+                onClick={() => {
+                  setShowLoginHistory(null)
+                  setLoginHistoryData(null)
+                }}
+                className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 font-medium"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Confirmation Modal */}
       <ConfirmationDialog />

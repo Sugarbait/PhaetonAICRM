@@ -1,4 +1,4 @@
-import { supabase, supabaseConfig } from '@/config/supabase'
+import { supabaseConfig } from '@/config/supabase'
 import { userProfileService } from '@/services/userProfileService'
 import { avatarStorageService } from '@/services/avatarStorageService'
 import { realTimeSyncService } from '@/services/realTimeSyncService'
@@ -44,7 +44,6 @@ export class EnhancedProfileSyncService {
   private static deviceId: string | null = null
   private static syncListeners: Set<(event: ProfileSyncEvent) => void> = new Set()
   private static fieldPendingSync: Map<string, ProfileField> = new Map()
-  private static realtimeChannel: any = null
   private static syncTimer: NodeJS.Timeout | null = null
   private static isInitialized = false
 

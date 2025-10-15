@@ -1,4 +1,19 @@
-import { supabase, supabaseAdmin } from '@/config/supabase'
+/**
+ * @deprecated This service has been deprecated as of 2025-10-12
+ *
+ * All functionality has been consolidated into the primary userSettingsService.ts
+ *
+ * Migration complete:
+ * - App.tsx now uses userSettingsService instead of UserSettingsService
+ * - Validation, import/export, and initialize() methods added to primary service
+ *
+ * This file is kept temporarily for reference but should not be used.
+ * It will be removed in a future cleanup phase.
+ *
+ * Use: import { userSettingsService } from './services/userSettingsService'
+ */
+
+import { supabase } from '@/config/supabase'
 import { UserSettings, ServiceResponse, RealtimePayload, Database } from '@/types/supabase'
 import { encryptPHI, decryptPHI } from '@/utils/encryption'
 import { v4 as uuidv4 } from 'uuid'
@@ -78,49 +93,6 @@ export class EnhancedUserSettingsService {
     }
     this.syncListeners.clear()
     this.pendingSync.clear()
-  }
-
-  /**
-   * Get user ID from Azure AD authentication context
-   */
-  private static async getCurrentUserId(): Promise<string | null> {
-    try {
-      // Method 1: Try to get from Supabase auth context
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        // Look up user by Azure AD ID
-        const { data } = await supabase
-          .from('users')
-          .select('id')
-          .eq('tenant_id', getCurrentTenantId())
-          .eq('azure_ad_id', user.id)
-          .eq('is_active', true)
-          .single()
-
-        if (data) return data.id
-      }
-
-      // Method 2: Try to get from session storage (fallback)
-      const sessionData = sessionStorage.getItem('carexps_session')
-      if (sessionData) {
-        const session = JSON.parse(sessionData)
-        return session.userId || null
-      }
-
-      // Method 3: Try to get from secure storage
-      const { getCurrentTenantId } = require('@/config/tenantConfig')
-      const tenantId = getCurrentTenantId()
-      const secureSession = localStorage.getItem(`${tenantId}_session`)
-      if (secureSession) {
-        const session = JSON.parse(secureSession)
-        return session.userId || null
-      }
-
-      return null
-    } catch (error) {
-      console.warn('Failed to get current user ID:', error)
-      return null
-    }
   }
 
   /**
@@ -691,7 +663,7 @@ export class EnhancedUserSettingsService {
       const cached = localStorage.getItem(cacheKey)
 
       if (cached) {
-        const { data, timestamp, version } = JSON.parse(cached)
+        const { data, timestamp } = JSON.parse(cached)
 
         // Check if cache is still valid (24 hours for offline support)
         const maxAge = 24 * 60 * 60 * 1000 // 24 hours

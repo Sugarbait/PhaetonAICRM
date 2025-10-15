@@ -606,14 +606,14 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
   const handleToastPreferenceChange = async (key: keyof ToastNotificationPreferences, value: any) => {
     const newPreferences = { ...toastPreferences, [key]: value }
     setToastPreferences(newPreferences)
-    await toastNotificationService.updatePreferences(user.id, { [key]: value })
+    await toastNotificationService.updatePreferences({ [key]: value })
   }
 
   const handleDoNotDisturbChange = async (key: keyof ToastNotificationPreferences['doNotDisturb'], value: any) => {
     const newDndSettings = { ...toastPreferences.doNotDisturb, [key]: value }
     const newPreferences = { ...toastPreferences, doNotDisturb: newDndSettings }
     setToastPreferences(newPreferences)
-    await toastNotificationService.updatePreferences(user.id, { doNotDisturb: newDndSettings })
+    await toastNotificationService.updatePreferences({ doNotDisturb: newDndSettings })
   }
 
   // Test function to trigger demo toast notifications

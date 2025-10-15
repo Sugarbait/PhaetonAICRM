@@ -14,7 +14,8 @@ import {
   ActivityIcon,
   UserIcon,
   Shield,
-  AlertTriangle
+  AlertTriangle,
+  CalendarIcon
 } from 'lucide-react'
 
 interface SidebarProps {
@@ -56,6 +57,12 @@ const getNavigationItems = (user: any, mfaStatus: MfaStatus) => {
       description: hasMFA ? 'SMS management and analytics' : 'Requires MFA setup',
       requiresMFA: true,
       mfaEnabled: hasMFA
+    },
+    {
+      name: 'Calendar',
+      href: '/calendar',
+      icon: CalendarIcon,
+      description: 'Schedule management'
     },
     {
       name: 'Settings',
